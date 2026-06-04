@@ -1718,20 +1718,32 @@ function submitReq(){
   ['req-name','req-email','req-details'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});document.getElementById('req-type').value='';
 }
 function checkAdm(){
-  const pwEl=document.getElementById('adm-pw');
-  if(!pwEl)return;
-  const pw=pwEl.value.trim();
-  if(pw===ADMIN_PW){
-    const gate=document.getElementById('adm-gate-wrap');
-    const content=document.getElementById('adm-content');
-    if(gate)gate.style.display='none';
-    if(content)content.style.display='block';
-    sd('vsb_adm','1');
-    renderAdmContent();
-  } else {
-    const err=document.getElementById('adm-pw-err');
-    if(err){err.style.display='block';setTimeout(()=>err.style.display='none',2500);}
-  }
+  try{
+    const pwEl=document.getElementById('adm-pw');
+    if(!pwEl)return;
+    const pw=pwEl.value.trim();
+    if(pw===ADMIN_PW){
+      // Hide gate, show content
+      const gate=document.getElementById('adm-gate-wrap');
+      const content=document.getElementById('adm-content');
+      if(gate)gate.style.display='none';
+      if(content)content.style.display='block';
+      // Save auth state
+      try{sd('vsb_adm','1');}catch(e){}
+      // Render admin content
+      try{renderAdmContent();}catch(e){console.error('renderAdmContent:',e);}
+      // Make sure admin page is visible
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      const pg=document.getElementById('page-admin');
+      if(pg)pg.classList.add('active');
+    } else {
+      const err=document.getElementById('adm-pw-err');
+      if(err){
+        err.style.display='block';
+        setTimeout(()=>{try{err.style.display='none';}catch(e){}},2500);
+      }
+    }
+  }catch(e){console.error('checkAdm error:',e);}
 }
 function savePacksSheetUrl(){
   const url=document.getElementById('packs-sheet-url-inp')?.value.trim()||'';
@@ -1917,24 +1929,44 @@ function init(){
   // hash handled by handleHash() below
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  // Always init — packs, learn, contact are public
-  init();
+  // Run init safely — don't let sheet loading errors block admin
+  try{init();}catch(e){console.error('init error:',e);}
+
   // Unlock build gate if already authed
-  if(gd('vsb_authed','0')==='1'){const bl=document.getElementById('gate-build-lock');if(bl)bl.classList.add('hidden');}
-  // Handle #admin hash on load AND on navigation
-  function handleHash(){
-    if(window.location.hash==='#admin'){
-      showPage('admin');
-      if(gd('vsb_adm','0')==='1'){
-        const gate=document.getElementById('adm-gate-wrap');
-        const content=document.getElementById('adm-content');
-        if(gate)gate.style.display='none';
-        if(content){content.style.display='block';renderAdmContent();}
-      }
+  try{
+    if(gd('vsb_authed','0')==='1'){
+      const bl=document.getElementById('gate-build-lock');
+      if(bl)bl.classList.add('hidden');
     }
+  }catch(e){}
+
+  // Handle #admin hash — wrapped in try/catch, slight delay to ensure DOM ready
+  function handleHash(){
+    try{
+      if(window.location.hash==='#admin'){
+        // Show admin page
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        const pg=document.getElementById('page-admin');
+        if(pg)pg.classList.add('active');
+        document.getElementById('nav-links').classList.remove('open');
+        window.scrollTo({top:0,behavior:'smooth'});
+        // If already authenticated, skip gate
+        if(gd('vsb_adm','0')==='1'){
+          const gate=document.getElementById('adm-gate-wrap');
+          const content=document.getElementById('adm-content');
+          if(gate)gate.style.display='none';
+          if(content){
+            content.style.display='block';
+            try{renderAdmContent();}catch(e){console.error('renderAdmContent:',e);}
+          }
+        }
+      }
+    }catch(e){console.error('handleHash error:',e);}
   }
-  handleHash();
-  window.addEventListener('hashchange',handleHash);
+
+  // Fire once immediately, then on every hash change
+  setTimeout(handleHash, 50);
+  window.addEventListener('hashchange', handleHash);
 });
 </script>
 </body>
