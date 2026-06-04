@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Visual Schedules</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Atkinson Hyperlegible',sans-serif;background:#F7F7F7;color:#1A1A14;min-height:100vh;}
+
+/* GATE */
+#gate{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:999;}
+.gate-box{border:2px solid #0A0A0A;padding:2.5rem 2.5rem 2rem;max-width:360px;width:92%;text-align:center;}
+.gate-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;margin-bottom:.3rem;}
+.gate-sub{font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:.14em;margin-bottom:2rem;}
+.gate-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:#666;display:block;text-align:left;margin-bottom:.35rem;}
+.gate-inp{width:100%;padding:.7rem 1rem;border:1.5px solid #ccc;font-family:'Atkinson Hyperlegible',sans-serif;font-size:1rem;outline:none;margin-bottom:.8rem;}
+.gate-inp:focus{border-color:#0A0A0A;}
+.gate-btn{width:100%;background:#0A0A0A;color:#fff;border:none;padding:.75rem;font-family:'Atkinson Hyperlegible',sans-serif;font-size:.84rem;font-weight:700;letter-spacing:.06em;cursor:pointer;text-transform:uppercase;}
+.gate-btn:hover{opacity:.85;}
+.gate-err{font-size:.72rem;color:#C0392B;margin-top:.5rem;min-height:1rem;}
+
+/* ADMIN SHELL */
+#app{display:none;}
+.top-bar{background:#0A0A0A;padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.top-bar-title{font-family:'Playfair Display',serif;color:#fff;font-size:1.1rem;font-style:italic;}
+.top-bar-right{display:flex;align-items:center;gap:1rem;}
+.top-bar-site{font-size:.7rem;color:rgba(255,255,255,.5);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.2);}
+.top-bar-site:hover{color:#fff;}
+.top-bar-logout{font-size:.68rem;color:rgba(255,255,255,.4);cursor:pointer;background:none;border:none;}
+.top-bar-logout:hover{color:#fff;}
+
+.admin-wrap{max-width:1100px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid #0A0A0A;margin-bottom:2rem;gap:0;}
+.tab{font-size:.8rem;padding:.6rem 1.2rem;cursor:pointer;color:#666;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:'Atkinson Hyperlegible',sans-serif;background:none;border-top:none;border-left:none;border-right:none;transition:all .14s;}
+.tab:hover{color:#0A0A0A;}
+.tab.on{color:#0A0A0A;border-bottom-color:#0A0A0A;font-weight:700;}
+.panel{display:none;}
+.panel.on{display:block;}
+
+/* FORM ELEMENTS */
+.section-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;margin-bottom:.4rem;color:#0A0A0A;}
+.section-sub{font-size:.78rem;color:#666;line-height:1.6;margin-bottom:1.2rem;}
+.field{margin-bottom:1.1rem;}
+.field label{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:#666;display:block;margin-bottom:.32rem;}
+.field input,.field select,.field textarea{width:100%;max-width:600px;padding:.5rem .8rem;border:1px solid #ccc;font-family:'Atkinson Hyperlegible',sans-serif;font-size:.84rem;outline:none;color:#1A1A14;background:#fff;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#0A0A0A;}
+.field .hint{font-size:.68rem;color:#888;margin-top:.28rem;line-height:1.5;}
+.field textarea{resize:vertical;min-height:70px;}
+
+/* BUTTONS */
+.btn{background:#0A0A0A;color:#fff;border:none;padding:.48rem 1.1rem;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Atkinson Hyperlegible',sans-serif;letter-spacing:.04em;text-transform:uppercase;transition:opacity .14s;}
+.btn:hover{opacity:.82;}
+.btn-out{background:transparent;color:#0A0A0A;border:1px solid #ccc;padding:.48rem 1.1rem;font-size:.76rem;cursor:pointer;font-family:'Atkinson Hyperlegible',sans-serif;transition:all .14s;}
+.btn-out:hover{border-color:#0A0A0A;}
+.btn-row{display:flex;gap:.5rem;align-items:center;margin-top:.3rem;flex-wrap:wrap;}
+.ok-msg{font-size:.74rem;color:#444;display:none;}
+
+/* TABLE */
+.adm-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:.5rem;}
+.adm-table th{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:#888;text-align:left;padding:.45rem .7rem;border-bottom:2px solid #0A0A0A;}
+.adm-table td{padding:.55rem .7rem;border-bottom:1px solid #EFEFEF;color:#444;vertical-align:top;}
+.adm-table tr:hover td{background:#F7F7F7;}
+.badge{display:inline-block;font-size:.58rem;font-weight:700;padding:2px 7px;text-transform:uppercase;}
+.badge-new{background:#0A0A0A;color:#fff;}
+.badge-done{background:#EFEFEF;color:#888;}
+
+/* TERM GRID */
+.term-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;max-width:600px;margin-bottom:.8rem;}
+.term-item{border:1px solid #e0e0e0;padding:.7rem .9rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;background:#fff;}
+.term-val{font-size:.82rem;font-weight:600;color:#0A0A0A;}
+.term-orig{font-size:.64rem;color:#888;margin-top:2px;}
+.term-edit{font-size:.64rem;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline;}
+.term-edit:hover{color:#0A0A0A;}
+
+/* CARD LIST */
+.card-row{display:flex;align-items:center;justify-content:space-between;padding:.45rem 0;border-bottom:1px solid #EFEFEF;font-size:.78rem;}
+.card-del{font-size:.64rem;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline;}
+
+/* DIVIDER */
+.div-rule{height:1px;background:#e0e0e0;margin:2rem 0;}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .admin-wrap{padding:1.2rem 1rem 3rem;}
+  .term-grid{grid-template-columns:1fr;}
+  .tabs{overflow-x:auto;}
+  .tab{white-space:nowrap;font-size:.72rem;padding:.5rem .8rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-title">Admin</div>
+    <div class="gate-sub">Visual Schedules by Grow Gently</div>
+    <label class="gate-lbl" for="pw">Admin password</label>
+    <input type="password" id="pw" class="gate-inp" placeholder="Enter password" onkeydown="if(event.key==='Enter')login()"/>
+    <button class="gate-btn" onclick="login()">Enter Admin</button>
+    <div class="gate-err" id="gate-err"></div>
+    <div style="margin-top:1.2rem;font-size:.7rem;color:#aaa;">
+      <a href="https://visualschedule.app" style="color:#aaa;text-decoration:none;border-bottom:1px solid #ddd;">← Back to site</a>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="app">
+  <div class="top-bar">
+    <div class="top-bar-title">Visual Schedules — Admin</div>
+    <div class="top-bar-right">
+      <a href="https://visualschedule.app" target="_blank" class="top-bar-site">View site ↗</a>
+      <button class="top-bar-logout" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="admin-wrap">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab on"  onclick="switchTab('sheets',this)">Google Sheets</button>
+      <button class="tab"     onclick="switchTab('terms',this)">Terminology</button>
+      <button class="tab"     onclick="switchTab('cards',this)">Custom Cards</button>
+      <button class="tab"     onclick="switchTab('requests',this)">Requests</button>
+      <button class="tab"     onclick="switchTab('packs',this)">Pack Links</button>
+    </div>
+
+    <!-- PANEL: SHEETS -->
+    <div class="panel on" id="panel-sheets">
+      <div class="section-title">Google Sheets connections</div>
+      <div class="section-sub">Paste your published CSV URLs here. All content — cards, packs, lessons — is read live from your sheets.</div>
+
+      <div class="field">
+        <label>Schedule Cards CSV URL</label>
+        <input id="cards-url" placeholder="https://docs.google.com/.../pub?output=csv"/>
+        <div class="hint">Columns: labelEn, labelHi, category, lang, gender, imageUrl</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="saveCardsUrl()">Save &amp; sync cards</button>
+        <span class="ok-msg" id="cards-url-ok">Saved.</span>
+      </div>
+
+      <div class="div-rule"></div>
+
+      <div class="field">
+        <label>Visual Schedule Packs CSV URL</label>
+        <input id="packs-url" placeholder="https://docs.google.com/.../pub?output=csv"/>
+        <div class="hint">Columns: name, nameHi, desc, descHi, price, info, category, free, gumroadUrl, previewUrl, previewImg, cards, icon</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="savePacksUrl()">Save &amp; sync packs</button>
+        <span class="ok-msg" id="packs-url-ok">Saved.</span>
+      </div>
+
+      <div class="div-rule"></div>
+
+      <div class="field">
+        <label>How to Use — Lessons CSV URL</label>
+        <input id="learn-url" placeholder="https://docs.google.com/.../pub?output=csv"/>
+        <div class="hint">Columns: title, subtitle, duration, videoId, bodyHtml, attachmentName, attachmentUrl, category</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="saveLearnUrl()">Save lessons URL</button>
+        <span class="ok-msg" id="learn-url-ok">Saved.</span>
+      </div>
+
+      <div class="div-rule"></div>
+
+      <div class="section-title" style="margin-bottom:.3rem;">Video IDs</div>
+      <div class="field" style="margin-top:.8rem;">
+        <label>How to Use — Hero video YouTube ID</label>
+        <input id="learn-hero-vid" placeholder="e.g. dQw4w9WgXcQ" style="max-width:280px;"/>
+        <div class="hint">The part after ?v= in the YouTube URL</div>
+      </div>
+      <div class="field">
+        <label>Design Schedule — Demo video YouTube ID</label>
+        <input id="demo-vid" placeholder="e.g. dQw4w9WgXcQ" style="max-width:280px;"/>
+        <div class="hint">Shown on the password gate for the builder</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="saveVids()">Save video IDs</button>
+        <span class="ok-msg" id="vids-ok">Saved.</span>
+      </div>
+
+      <div class="div-rule"></div>
+
+      <div class="field">
+        <label>WhatsApp group link</label>
+        <input id="wa-link" placeholder="https://chat.whatsapp.com/..."/>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="saveWA()">Save WhatsApp link</button>
+        <span class="ok-msg" id="wa-ok">Saved.</span>
+      </div>
+    </div>
+
+    <!-- PANEL: TERMINOLOGY -->
+    <div class="panel" id="panel-terms">
+      <div class="section-title">Rename labels</div>
+      <div class="section-sub">Change how any card label appears — e.g. rename "Meltdown" to "Sensory overload". Changes apply on the main site immediately.</div>
+      <div class="term-grid" id="term-grid"></div>
+      <button class="btn" onclick="addTerm()">+ Add term</button>
+    </div>
+
+    <!-- PANEL: CUSTOM CARDS -->
+    <div class="panel" id="panel-cards">
+      <div class="section-title">Add a custom card</div>
+      <div class="section-sub">Cards added here appear in the Design Schedule builder alongside the default and sheet cards.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;max-width:600px;">
+        <div class="field"><label>English label *</label><input id="cc-en" placeholder="e.g. Quiet Time"/></div>
+        <div class="field"><label>Hindi label</label><input id="cc-hi" placeholder="e.g. शांत समय"/></div>
+        <div class="field"><label>Category</label>
+          <select id="cc-cat">
+            <option value="morning">Morning</option><option value="food">Food</option>
+            <option value="hygiene">Hygiene</option><option value="school">School</option>
+            <option value="play">Play</option><option value="outdoor">Outdoor</option>
+            <option value="therapy">Therapy</option><option value="emotions">Emotions</option>
+            <option value="sleep">Sleep</option><option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Image URL (Google Drive)</label><input id="cc-img" placeholder="https://drive.google.com/..."/></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="saveCard()">Add card</button>
+        <button class="btn-out" onclick="renderCardList()">Refresh list</button>
+      </div>
+      <div id="card-list" style="margin-top:1.2rem;max-width:600px;"></div>
+    </div>
+
+    <!-- PANEL: REQUESTS -->
+    <div class="panel" id="panel-requests">
+      <div class="section-title">Resource &amp; custom schedule requests</div>
+      <div class="section-sub">Submitted by visitors from the Contact and Customised Schedule pages.</div>
+      <table class="adm-table" id="req-table" style="display:none;">
+        <thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Details</th><th>Date</th><th>Status</th><th></th></tr></thead>
+        <tbody id="req-body"></tbody>
+      </table>
+      <div id="req-empty" style="font-size:.82rem;color:#888;padding:2rem;text-align:center;border:1px dashed #ccc;">No requests yet.</div>
+    </div>
+
+    <!-- PANEL: PACK LINKS -->
+    <div class="panel" id="panel-packs">
+      <div class="section-title">Gumroad pack links</div>
+      <div class="section-sub">These are used as fallback if a pack in your sheet has no gumroadUrl. If you manage everything via Google Sheets, you can ignore this panel.</div>
+      <div id="pack-links-form"></div>
+      <div class="btn-row" style="margin-top:.8rem;">
+        <button class="btn" onclick="savePackLinks()">Save links</button>
+        <span class="ok-msg" id="pack-links-ok">Saved.</span>
+      </div>
+    </div>
+
+  </div><!-- end admin-wrap -->
+</div><!-- end #app -->
+
+<script>
+const ADMIN_PW = 'growgently2025';
+const STORAGE_KEY_PREFIX = 'vsb_'; // same prefix as main site
+
+// ── UTILS ──
+function gd(k,d){try{const v=localStorage.getItem(STORAGE_KEY_PREFIX+k.replace('vsb_',''));return v!==null?JSON.parse(v):d;}catch(e){return d;}}
+function sd(k,v){try{localStorage.setItem(STORAGE_KEY_PREFIX+k.replace('vsb_',''),JSON.stringify(v));}catch(e){}}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Use same keys as main site (without prefix doubling)
+function get(k){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):null;}catch(e){return null;}}
+function set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// ── AUTH ──
+function login(){
+  const pw=document.getElementById('pw').value.trim();
+  const err=document.getElementById('gate-err');
+  if(pw===ADMIN_PW){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('app').style.display='block';
+    localStorage.setItem('vsb_adm',JSON.stringify('1'));
+    loadAll();
+  } else {
+    err.textContent='Incorrect password.';
+    setTimeout(()=>err.textContent='',2500);
+  }
+}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+
+function logout(){
+  localStorage.removeItem('vsb_adm');
+  document.getElementById('gate').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('pw').value='';
+}
+
+// Auto-login if already authenticated
+if(localStorage.getItem('vsb_adm')==='"1"'||localStorage.getItem('vsb_adm')==='1'){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+
+// ── TABS ──
+function switchTab(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('panel-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='terms')renderTermGrid();
+  if(id==='cards')renderCardList();
+  if(id==='requests')renderRequests();
+  if(id==='packs')renderPackLinks();
+}
+
+// ── LOAD ALL ──
+function loadAll(){
+  // Sheets
+  document.getElementById('cards-url').value=localStorage.getItem('vsb_sheet_url')||'';
+  document.getElementById('packs-url').value=localStorage.getItem('vsb_packs_sheet_url')||'';
+  document.getElementById('learn-url').value=localStorage.getItem('vsb_learn_url')||'';
+  document.getElementById('learn-hero-vid').value=JSON.parse(localStorage.getItem('vsb_learn_hero_vid')||'""');
+  document.getElementById('demo-vid').value=JSON.parse(localStorage.getItem('vsb_demo_vid')||'""');
+  document.getElementById('wa-link').value=JSON.parse(localStorage.getItem('vsb_wa_link')||'"https://wa.me/919999999999"');
+  renderTermGrid();
+}
+
+function showOk(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.display='inline';
+  setTimeout(()=>el.style.display='none',2000);
+}
+
+// ── SHEETS ──
+function saveCardsUrl(){
+  localStorage.setItem('vsb_sheet_url',document.getElementById('cards-url').value.trim());
+  showOk('cards-url-ok');
+}
+function savePacksUrl(){
+  localStorage.setItem('vsb_packs_sheet_url',document.getElementById('packs-url').value.trim());
+  showOk('packs-url-ok');
+}
+function saveLearnUrl(){
+  localStorage.setItem('vsb_learn_url',JSON.stringify(document.getElementById('learn-url').value.trim()));
+  showOk('learn-url-ok');
+}
+function saveVids(){
+  localStorage.setItem('vsb_learn_hero_vid',JSON.stringify(document.getElementById('learn-hero-vid').value.trim()));
+  localStorage.setItem('vsb_demo_vid',JSON.stringify(document.getElementById('demo-vid').value.trim()));
+  showOk('vids-ok');
+}
+function saveWA(){
+  localStorage.setItem('vsb_wa_link',JSON.stringify(document.getElementById('wa-link').value.trim()));
+  showOk('wa-ok');
+}
+
+// ── TERMINOLOGY ──
+const DEF_TERMS={'Meltdown':'Meltdown','Calm time':'Calm time','Break time':'Break time','Sensory overload':'Sensory overload','Feelings check':'Feelings check','Transition time':'Transition time'};
+function getTerms(){try{const v=localStorage.getItem('vsb_terms');return v?JSON.parse(v):{...DEF_TERMS};}catch(e){return{...DEF_TERMS};}}
+function renderTermGrid(){
+  const g=document.getElementById('term-grid');if(!g)return;
+  const t=getTerms();
+  g.innerHTML=Object.keys(t).map(k=>`<div class="term-item">
+    <div><div class="term-val">${esc(t[k])}</div><div class="term-orig">Original: ${esc(k)}</div></div>
+    <button class="term-edit" onclick="editTerm('${esc(k)}')">Edit</button>
+  </div>`).join('');
+}
+function editTerm(k){
+  const terms=getTerms();
+  const v=prompt('Rename "'+k+'" to:',terms[k]);
+  if(v&&v.trim()){terms[k]=v.trim();localStorage.setItem('vsb_terms',JSON.stringify(terms));renderTermGrid();}
+}
+function addTerm(){
+  const k=prompt('Original label (as it appears on the card):');if(!k||!k.trim())return;
+  const v=prompt('Show it as:',k);if(!v||!v.trim())return;
+  const terms=getTerms();terms[k.trim()]=v.trim();
+  localStorage.setItem('vsb_terms',JSON.stringify(terms));renderTermGrid();
+}
+
+// ── CUSTOM CARDS ──
+function saveCard(){
+  const en=document.getElementById('cc-en').value.trim();
+  if(!en){alert('English label is required.');return;}
+  const cards=JSON.parse(localStorage.getItem('vsb_custom_cards')||'[]');
+  cards.push({id:'cu'+Date.now(),labelEn:en,labelHi:document.getElementById('cc-hi').value.trim(),cat:document.getElementById('cc-cat').value,lang:'both',gender:'neutral',img:document.getElementById('cc-img').value.trim(),svgKey:'default'});
+  localStorage.setItem('vsb_custom_cards',JSON.stringify(cards));
+  ['cc-en','cc-hi','cc-img'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  renderCardList();
+}
+function renderCardList(){
+  const el=document.getElementById('card-list');if(!el)return;
+  const cards=JSON.parse(localStorage.getItem('vsb_custom_cards')||'[]');
+  if(!cards.length){el.innerHTML='<div style="font-size:.78rem;color:#888;padding:.8rem 0;">No custom cards yet.</div>';return;}
+  el.innerHTML='<div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-bottom:.4rem;">'+cards.length+' custom card'+(cards.length===1?'':'s')+'</div>'
+    +cards.map(c=>`<div class="card-row"><span style="color:#0A0A0A;">${esc(c.labelEn)}${c.labelHi?' / <span style="color:#666;">'+esc(c.labelHi)+'</span>':''} <span style="color:#aaa;font-size:.68rem;">(${c.cat})</span></span><button class="card-del" onclick="delCard('${c.id}')">Delete</button></div>`).join('');
+}
+function delCard(id){
+  if(!confirm('Delete this card?'))return;
+  const cards=JSON.parse(localStorage.getItem('vsb_custom_cards')||'[]').filter(c=>c.id!==id);
+  localStorage.setItem('vsb_custom_cards',JSON.stringify(cards));renderCardList();
+}
+
+// ── REQUESTS ──
+function renderRequests(){
+  const reqs=[...JSON.parse(localStorage.getItem('vsb_reqs')||'[]'),...JSON.parse(localStorage.getItem('vsb_requests')||'[]')];
+  const tbody=document.getElementById('req-body');
+  const empty=document.getElementById('req-empty');
+  const table=document.getElementById('req-table');
+  if(!reqs.length){empty.style.display='block';table.style.display='none';return;}
+  empty.style.display='none';table.style.display='table';
+  tbody.innerHTML=reqs.map(r=>`<tr>
+    <td>${esc(r.name||'—')}</td>
+    <td style="font-size:.72rem;">${esc(r.email||'—')}</td>
+    <td>${esc(r.type||'—')}</td>
+    <td style="max-width:220px;font-size:.72rem;color:#666;">${esc((r.details||'').substring(0,120))}${(r.details||'').length>120?'…':''}</td>
+    <td style="white-space:nowrap;font-size:.7rem;color:#888;">${esc(r.date||'—')}</td>
+    <td><span class="badge badge-${r.status||'new'}">${r.status||'new'}</span></td>
+    <td><button onclick="markDone('${r.id}')" style="font-size:.64rem;color:#888;background:none;border:none;cursor:pointer;text-decoration:underline;">Done</button></td>
+  </tr>`).join('');
+}
+function markDone(id){
+  ['vsb_reqs','vsb_requests'].forEach(key=>{
+    const arr=JSON.parse(localStorage.getItem(key)||'[]').map(r=>r.id==id?{...r,status:'done'}:r);
+    localStorage.setItem(key,JSON.stringify(arr));
+  });
+  renderRequests();
+}
+
+// ── PACK LINKS (fallback) ──
+const PACK_KEYS=['school','therapy','weekend','bedtime'];
+function renderPackLinks(){
+  const el=document.getElementById('pack-links-form');if(!el)return;
+  const saved=JSON.parse(localStorage.getItem('vsb_pack_links')||'{}');
+  el.innerHTML=PACK_KEYS.map(k=>`<div class="field">
+    <label>${k.charAt(0).toUpperCase()+k.slice(1)} pack Gumroad URL</label>
+    <input id="pl-${k}" value="${esc(saved[k]||'')}" placeholder="https://gumroad.com/l/..."/>
+  </div>`).join('');
+}
+function savePackLinks(){
+  const links={};
+  PACK_KEYS.forEach(k=>{links[k]=(document.getElementById('pl-'+k)||{}).value||'';});
+  localStorage.setItem('vsb_pack_links',JSON.stringify(links));
+  showOk('pack-links-ok');
+}
+
+// ── AUTO-INIT ──
+if(document.getElementById('app').style.display==='block'){loadAll();}
+</script>
+</body>
+</html>
