@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Schedule Admin — Grow Gently</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@300;400;500&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -14,7 +14,7 @@
   --accent:#8B5E2A;--border:#DDD9D0;
   --green:#2D6A2D;--green-bg:#EAF5EA;
   --red:#B83232;--red-bg:#FAF0F0;
-  --sans:'Jost',system-ui,sans-serif;
+  --sans:'Atkinson Hyperlegible',system-ui,sans-serif;
 }
 html,body{height:100%;overflow:hidden;font-size:14px}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-weight:300;display:flex;flex-direction:column}
@@ -194,9 +194,100 @@ td.pri{color:var(--ink);font-weight:400}
 .prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);margin-bottom:3px}
 .prog-track{height:3px;background:var(--border);border-radius:2px}
 .prog-fill{height:100%;background:var(--accent);border-radius:2px}
+
+/* ── LOGIN GATE ── */
+#login-gate{
+  position:fixed;inset:0;
+  background:#EDEADE;
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;
+  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+}
+.login-box{
+  background:#FDFCFA;
+  border:1px solid #DDD9D0;
+  padding:2.5rem 2rem;
+  width:340px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.1);
+}
+.login-logo{
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem;font-style:italic;
+  color:#1C1B19;text-align:center;
+  margin-bottom:0.25rem;
+}
+.login-sub{
+  font-size:12px;letter-spacing:0.08em;text-transform:uppercase;
+  color:#8B5E2A;text-align:center;margin-bottom:2rem;
+}
+.login-label{
+  font-size:12px;letter-spacing:0.08em;text-transform:uppercase;
+  color:#6B6560;display:block;margin-bottom:0.4rem;font-weight:600;
+}
+.login-input{
+  width:100%;padding:0.65rem 0.75rem;
+  border:1.5px solid #DDD9D0;
+  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-size:14px;color:#1C1B19;
+  outline:none;background:#FFFFFF;
+  margin-bottom:0.75rem;letter-spacing:0.08em;
+}
+.login-input:focus{border-color:#8B5E2A}
+.login-btn{
+  width:100%;padding:0.7rem;
+  background:#1C1B19;color:#FFFFFF;
+  border:none;cursor:pointer;
+  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-size:12px;letter-spacing:0.1em;text-transform:uppercase;
+  font-weight:600;transition:background 0.15s;margin-bottom:0.5rem;
+}
+.login-btn:hover{background:#333}
+.login-error{
+  font-size:12px;color:#B83232;
+  text-align:center;min-height:18px;margin-top:0.25rem;
+}
+.login-hint{
+  font-size:11px;color:#B5B0A8;
+  text-align:center;margin-top:1.25rem;line-height:1.55;
+}
+.login-footer{
+  font-size:11px;color:#B5B0A8;
+  text-align:center;margin-top:1.5rem;padding-top:1rem;
+  border-top:1px solid #EDEADE;
+}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.shake{animation:shake 0.3s ease}
 </style>
 </head>
 <body>
+
+<!-- ── LOGIN GATE ── -->
+<div id="login-gate">
+  <div class="login-box">
+    <p class="login-logo">Visual Schedules</p>
+    <p class="login-sub">Admin Panel · Grow Gently</p>
+
+    <label class="login-label" for="admin-pass">Password</label>
+    <input
+      class="login-input"
+      type="password"
+      id="admin-pass"
+      placeholder="Enter admin password"
+      onkeydown="if(event.key==='Enter')checkLogin()"
+      autocomplete="current-password">
+    <button class="login-btn" onclick="checkLogin()">Sign in</button>
+    <p class="login-error" id="login-error"></p>
+
+    <p class="login-hint">
+      This page is for Grow Gently admins only.<br>
+      Contact <a href="mailto:visualschedulesofficial@gmail.com" style="color:#8B5E2A;text-decoration:none">visualschedulesofficial@gmail.com</a> for access.
+    </p>
+    <p class="login-footer">Visual Schedules by Grow Gently</p>
+  </div>
+</div>
+
+<!-- ── ADMIN CONTENT (hidden until login) ── -->
+<div id="admin-content" style="display:none;height:100vh;overflow:hidden">
 
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
   <symbol id="a-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
@@ -243,6 +334,7 @@ td.pri{color:var(--ink);font-weight:400}
   <div class="sb-foot">
     <div class="sb-avatar">N</div>
     <div><p class="sb-user">Neha</p><p style="font-size:11px;color:#444">Admin</p></div>
+    <button onclick="logout()" style="margin-left:auto;background:none;border:none;font-size:11px;color:#555;cursor:pointer;font-family:'Atkinson Hyperlegible',sans-serif;padding:2px 6px;transition:color 0.15s" onmouseover="this.style.color='#EE8888'" onmouseout="this.style.color='#555'">Sign out</button>
   </div>
 </aside>
 
@@ -654,7 +746,7 @@ td.pri{color:var(--ink);font-weight:400}
                 </div>
                 <div class="fgroup"><label class="flabel">Default language 1</label><select class="fselect"><option>English</option><option>Hindi</option><option>Marathi</option></select></div>
                 <div class="fgroup"><label class="flabel">Default language 2</label><select class="fselect"><option>Hindi · हिंदी</option><option>English</option><option>None</option></select></div>
-                <div class="fgroup"><label class="flabel">Instagram handle (shown in A4 footer)</label><input class="finput" value="@grow_gently_official"></div>
+                <div class="fgroup"><label class="flabel">Instagram handle (shown in A4 footer)</label><input class="finput" value="@visual_schedule_official"></div>
                 <div class="fgroup"><label class="flabel">Site URL (shown in A4 footer)</label><input class="finput" value="growgently.co"></div>
               </div>
               <div class="form-actions"><button class="btn-save">Save settings</button></div>
@@ -1076,6 +1168,78 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelect
 
 // init
 renderCardsTable();
+</script>
+</div><!-- /admin-content -->
+
+<script>
+// ── AUTH ──
+
+// ⚠ Change this password before deploying
+const ADMIN_PASSWORD = 'growgently2025';
+const SESSION_KEY = 'gg_admin_auth';
+const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours
+
+function checkLogin() {
+  const input = document.getElementById('admin-pass');
+  const val = input.value.trim();
+  const errorEl = document.getElementById('login-error');
+
+  if (!val) {
+    errorEl.textContent = 'Please enter your password.';
+    return;
+  }
+
+  if (val === ADMIN_PASSWORD) {
+    // Save session with expiry
+    const session = { expires: Date.now() + SESSION_DURATION };
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e){}
+    showAdmin();
+  } else {
+    errorEl.textContent = 'Incorrect password. Please try again.';
+    input.value = '';
+    const box = document.querySelector('.login-box');
+    box.classList.remove('shake');
+    void box.offsetWidth; // reflow to restart animation
+    box.classList.add('shake');
+    input.focus();
+  }
+}
+
+function checkSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return false;
+    const session = JSON.parse(raw);
+    if (Date.now() < session.expires) return true;
+    sessionStorage.removeItem(SESSION_KEY);
+    return false;
+  } catch(e) { return false; }
+}
+
+function showAdmin() {
+  document.getElementById('login-gate').style.display = 'none';
+  document.getElementById('admin-content').style.display = 'flex';
+  document.getElementById('admin-content').style.flexDirection = 'column';
+  // Init admin panels
+  renderCardsTable();
+}
+
+function logout() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e){}
+  location.reload();
+}
+
+// Check on load
+if (checkSession()) {
+  showAdmin();
+} else {
+  // Focus password field
+  setTimeout(() => {
+    const inp = document.getElementById('admin-pass');
+    if (inp) inp.focus();
+  }, 100);
+}
+
 </script>
 </body>
 </html>
