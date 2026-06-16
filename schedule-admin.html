@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule Admin — Grow Gently</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@300;400;500&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --white:#F5F2EC;--card:#FDFCFA;--bg:#EDEADE;
+  --ink:#1C1B19;--ink2:#5C5855;--ink3:#6B6560;
+  --accent:#8B5E2A;--border:#DDD9D0;
+  --green:#2D6A2D;--green-bg:#EAF5EA;
+  --red:#B83232;--red-bg:#FAF0F0;
+  --sans:'Jost',system-ui,sans-serif;
+}
+html,body{height:100%;overflow:hidden;font-size:14px}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-weight:300;display:flex;flex-direction:column}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:200px 1fr;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sb{background:var(--ink);display:flex;flex-direction:column;overflow-y:auto}
+.sb-logo{padding:1.1rem 1rem 0.75rem;border-bottom:1px solid #2A2825}
+.sb-logo a{font-family:'Playfair Display',serif;font-size:0.95rem;font-style:italic;color:var(--white);text-decoration:none;display:block}
+.sb-logo p{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#555;margin-top:2px}
+.sb-nav{padding:0.75rem 0;flex:1}
+.sb-group{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#444;padding:0.75rem 1rem 0.3rem}
+.sb-link{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 1rem;font-size:11px;color:#888;text-decoration:none;cursor:pointer;border:none;background:none;width:100%;font-family:var(--sans);transition:background 0.15s,color 0.15s}
+.sb-link:hover{background:#1E1C1A;color:#CCC}
+.sb-link.active{background:#252220;color:var(--white)}
+.sb-link svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;flex-shrink:0}
+.sb-foot{padding:0.75rem 1rem;border-top:1px solid #2A2825;display:flex;align-items:center;gap:0.5rem}
+.sb-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--white);flex-shrink:0}
+.sb-user{font-size:11px;color:#888}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:50px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;flex-shrink:0}
+.topbar-title{font-size:14px;font-weight:400;color:var(--ink)}
+.topbar-right{display:flex;gap:0.5rem}
+.tbtn{font-size:11px;letter-spacing:0.06em;text-transform:uppercase;padding:0.35rem 0.85rem;border:1px solid var(--border);background:none;color:var(--ink2);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:4px;transition:all 0.15s}
+.tbtn svg{width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+.tbtn:hover{border-color:var(--ink);color:var(--ink)}
+.tbtn-primary{background:var(--ink);color:var(--white);border-color:var(--ink)}.tbtn-primary:hover{background:#333}
+.tbtn-accent{background:var(--accent);color:var(--white);border-color:var(--accent)}.tbtn-accent:hover{background:#7A5224;border-color:#7A5224}
+
+.content{flex:1;overflow-y:auto;padding:1.5rem}
+.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* PANELS */
+.panel{display:none}.panel.active{display:block}
+
+/* STATS ROW */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:var(--card);border:1px solid var(--border);padding:1rem 1.1rem}
+.stat-lbl{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.35rem}
+.stat-val{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:300;color:var(--ink);line-height:1}
+.stat-val em{font-style:italic;color:var(--accent)}
+.stat-sub{font-size:11px;color:var(--green);margin-top:3px}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.sh h2{font-size:13px;font-weight:400;color:var(--ink)}
+.sh-right{display:flex;gap:0.5rem;align-items:center}
+
+/* CARD ADMIN GRID */
+.cat-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.25rem;overflow-x:auto}
+.ctab{font-size:11px;letter-spacing:0.07em;text-transform:uppercase;padding:0.5rem 1rem;background:none;border:none;border-bottom:2px solid transparent;color:var(--ink3);cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:color 0.15s,border-color 0.15s}
+.ctab.active{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* TABLE */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);overflow-x:auto;margin-bottom:1.5rem}
+.tbl-ctrl{display:flex;gap:0.5rem;align-items:center;padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);background:var(--bg)}
+.tbl-search{flex:1;padding:0.38rem 0.6rem;border:1px solid var(--border);background:var(--white);font-family:var(--sans);font-size:12px;color:var(--ink);outline:none}
+.tbl-search::placeholder{color:var(--ink3)}
+.tbl-sel{padding:0.38rem 0.5rem;border:1px solid var(--border);background:var(--white);font-family:var(--sans);font-size:12px;color:var(--ink2);outline:none}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--ink3);padding:0.65rem 0.85rem;text-align:left;border-bottom:1px solid var(--border);background:var(--bg);font-weight:400;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+td{padding:0.6rem 0.85rem;font-size:12px;color:var(--ink2);vertical-align:middle}
+td.pri{color:var(--ink);font-weight:400}
+
+/* CARD THUMB IN TABLE */
+.card-thumb-cell{display:flex;align-items:center;gap:0.6rem}
+.card-img-box{width:40px;height:40px;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative}
+.card-img-box img{width:100%;height:100%;object-fit:cover}
+.card-img-box.empty svg{width:16px;height:16px;stroke:var(--ink3);stroke-width:1.5;fill:none;stroke-linecap:round}
+.card-img-box .upload-hint{position:absolute;inset:0;background:rgba(28,27,25,0.45);display:none;align-items:center;justify-content:center}
+.card-img-box:hover .upload-hint{display:flex}
+.upload-hint svg{width:12px;height:12px;stroke:var(--white);stroke-width:2;fill:none;stroke-linecap:round}
+
+/* BADGES */
+.badge{display:inline-block;font-size:11px;letter-spacing:0.06em;padding:2px 7px;border-radius:1px}
+.badge-free{background:var(--green-bg);color:var(--green)}
+.badge-paid{background:#FFF5EA;color:var(--accent);border:1px solid #F0D8B8}
+.badge-live{background:var(--green-bg);color:var(--green)}
+.badge-draft{background:var(--bg);color:var(--ink3);border:1px solid var(--border)}
+.badge-locked{background:var(--red-bg);color:var(--red)}
+
+/* ACTIONS */
+.acts{display:flex;gap:3px}
+.act{font-size:11px;padding:3px 8px;border:1px solid var(--border);background:none;color:var(--ink3);cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.act:hover{border-color:var(--ink);color:var(--ink)}
+.act-red:hover{border-color:var(--red);color:var(--red)}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+.form-full{grid-column:1/-1}
+.fgroup{margin-bottom:0;display:flex;flex-direction:column;gap:0.3rem}
+.flabel{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--ink3)}
+.finput,.fselect,.ftextarea{padding:0.45rem 0.6rem;border:1px solid var(--border);background:var(--white);font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;width:100%}
+.finput:focus,.fselect:focus,.ftextarea:focus{border-color:var(--accent)}
+.ftextarea{height:70px;resize:vertical}
+.form-actions{display:flex;gap:0.5rem;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)}
+.btn-save{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem 1.5rem;background:var(--ink);color:var(--white);border:none;cursor:pointer;font-family:var(--sans)}
+.btn-save:hover{background:#333}
+.btn-cancel{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem 1.25rem;background:none;color:var(--ink2);border:1px solid var(--border);cursor:pointer;font-family:var(--sans)}
+
+/* IMAGE UPLOAD ZONE */
+.upload-zone{border:1.5px dashed var(--border);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;background:var(--bg)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:#FDF8F4}
+.upload-zone svg{width:24px;height:24px;stroke:var(--ink3);stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:0 auto 0.5rem}
+.upload-zone p{font-size:12px;color:var(--ink3);line-height:1.5}
+.upload-zone strong{font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent)}
+.image-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:0.5rem;margin-top:0.75rem}
+.img-thumb{aspect-ratio:1;border:1px solid var(--border);background:var(--bg);position:relative;overflow:hidden}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-thumb-rm{position:absolute;top:3px;right:3px;width:16px;height:16px;background:rgba(28,27,25,0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--white);line-height:1}
+
+/* LANG SETTINGS */
+.lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1rem}
+.lang-card{border:1.5px solid var(--border);padding:1rem;cursor:pointer;transition:border-color 0.2s,background 0.2s;position:relative;background:var(--card)}
+.lang-card.enabled{border-color:var(--accent);background:#FDF8F4}
+.lang-card.locked-lang{opacity:0.5;cursor:not-allowed}
+.lang-check{position:absolute;top:8px;right:8px;width:16px;height:16px;border:1.5px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.lang-card.enabled .lang-check{background:var(--accent);border-color:var(--accent)}
+.lang-check svg{width:9px;height:9px;stroke:var(--white);stroke-width:3;fill:none;stroke-linecap:round;display:none}
+.lang-card.enabled .lang-check svg{display:block}
+.lang-name{font-size:13px;color:var(--ink);margin-bottom:2px;font-weight:400}
+.lang-native{font-size:12px;color:var(--ink3);font-style:italic}
+.lang-status{font-size:11px;margin-top:6px}
+
+/* CAT SETTINGS */
+.cat-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+.cat-item{border:1px solid var(--border);padding:1rem;background:var(--card)}
+.cat-item-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem}
+.cat-item-title{font-size:13px;font-weight:400;color:var(--ink)}
+.cat-item-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.toggle{width:32px;height:18px;background:var(--border);border-radius:9px;position:relative;cursor:pointer;transition:background 0.2s;border:none;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;width:12px;height:12px;background:var(--white);border-radius:50%;top:3px;left:3px;transition:left 0.18s}
+.toggle.on::after{left:17px}
+.cat-item-price{display:flex;align-items:center;gap:0.4rem;margin-top:0.5rem}
+.cat-item-price label{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3)}
+.cat-item-price input{padding:0.3rem 0.5rem;border:1px solid var(--border);background:var(--bg);font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;width:80px}
+.cat-item-count{font-size:11px;color:var(--ink3);margin-top:6px}
+
+/* BOX */
+.box{background:var(--card);border:1px solid var(--border);margin-bottom:1.25rem}
+.box-hd{padding:0.75rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.box-hd h3{font-size:13px;font-weight:400}
+.box-hd span{font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3)}
+.box-body{padding:1rem}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(28,27,25,0.55);z-index:600;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);width:90%;max-width:560px;max-height:88vh;overflow-y:auto;padding:1.75rem;position:relative}
+.modal::-webkit-scrollbar{width:3px}.modal::-webkit-scrollbar-thumb{background:var(--border)}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border)}
+.modal-hd h3{font-size:14px;font-weight:400}
+.modal-close{background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink3);line-height:1}
+
+/* MINI FEED */
+.feed-item{display:flex;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.feed-item:last-child{border-bottom:none}
+.feed-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px}
+.feed-dot-g{background:var(--green)}
+.feed-text{font-size:12px;color:var(--ink2);line-height:1.4;flex:1}
+.feed-text strong{color:var(--ink);font-weight:400}
+.feed-time{font-size:11px;color:var(--ink3);white-space:nowrap}
+
+/* PROGRESS */
+.prog-row{margin-bottom:0.65rem}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);margin-bottom:3px}
+.prog-track{height:3px;background:var(--border);border-radius:2px}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px}
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="a-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+  <symbol id="a-cards" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+  <symbol id="a-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+  <symbol id="a-lang" viewBox="0 0 24 24"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol>
+  <symbol id="a-cat" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="a-orders" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></symbol>
+  <symbol id="a-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="a-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="a-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+  <symbol id="a-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
+  <symbol id="a-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+  <symbol id="a-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="a-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="a-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="a-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="a-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="a-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+</svg>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-logo">
+    <a href="growgently.html">Grow Gently</a>
+    <p>Schedule Admin</p>
+  </div>
+  <nav class="sb-nav">
+    <p class="sb-group">Overview</p>
+    <button class="sb-link active" onclick="show('dashboard',this)"><svg><use href="#a-dash"/></svg>Dashboard</button>
+    <p class="sb-group">Cards</p>
+    <button class="sb-link" onclick="show('cards',this)"><svg><use href="#a-cards"/></svg>Schedule Cards</button>
+    <button class="sb-link" onclick="show('images',this)"><svg><use href="#a-image"/></svg>Card Images</button>
+    <button class="sb-link" onclick="show('categories',this)"><svg><use href="#a-cat"/></svg>Categories</button>
+    <p class="sb-group">Access</p>
+    <button class="sb-link" onclick="show('languages',this)"><svg><use href="#a-lang"/></svg>Languages</button>
+    <button class="sb-link" onclick="show('orders',this)"><svg><use href="#a-orders"/></svg>Unlock Orders</button>
+    <button class="sb-link" onclick="show('licenses',this)"><svg><use href="#a-lock"/></svg>License Keys</button>
+    <p class="sb-group">Site</p>
+    <button class="sb-link" onclick="show('settings',this)"><svg><use href="#a-settings"/></svg>App Settings</button>
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-avatar">N</div>
+    <div><p class="sb-user">Neha</p><p style="font-size:11px;color:#444">Admin</p></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <p class="topbar-title" id="page-title">Dashboard</p>
+    <div class="topbar-right">
+      <a href="app.html" target="_blank" class="tbtn"><svg><use href="#a-eye"/></svg>Open app</a>
+      <button class="tbtn tbtn-primary" onclick="show('cards',document.querySelector('[onclick*=cards]'))"><svg><use href="#a-plus"/></svg>Add card</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stat-row">
+        <div class="stat"><p class="stat-lbl">Total cards</p><p class="stat-val"><em>48</em></p><p class="stat-sub">+6 this week</p></div>
+        <div class="stat"><p class="stat-lbl">Categories</p><p class="stat-val">7</p><p class="stat-sub">1 free, 6 paid</p></div>
+        <div class="stat"><p class="stat-lbl">Languages</p><p class="stat-val"><em>10</em></p><p class="stat-sub">All active</p></div>
+        <div class="stat"><p class="stat-lbl">Unlock orders</p><p class="stat-val">31</p><p class="stat-sub">+4 this month</p></div>
+      </div>
+      <div class="two-col">
+        <div class="box">
+          <div class="box-hd"><h3>Recent activity</h3><span>Today</span></div>
+          <div class="box-body">
+            <div class="feed-item"><div class="feed-dot feed-dot-g"></div><p class="feed-text"><strong>Card added</strong> — Sensory Break (Therapy and OT)</p><span class="feed-time">1 hr ago</span></div>
+            <div class="feed-item"><div class="feed-dot"></div><p class="feed-text"><strong>Image uploaded</strong> — Bath Time card image updated</p><span class="feed-time">2 hr ago</span></div>
+            <div class="feed-item"><div class="feed-dot feed-dot-g"></div><p class="feed-text"><strong>Unlock order</strong> — All categories · ₹499</p><span class="feed-time">3 hr ago</span></div>
+            <div class="feed-item"><div class="feed-dot"></div><p class="feed-text"><strong>Language added</strong> — Kannada enabled</p><span class="feed-time">Yesterday</span></div>
+            <div class="feed-item"><div class="feed-dot"></div><p class="feed-text"><strong>Card updated</strong> — Assembly translation (Marathi)</p><span class="feed-time">Yesterday</span></div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-hd"><h3>Cards by category</h3><span>All</span></div>
+          <div class="box-body">
+            <div class="prog-row"><div class="prog-lbl"><span>Daily Schedule</span><span>12 cards</span></div><div class="prog-track"><div class="prog-fill" style="width:100%"></div></div></div>
+            <div class="prog-row"><div class="prog-lbl"><span>School Routine</span><span>6 cards</span></div><div class="prog-track"><div class="prog-fill" style="width:50%"></div></div></div>
+            <div class="prog-row"><div class="prog-lbl"><span>Therapy and OT</span><span>4 cards</span></div><div class="prog-track"><div class="prog-fill" style="width:33%"></div></div></div>
+            <div class="prog-row"><div class="prog-lbl"><span>Meals and Nutrition</span><span>4 cards</span></div><div class="prog-track"><div class="prog-fill" style="width:33%"></div></div></div>
+            <div class="prog-row"><div class="prog-lbl"><span>Social and Emotions</span><span>4 cards</span></div><div class="prog-track"><div class="prog-fill" style="width:33%"></div></div></div>
+            <div class="prog-row"><div class="prog-lbl"><span>Art and Play</span><span>4 cards</span></div><div class="prog-track"><div class="prog-fill" style="width:33%"></div></div></div>
+            <div class="prog-row"><div class="prog-lbl"><span>Home Life</span><span>4 cards</span></div><div class="prog-track"><div class="prog-fill" style="width:33%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE CARDS -->
+    <div class="panel" id="panel-cards">
+      <div class="cat-tabs" id="card-cat-tabs">
+        <button class="ctab active" onclick="filterCardsCat('all',this)">All</button>
+        <button class="ctab" onclick="filterCardsCat('daily',this)">Daily Schedule</button>
+        <button class="ctab" onclick="filterCardsCat('school',this)">School</button>
+        <button class="ctab" onclick="filterCardsCat('therapy',this)">Therapy and OT</button>
+        <button class="ctab" onclick="filterCardsCat('meals',this)">Meals</button>
+        <button class="ctab" onclick="filterCardsCat('social',this)">Social</button>
+        <button class="ctab" onclick="filterCardsCat('art',this)">Art and Play</button>
+        <button class="ctab" onclick="filterCardsCat('home',this)">Home Life</button>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-ctrl">
+          <input class="tbl-search" placeholder="Search cards…" oninput="filterTbl(this,'cards-tbl')">
+          <select class="tbl-sel"><option>All status</option><option>Live</option><option>Draft</option></select>
+          <button class="tbtn tbtn-accent" onclick="openModal('modal-add-card')"><svg><use href="#a-plus"/></svg>Add card</button>
+        </div>
+        <table id="cards-tbl">
+          <thead><tr><th>Images</th><th>Card name</th><th>Hindi</th><th>Category</th><th>Icon</th><th>Characters</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="cards-tbody">
+            <!-- rows rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CARD IMAGES -->
+    <div class="panel" id="panel-images">
+      <div class="sh"><h2>Card images</h2><div class="sh-right"><button class="tbtn tbtn-primary" onclick="triggerUpload()"><svg><use href="#a-upload"/></svg>Upload images</button><input type="file" id="img-upload" accept="image/*" multiple style="display:none" onchange="onImagesUploaded(this)"></div></div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:1rem">Upload one image per card. Square images work best — they fill the card thumbnail at 1:1. PNG or WebP recommended for clean print quality. Max 2MB per image.</p>
+
+      <div class="box">
+        <div class="box-hd"><h3>Upload area</h3><span>PNG · WebP · JPG</span></div>
+        <div class="box-body">
+          <div class="upload-zone" id="drop-zone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="onDropImages(event)" onclick="triggerUpload()">
+            <svg><use href="#a-upload"/></svg>
+            <p>Drag and drop images here, or click to browse</p>
+            <strong>PNG · WebP · JPG up to 2MB each</strong>
+          </div>
+          <div class="image-preview-grid" id="image-preview-grid"></div>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="box-hd"><h3>Assign images to cards</h3><span>Click a card row to assign its image</span></div>
+        <div class="box-body">
+          <div class="tbl-wrap" style="border:none;margin:0">
+            <div class="tbl-ctrl" style="border-top:1px solid var(--border)">
+              <input class="tbl-search" placeholder="Search cards…" oninput="filterTbl(this,'img-assign-tbl')">
+              <select class="tbl-sel" onchange="filterImgCat(this.value)">
+                <option value="">All categories</option>
+                <option value="daily">Daily Schedule</option>
+                <option value="school">School</option>
+                <option value="therapy">Therapy and OT</option>
+                <option value="meals">Meals</option>
+                <option value="social">Social</option>
+                <option value="art">Art and Play</option>
+                <option value="home">Home Life</option>
+              </select>
+            </div>
+            <table id="img-assign-tbl">
+              <thead><tr><th>Neutral</th><th>Boy</th><th>Girl</th><th>Card name</th><th>Category</th><th>Actions</th></tr></thead>
+              <tbody id="img-assign-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="panel" id="panel-categories">
+      <div class="sh"><h2>Category settings</h2><button class="tbtn tbtn-primary" onclick="openModal('modal-add-cat')"><svg><use href="#a-plus"/></svg>Add category</button></div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:1.25rem">Daily Schedule is always free. Set each paid category's price and enable or disable it for users.</p>
+      <div class="cat-settings-grid" id="cat-settings-grid">
+        <!-- rendered by JS -->
+      </div>
+      <div style="margin-top:1rem;padding:1rem;background:var(--card);border:1px solid var(--border)">
+        <p style="font-size:13px;font-weight:400;margin-bottom:0.5rem">Bundle pricing</p>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:0.4rem"><label style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3)">All categories bundle</label><input style="padding:0.3rem 0.5rem;border:1px solid var(--border);background:var(--bg);font-family:var(--sans);font-size:12px;width:80px" value="₹499"></div>
+          <div style="display:flex;align-items:center;gap:0.4rem"><label style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3)">Single category</label><input style="padding:0.3rem 0.5rem;border:1px solid var(--border);background:var(--bg);font-family:var(--sans);font-size:12px;width:80px" value="₹199"></div>
+          <button class="btn-save" style="margin-top:0">Save pricing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANGUAGES -->
+    <div class="panel" id="panel-languages">
+      <div class="sh"><h2>Language settings</h2></div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:1rem">Users can pick <strong>up to 2 languages</strong> in the app. Enable the languages you have translations for. Disabled languages will not appear in the user's dropdown.</p>
+      <div style="background:#FFF5EA;border:1px solid #F0D8B8;padding:0.75rem 1rem;margin-bottom:1.25rem;font-size:12px;color:var(--accent)">
+        Language selection is limited to 2 per user session. If a user picks the same language twice, the app automatically prevents duplicates.
+      </div>
+      <div class="lang-grid" id="lang-grid">
+        <!-- rendered by JS -->
+      </div>
+      <div class="form-actions" style="margin-top:0"><button class="btn-save">Save language settings</button></div>
+
+      <div style="height:1.5rem"></div>
+      <p class="rp-lbl" style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.75rem">Character variants</p>
+      <p style="font-size:12px;color:var(--ink2);margin-bottom:1rem;line-height:1.65">
+        The app shows a <strong>Character</strong> selector next to Language. Users can pick Boy, Girl, or Gender Neutral.
+        Each card can have up to 3 images — one per character variant. If only one image is uploaded, it is used for all variants.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem">
+        <div style="border:1px solid var(--border);padding:1rem;background:var(--card);text-align:center">
+          <div style="width:48px;height:48px;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;border-radius:50%">
+            <svg width="22" height="22" stroke="var(--ink3)" stroke-width="1.5" fill="none" stroke-linecap="round"><use href="#a-users"/></svg>
+          </div>
+          <p style="font-size:12px;font-weight:400;color:var(--ink);margin-bottom:3px">Gender Neutral</p>
+          <p style="font-size:11px;color:var(--ink3)">Default fallback for all characters</p>
+          <p style="font-size:11px;color:var(--green);margin-top:6px">Always shown</p>
+        </div>
+        <div style="border:1px solid #B8DCF0;padding:1rem;background:#F0F8FF;text-align:center">
+          <div style="width:48px;height:48px;border:1px solid #B8DCF0;background:#E0F0FF;display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;border-radius:50%">
+            <svg width="22" height="22" stroke="#1A6699" stroke-width="1.5" fill="none" stroke-linecap="round"><use href="#a-users"/></svg>
+          </div>
+          <p style="font-size:12px;font-weight:400;color:#1A4A7A;margin-bottom:3px">Boy</p>
+          <p style="font-size:11px;color:#4A7AA0">Upload boy character images per card</p>
+          <p style="font-size:11px;color:var(--accent);margin-top:6px">Optional</p>
+        </div>
+        <div style="border:1px solid #F0C8DC;padding:1rem;background:#FFF0F5;text-align:center">
+          <div style="width:48px;height:48px;border:1px solid #F0C8DC;background:#FFE0EE;display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;border-radius:50%">
+            <svg width="22" height="22" stroke="#994466" stroke-width="1.5" fill="none" stroke-linecap="round"><use href="#a-users"/></svg>
+          </div>
+          <p style="font-size:12px;font-weight:400;color:#7A2244;margin-bottom:3px">Girl</p>
+          <p style="font-size:11px;color:#AA6688">Upload girl character images per card</p>
+          <p style="font-size:11px;color:var(--accent);margin-top:6px">Optional</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="panel" id="panel-orders">
+      <div class="sh"><h2>Unlock orders</h2><button class="tbtn"><svg><use href="#a-download"/></svg>Export CSV</button></div>
+      <div class="tbl-wrap">
+        <div class="tbl-ctrl">
+          <input class="tbl-search" placeholder="Search orders…" oninput="filterTbl(this,'orders-tbl')">
+          <select class="tbl-sel"><option>All types</option><option>Single category</option><option>All categories</option></select>
+        </div>
+        <table id="orders-tbl">
+          <thead><tr><th>Order ID</th><th>Email</th><th>Unlocked</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="pri">#U041</td><td>parent@example.com</td><td>All categories</td><td>₹499</td><td>Today</td><td><span class="badge badge-live">Active</span></td></tr>
+            <tr><td class="pri">#U040</td><td>slp@example.com</td><td>Therapy and OT</td><td>₹199</td><td>Today</td><td><span class="badge badge-live">Active</span></td></tr>
+            <tr><td class="pri">#U039</td><td>teacher@school.in</td><td>All categories</td><td>₹499</td><td>Yesterday</td><td><span class="badge badge-live">Active</span></td></tr>
+            <tr><td class="pri">#U038</td><td>family@example.com</td><td>School Routine</td><td>₹199</td><td>2 days ago</td><td><span class="badge badge-live">Active</span></td></tr>
+            <tr><td class="pri">#U037</td><td>ot@clinic.in</td><td>All categories</td><td>₹499</td><td>3 days ago</td><td><span class="badge badge-live">Active</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LICENSES -->
+    <div class="panel" id="panel-licenses">
+
+      <!-- STATS -->
+      <div class="stat-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><p class="stat-lbl">Total keys issued</p><p class="stat-val"><em>36</em></p><p class="stat-sub">+4 this week</p></div>
+        <div class="stat"><p class="stat-lbl">All-categories keys</p><p class="stat-val">21</p><p class="stat-sub">₹499 × 21 = ₹10,479</p></div>
+        <div class="stat"><p class="stat-lbl">Single-category keys</p><p class="stat-val"><em>15</em></p><p class="stat-sub">₹199 × 15 = ₹2,985</p></div>
+        <div class="stat"><p class="stat-lbl">Total revenue</p><p class="stat-val">₹13.4k</p><p class="stat-sub">This month</p></div>
+      </div>
+
+      <!-- HOW IT WORKS -->
+      <div class="box" style="margin-bottom:1.25rem">
+        <div class="box-hd"><h3>How Gumroad License Keys work</h3><span>Setup guide</span></div>
+        <div class="box-body">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border)">
+            <div style="padding:1rem;border-right:1px solid var(--border)">
+              <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;color:var(--border);margin-bottom:0.5rem;line-height:1">01</div>
+              <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--accent);margin-bottom:0.3rem">Create products</p>
+              <p style="font-size:12px;color:var(--ink2);line-height:1.6">Create 2 products on Gumroad — one for ₹199 (single) and one for ₹499 (all). Enable <strong>License Keys</strong> in each product's settings.</p>
+            </div>
+            <div style="padding:1rem;border-right:1px solid var(--border)">
+              <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;color:var(--border);margin-bottom:0.5rem;line-height:1">02</div>
+              <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--accent);margin-bottom:0.3rem">Add permalinks</p>
+              <p style="font-size:12px;color:var(--ink2);line-height:1.6">Copy the product permalink from Gumroad and paste it into the two fields below. The app uses this to verify keys against the right product.</p>
+            </div>
+            <div style="padding:1rem;border-right:1px solid var(--border)">
+              <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;color:var(--border);margin-bottom:0.5rem;line-height:1">03</div>
+              <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--accent);margin-bottom:0.3rem">User buys</p>
+              <p style="font-size:12px;color:var(--ink2);line-height:1.6">User clicks Buy in the app → Gumroad checkout → payment → Gumroad emails them a unique license key automatically.</p>
+            </div>
+            <div style="padding:1rem">
+              <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;color:var(--border);margin-bottom:0.5rem;line-height:1">04</div>
+              <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--accent);margin-bottom:0.3rem">User enters key</p>
+              <p style="font-size:12px;color:var(--ink2);line-height:1.6">User pastes their key into the app. The app calls Gumroad API to verify → unlocks categories → saves to browser localStorage.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCT PERMALINK CONFIG -->
+      <div class="two-col" style="margin-bottom:1.25rem">
+        <div class="box">
+          <div class="box-hd"><h3>All Categories product</h3><span style="color:var(--green)">₹499</span></div>
+          <div class="box-body">
+            <div style="display:flex;flex-direction:column;gap:0.65rem">
+              <div class="fgroup">
+                <label class="flabel">Gumroad product permalink</label>
+                <input class="finput" id="permalink-all" value="growgently-all" placeholder="e.g. growgently-all">
+                <p style="font-size:11px;color:var(--ink3);margin-top:0.25rem">Found at: gumroad.com/l/<strong>permalink</strong></p>
+              </div>
+              <div class="fgroup">
+                <label class="flabel">Full Gumroad URL</label>
+                <input class="finput" id="url-all" placeholder="https://growgently.gumroad.com/l/..." oninput="syncPermalink('all',this.value)">
+              </div>
+              <div style="padding:0.6rem 0.75rem;background:var(--green-bg);border:1px solid #B8DDB8;font-size:11px;color:var(--green)">
+                ✓ Unlocks: School, Therapy, Meals, Social, Art, Home — all 6 categories
+              </div>
+              <button class="btn-save" onclick="savePermalinks()">Save permalink</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-hd"><h3>Single Category product</h3><span style="color:var(--accent)">₹199</span></div>
+          <div class="box-body">
+            <div style="display:flex;flex-direction:column;gap:0.65rem">
+              <div class="fgroup">
+                <label class="flabel">Gumroad product permalink</label>
+                <input class="finput" id="permalink-single" value="growgently-single" placeholder="e.g. growgently-single">
+                <p style="font-size:11px;color:var(--ink3);margin-top:0.25rem">Found at: gumroad.com/l/<strong>permalink</strong></p>
+              </div>
+              <div class="fgroup">
+                <label class="flabel">Full Gumroad URL</label>
+                <input class="finput" id="url-single" placeholder="https://growgently.gumroad.com/l/..." oninput="syncPermalink('single',this.value)">
+              </div>
+              <div style="padding:0.6rem 0.75rem;background:#FFF5EA;border:1px solid #F0D8B8;font-size:11px;color:var(--accent)">
+                ✓ Unlocks: One category of user's choice (School / Therapy / Meals / Social / Art / Home)
+              </div>
+              <button class="btn-save" onclick="savePermalinks()">Save permalink</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COUPON / DISCOUNT CODES -->
+      <div class="box" style="margin-bottom:1.25rem">
+        <div class="box-hd"><h3>Coupons and discounts</h3><span>via Gumroad</span></div>
+        <div class="box-body">
+          <p style="font-size:12px;color:var(--ink2);line-height:1.7;margin-bottom:1rem">
+            Coupons are created directly in Gumroad (Product → Edit → Offer codes). They reduce the purchase price — the license key flow still works the same way after payment. You do not need to manage coupons in this admin.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">
+            <div style="border:1px solid var(--border);padding:0.9rem;background:var(--bg)">
+              <p style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.3rem">SLP discount</p>
+              <p style="font-size:13px;color:var(--ink);margin-bottom:0.2rem">GROWSLP30</p>
+              <p style="font-size:11px;color:var(--ink3)">30% off · For therapists</p>
+            </div>
+            <div style="border:1px solid var(--border);padding:0.9rem;background:var(--bg)">
+              <p style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.3rem">Launch offer</p>
+              <p style="font-size:13px;color:var(--ink);margin-bottom:0.2rem">LAUNCH50</p>
+              <p style="font-size:11px;color:var(--ink3)">50% off · First 100 users</p>
+            </div>
+            <div style="border:1px solid var(--border);padding:0.9rem;background:var(--bg);cursor:pointer;border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem" onclick="window.open('https://gumroad.com','_blank')">
+              <svg width="16" height="16" stroke="var(--ink3)" stroke-width="1.8" fill="none" stroke-linecap="round"><use href="#a-plus"/></svg>
+              <p style="font-size:11px;color:var(--ink3)">Add on Gumroad</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LICENSE KEY LOG -->
+      <div class="box">
+        <div class="box-hd">
+          <h3>License key activity</h3>
+          <div style="display:flex;gap:0.5rem">
+            <button class="tbtn"><svg><use href="#a-download"/></svg>Export CSV</button>
+            <a href="https://app.gumroad.com/sales" target="_blank" class="tbtn" style="text-decoration:none">View on Gumroad</a>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="border:none;margin:0">
+          <div class="tbl-ctrl">
+            <input class="tbl-search" placeholder="Search by email or key…" oninput="filterTbl(this,'lic-tbl')">
+            <select class="tbl-sel">
+              <option>All types</option>
+              <option>All categories (₹499)</option>
+              <option>Single category (₹199)</option>
+            </select>
+            <select class="tbl-sel">
+              <option>All status</option>
+              <option>Active</option>
+              <option>Refunded</option>
+            </select>
+          </div>
+          <table id="lic-tbl">
+            <thead><tr><th>License key</th><th>Email</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="pri" style="font-family:monospace;font-size:11px;letter-spacing:0.05em">A3F2-9XK1-BMNQ-7TZ4</td>
+                <td>parent@example.com</td>
+                <td><span class="badge badge-live">All categories</span></td>
+                <td>All 6</td><td>₹499</td><td>Today, 10:22</td>
+                <td><span class="badge badge-live">Active</span></td>
+                <td><div class="acts"><button class="act act-red" onclick="revokeKey(this,'A3F2-9XK1-BMNQ-7TZ4')">Revoke</button></div></td>
+              </tr>
+              <tr>
+                <td class="pri" style="font-family:monospace;font-size:11px;letter-spacing:0.05em">B7M3-2LKP-XRQT-9WN5</td>
+                <td>slp@clinic.in</td>
+                <td><span class="badge" style="background:#FFF5EA;color:var(--accent);border:1px solid #F0D8B8">Single</span></td>
+                <td>Therapy and OT</td><td>₹199</td><td>Today, 08:45</td>
+                <td><span class="badge badge-live">Active</span></td>
+                <td><div class="acts"><button class="act act-red" onclick="revokeKey(this,'B7M3-2LKP-XRQT-9WN5')">Revoke</button></div></td>
+              </tr>
+              <tr>
+                <td class="pri" style="font-family:monospace;font-size:11px;letter-spacing:0.05em">C1N8-7QPR-MXZK-4LT2</td>
+                <td>teacher@school.in</td>
+                <td><span class="badge badge-live">All categories</span></td>
+                <td>All 6</td><td>₹499</td><td>Yesterday</td>
+                <td><span class="badge badge-live">Active</span></td>
+                <td><div class="acts"><button class="act act-red" onclick="revokeKey(this,'C1N8-7QPR-MXZK-4LT2')">Revoke</button></div></td>
+              </tr>
+              <tr>
+                <td class="pri" style="font-family:monospace;font-size:11px;letter-spacing:0.05em">D5T9-3NWQ-BPLM-8KR6</td>
+                <td>family@example.com</td>
+                <td><span class="badge" style="background:#FFF5EA;color:var(--accent);border:1px solid #F0D8B8">Single</span></td>
+                <td>School Routine</td><td>₹199</td><td>2 days ago</td>
+                <td><span class="badge badge-draft">Refunded</span></td>
+                <td><div class="acts"><button class="act">Restore</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-settings">
+      <div class="two-col">
+        <div>
+          <div class="box">
+            <div class="box-hd"><h3>App settings</h3></div>
+            <div class="box-body">
+              <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <div class="fgroup"><label class="flabel">App name shown to users</label><input class="finput" value="Create Schedule"></div>
+                <div class="fgroup"><label class="flabel">Max languages per session</label><select class="fselect"><option>1 (single language)</option><option>2</option></select></div>
+                <div class="fgroup"><label class="flabel">Max columns per row</label><select class="fselect"><option>4 (default)</option><option>3</option><option>2</option></select></div>
+                <div class="fgroup"><label class="flabel">Font size by column count</label>
+                  <div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.2rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0.5rem;background:var(--bg);border:1px solid var(--border)">
+                      <span style="font-size:11px;color:var(--ink3)">2 columns</span>
+                      <span style="font-size:24px;color:#2C2C2C;font-family:'Atkinson Hyperlegible',sans-serif;line-height:1">Aa</span>
+                      <span style="font-size:11px;color:var(--accent)">24px</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0.5rem;background:var(--bg);border:1px solid var(--border)">
+                      <span style="font-size:11px;color:var(--ink3)">3 columns</span>
+                      <span style="font-size:19px;color:#2C2C2C;font-family:'Atkinson Hyperlegible',sans-serif;line-height:1">Aa</span>
+                      <span style="font-size:11px;color:var(--accent)">19px</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0.5rem;background:var(--bg);border:1px solid var(--border)">
+                      <span style="font-size:11px;color:var(--ink3)">4 columns</span>
+                      <span style="font-size:14px;color:#2C2C2C;font-family:'Atkinson Hyperlegible',sans-serif;line-height:1">Aa</span>
+                      <span style="font-size:11px;color:var(--accent)">14px</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="fgroup"><label class="flabel">Default language 1</label><select class="fselect"><option>English</option><option>Hindi</option><option>Marathi</option></select></div>
+                <div class="fgroup"><label class="flabel">Default language 2</label><select class="fselect"><option>Hindi · हिंदी</option><option>English</option><option>None</option></select></div>
+                <div class="fgroup"><label class="flabel">Instagram handle (shown in A4 footer)</label><input class="finput" value="@grow_gently_official"></div>
+                <div class="fgroup"><label class="flabel">Site URL (shown in A4 footer)</label><input class="finput" value="growgently.co"></div>
+              </div>
+              <div class="form-actions"><button class="btn-save">Save settings</button></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="box">
+            <div class="box-hd"><h3>Feature toggles</h3></div>
+            <div class="box-body">
+              <div style="display:flex;flex-direction:column;gap:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--ink2)">Auto-add next page when full</span><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--ink2)">Show card images (when uploaded)</span><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--ink2)">Show lock icon on paid cards</span><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--ink2)">Show unlock modal on locked click</span><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--ink2)">Enable PDF save button</span><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0"><span style="font-size:12px;color:var(--ink2)">Show Grow Gently footer on A4</span><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ADD CARD MODAL -->
+<div class="modal-bg" id="modal-add-card" onclick="closeModal('modal-add-card')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h3>Add schedule card</h3><button class="modal-close" onclick="closeModal('modal-add-card')">×</button></div>
+    <div class="form-grid">
+      <div class="fgroup form-full"><label class="flabel">Category</label>
+        <select class="fselect"><option>Daily Schedule (Free)</option><option>School Routine (Paid)</option><option>Therapy and OT (Paid)</option><option>Meals and Nutrition (Paid)</option><option>Social and Emotions (Paid)</option><option>Art and Play (Paid)</option><option>Home Life (Paid)</option></select>
+      </div>
+      <div class="fgroup"><label class="flabel">Card name (English)</label><input class="finput" placeholder="e.g. Wake Up"></div>
+      <div class="fgroup"><label class="flabel">Icon ID</label><input class="finput" placeholder="e.g. s-sun"></div>
+      <div class="fgroup"><label class="flabel">Hindi · हिंदी</label><input class="finput" placeholder="उठना"></div>
+      <div class="fgroup"><label class="flabel">Marathi · मराठी</label><input class="finput" placeholder="उठणे"></div>
+      <div class="fgroup"><label class="flabel">Punjabi · ਪੰਜਾਬੀ</label><input class="finput" placeholder="ਜਾਗੋ"></div>
+      <div class="fgroup"><label class="flabel">Gujarati · ગુજરાતી</label><input class="finput" placeholder="જાગો"></div>
+      <div class="fgroup"><label class="flabel">Tamil · தமிழ்</label><input class="finput" placeholder="எழுந்திரு"></div>
+      <div class="fgroup"><label class="flabel">Telugu · తెలుగు</label><input class="finput" placeholder="లేవడం"></div>
+      <div class="fgroup"><label class="flabel">Bengali · বাংলা</label><input class="finput" placeholder="উঠুন"></div>
+      <div class="fgroup"><label class="flabel">Urdu · اردو</label><input class="finput" placeholder="اٹھو"></div>
+      <div class="fgroup"><label class="flabel">Kannada · ಕನ್ನಡ</label><input class="finput" placeholder="ಏಳುವುದು"></div>
+      <div class="fgroup"><label class="flabel">Status</label><select class="fselect"><option>Live</option><option>Draft</option></select></div>
+    </div>
+    <div style="margin-top:0.75rem">
+      <label class="flabel" style="margin-bottom:0.5rem;display:block">Card images by character</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+        <div>
+          <p style="font-size:11px;color:var(--ink3);margin-bottom:0.3rem;text-align:center">Gender Neutral</p>
+          <div class="upload-zone" style="padding:0.75rem;text-align:center" onclick="document.getElementById('add-img-neutral').click()">
+            <svg><use href="#a-upload"/></svg>
+            <p style="font-size:11px">Click to upload</p>
+          </div>
+          <input type="file" id="add-img-neutral" accept="image/*" style="display:none">
+        </div>
+        <div>
+          <p style="font-size:11px;color:#1A6699;margin-bottom:0.3rem;text-align:center">Boy</p>
+          <div class="upload-zone" style="padding:0.75rem;text-align:center;border-color:#B8DCF0" onclick="document.getElementById('add-img-boy').click()">
+            <svg><use href="#a-upload"/></svg>
+            <p style="font-size:11px">Click to upload</p>
+          </div>
+          <input type="file" id="add-img-boy" accept="image/*" style="display:none">
+        </div>
+        <div>
+          <p style="font-size:11px;color:#994466;margin-bottom:0.3rem;text-align:center">Girl</p>
+          <div class="upload-zone" style="padding:0.75rem;text-align:center;border-color:#F0C8DC" onclick="document.getElementById('add-img-girl').click()">
+            <svg><use href="#a-upload"/></svg>
+            <p style="font-size:11px">Click to upload</p>
+          </div>
+          <input type="file" id="add-img-girl" accept="image/*" style="display:none">
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:0.4rem">If only one image is uploaded, it will be used for all character variants. Square PNG or WebP, max 2MB.</p>
+    </div>
+    <div class="form-actions"><button class="btn-save">Add card</button><button class="btn-cancel" onclick="closeModal('modal-add-card')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- EDIT CARD MODAL -->
+<div class="modal-bg" id="modal-edit-card" onclick="closeModal('modal-edit-card')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h3>Edit card</h3><button class="modal-close" onclick="closeModal('modal-edit-card')">×</button></div>
+    <div class="form-grid">
+      <div class="fgroup form-full"><label class="flabel">Category</label><select class="fselect"><option selected>Daily Schedule</option><option>School Routine</option><option>Therapy and OT</option></select></div>
+      <div class="fgroup"><label class="flabel">Card name (English)</label><input class="finput" id="edit-en" value="Wake Up"></div>
+      <div class="fgroup"><label class="flabel">Icon ID</label><input class="finput" value="s-sun"></div>
+      <div class="fgroup"><label class="flabel">Hindi</label><input class="finput" value="उठना"></div>
+      <div class="fgroup"><label class="flabel">Marathi</label><input class="finput" value="उठणे"></div>
+      <div class="fgroup"><label class="flabel">Punjabi</label><input class="finput" value="ਜਾਗੋ"></div>
+      <div class="fgroup"><label class="flabel">Gujarati</label><input class="finput" value="જાગો"></div>
+      <div class="fgroup"><label class="flabel">Tamil</label><input class="finput" value="எழுந்திரு"></div>
+      <div class="fgroup"><label class="flabel">Telugu</label><input class="finput" value="లేవడం"></div>
+      <div class="fgroup"><label class="flabel">Bengali</label><input class="finput" value="উঠুন"></div>
+      <div class="fgroup"><label class="flabel">Urdu</label><input class="finput" value="اٹھو"></div>
+      <div class="fgroup"><label class="flabel">Kannada</label><input class="finput" value="ಏಳುವುದು"></div>
+      <div class="fgroup"><label class="flabel">Status</label><select class="fselect"><option selected>Live</option><option>Draft</option></select></div>
+    </div>
+    <div style="margin-top:0.75rem">
+      <label class="flabel" style="margin-bottom:0.5rem;display:block">Card images by character</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+        <div>
+          <p style="font-size:11px;color:var(--ink3);margin-bottom:0.3rem;text-align:center">Gender Neutral</p>
+          <div style="width:100%;aspect-ratio:1;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden" onclick="openImgPicker('__editing__','neutral')">
+            <svg width="20" height="20" stroke="var(--ink3)" stroke-width="1.4" fill="none" stroke-linecap="round"><use href="#a-image"/></svg>
+            <div class="upload-hint"><svg><use href="#a-upload"/></svg></div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:11px;color:#1A6699;margin-bottom:0.3rem;text-align:center">Boy</p>
+          <div style="width:100%;aspect-ratio:1;border:1px solid #B8DCF0;background:#F0F8FF;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden" onclick="openImgPicker('__editing__','boy')">
+            <svg width="20" height="20" stroke="#1A6699" stroke-width="1.4" fill="none" stroke-linecap="round"><use href="#a-image"/></svg>
+            <div class="upload-hint"><svg><use href="#a-upload"/></svg></div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:11px;color:#994466;margin-bottom:0.3rem;text-align:center">Girl</p>
+          <div style="width:100%;aspect-ratio:1;border:1px solid #F0C8DC;background:#FFF0F5;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden" onclick="openImgPicker('__editing__','girl')">
+            <svg width="20" height="20" stroke="#994466" stroke-width="1.4" fill="none" stroke-linecap="round"><use href="#a-image"/></svg>
+            <div class="upload-hint"><svg><use href="#a-upload"/></svg></div>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="edit-img-upload" accept="image/*" style="display:none">
+      <p style="font-size:11px;color:var(--ink3);margin-top:0.4rem">Square PNG or WebP, max 2MB each.</p>
+    </div>
+    <div class="form-actions"><button class="btn-save">Save changes</button><button class="btn-cancel" onclick="closeModal('modal-edit-card')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- ADD CATEGORY MODAL -->
+<div class="modal-bg" id="modal-add-cat" onclick="closeModal('modal-add-cat')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h3>Add category</h3><button class="modal-close" onclick="closeModal('modal-add-cat')">×</button></div>
+    <div style="display:flex;flex-direction:column;gap:0.75rem">
+      <div class="fgroup"><label class="flabel">Category name (English)</label><input class="finput" placeholder="e.g. Sports and Exercise"></div>
+      <div class="fgroup"><label class="flabel">Category name (Hindi)</label><input class="finput" placeholder="e.g. खेल और व्यायाम"></div>
+      <div class="fgroup"><label class="flabel">Price (₹)</label><input class="finput" placeholder="199"></div>
+      <div class="fgroup"><label class="flabel">Access type</label><select class="fselect"><option>Paid</option><option>Free</option></select></div>
+    </div>
+    <div class="form-actions"><button class="btn-save">Add category</button><button class="btn-cancel" onclick="closeModal('modal-add-cat')">Cancel</button></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const CARD_DATA = [
+  {id:'wake',  cat:'daily',   en:'Wake Up',        hi:'उठना',            icon:'s-sun',      img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'teeth', cat:'daily',   en:'Brush Teeth',    hi:'दाँत साफ करना',  icon:'s-tooth',    img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'bath',  cat:'daily',   en:'Bath Time',      hi:'नहाना',           icon:'s-droplet',  img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'dress', cat:'daily',   en:'Get Dressed',    hi:'कपड़े पहनना',    icon:'s-shirt',    img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'bag',   cat:'daily',   en:'Pack Bag',       hi:'बैग तैयार करना', icon:'s-backpack', img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'bfast', cat:'daily',   en:'Breakfast',      hi:'नाश्ता',          icon:'s-bowl',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'lunch', cat:'daily',   en:'Lunch',          hi:'दोपहर का खाना',  icon:'s-fork',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'dinner',cat:'daily',   en:'Dinner',         hi:'रात का खाना',    icon:'s-meal',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'play',  cat:'daily',   en:'Outdoor Play',   hi:'बाहर खेलना',     icon:'s-tree',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'quiet', cat:'daily',   en:'Quiet Time',     hi:'शांत समय',       icon:'s-puzzle',   img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'sleep', cat:'daily',   en:'Sleep',          hi:'सोना',            icon:'s-moon',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'story', cat:'daily',   en:'Bedtime Story',  hi:'सोने की कहानी',  icon:'s-book',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'sbus',  cat:'school',  en:'School Bus',     hi:'स्कूल बस',        icon:'s-bus',      img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'assm',  cat:'school',  en:'Assembly',       hi:'प्रार्थना सभा',  icon:'s-users',    img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'class', cat:'school',  en:'Class Work',     hi:'कक्षा कार्य',    icon:'s-pencil',   img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'pt',    cat:'school',  en:'PT and Break',   hi:'खेल का समय',     icon:'s-run',      img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'lib',   cat:'school',  en:'Library',        hi:'पुस्तकालय',      icon:'s-book',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'hw',    cat:'school',  en:'Homework',       hi:'गृहकार्य',        icon:'s-pencil',   img:null, img_boy:null, img_girl:null, status:'draft'},
+  {id:'ot',    cat:'therapy', en:'OT Session',     hi:'OT सत्र',         icon:'s-therapy',  img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'speech',cat:'therapy', en:'Speech Therapy', hi:'स्पीच थेरेपी',   icon:'s-heart',    img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'calm',  cat:'therapy', en:'Calm Down',      hi:'शांत होना',       icon:'s-leaf',     img:null, img_boy:null, img_girl:null, status:'live'},
+  {id:'sensor',cat:'therapy', en:'Sensory Break',  hi:'संवेदी विराम',   icon:'s-star',     img:null, img_boy:null, img_girl:null, status:'live'},
+];
+
+const CAT_SETTINGS = [
+  {id:'daily',   name:'Daily Schedule',    free:true,  price:'',    enabled:true,  cards:12},
+  {id:'school',  name:'School Routine',    free:false, price:'199', enabled:true,  cards:6},
+  {id:'therapy', name:'Therapy and OT',   free:false, price:'199', enabled:true,  cards:4},
+  {id:'meals',   name:'Meals and Nutrition',free:false,price:'199', enabled:true,  cards:4},
+  {id:'social',  name:'Social and Emotions',free:false,price:'199', enabled:true,  cards:4},
+  {id:'art',     name:'Art and Play',      free:false, price:'199', enabled:true,  cards:4},
+  {id:'home',    name:'Home Life',         free:false, price:'199', enabled:false, cards:4},
+];
+
+const LANGUAGES = [
+  {code:'en', name:'English',  native:'English',  enabled:true,  translations:'complete'},
+  {code:'hi', name:'Hindi',    native:'हिंदी',    enabled:true,  translations:'complete'},
+  {code:'mr', name:'Marathi',  native:'मराठी',    enabled:true,  translations:'complete'},
+  {code:'pa', name:'Punjabi',  native:'ਪੰਜਾਬੀ',   enabled:true,  translations:'complete'},
+  {code:'gu', name:'Gujarati', native:'ગુજરાતી',   enabled:true,  translations:'complete'},
+  {code:'ta', name:'Tamil',    native:'தமிழ்',     enabled:true,  translations:'complete'},
+  {code:'te', name:'Telugu',   native:'తెలుగు',    enabled:true,  translations:'complete'},
+  {code:'bn', name:'Bengali',  native:'বাংলা',     enabled:true,  translations:'complete'},
+  {code:'ur', name:'Urdu',     native:'اردو',      enabled:true,  translations:'complete'},
+  {code:'kn', name:'Kannada',  native:'ಕನ್ನಡ',     enabled:false, translations:'partial'},
+];
+
+let uploadedImages = []; // {name, dataUrl}
+let currentCardCat = 'all';
+
+// ── PANELS ──
+function show(id, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  document.getElementById('page-title').textContent = {
+    dashboard:'Dashboard',cards:'Schedule Cards',images:'Card Images',
+    categories:'Categories',languages:'Languages',orders:'Unlock Orders',settings:'App Settings'
+  }[id]||id;
+  // lazy render
+  if(id==='cards') renderCardsTable();
+  if(id==='images') renderImgAssignTable();
+  if(id==='categories') renderCatSettings();
+  if(id==='languages') renderLangGrid();
+}
+
+// ── CARDS TABLE ──
+function renderCardsTable(){
+  const tbody = document.getElementById('cards-tbody');
+  const filtered = currentCardCat==='all' ? CARD_DATA : CARD_DATA.filter(c=>c.cat===currentCardCat);
+  tbody.innerHTML = filtered.map(c=>`
+    <tr data-cat="${c.cat}">
+      <td>
+        <div class="card-thumb-cell">
+          <div class="card-img-box ${c.img?'':'empty'}" onclick="openImgPicker('${c.id}')">
+            ${c.img ? `<img src="${c.img}" alt="">` : `<svg><use href="#a-image"/></svg>`}
+            <div class="upload-hint"><svg><use href="#a-upload"/></svg></div>
+          </div>
+        </div>
+      </td>
+      <td class="pri">${c.en}</td>
+      <td>${c.hi}</td>
+      <td>—</td>
+      <td><span class="badge ${c.cat==='daily'?'badge-free':'badge-paid'}">${c.cat==='daily'?'Free':'Paid'}</span></td>
+      <td style="font-size:11px;color:var(--ink3)">${c.icon}</td>
+      <td><span class="badge ${c.status==='live'?'badge-live':'badge-draft'}">${c.status}</span></td>
+      <td><div class="acts">
+        <button class="act" onclick="editCard('${c.id}')">Edit</button>
+        <button class="act" onclick="openImgPicker('${c.id}')">Image</button>
+        <button class="act act-red">Delete</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function filterCardsCat(cat, btn){
+  currentCardCat = cat;
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderCardsTable();
+}
+
+function editCard(id){
+  const c = CARD_DATA.find(x=>x.id===id);
+  if(c) document.getElementById('edit-en').value = c.en;
+  openModal('modal-edit-card');
+}
+
+function openImgPicker(cardId, variant='neutral'){
+  document.getElementById('edit-img-upload').onchange = function(){
+    const file = this.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const c = CARD_DATA.find(x=>x.id===cardId);
+      if(c){
+        if(variant==='boy') c.img_boy = e.target.result;
+        else if(variant==='girl') c.img_girl = e.target.result;
+        else c.img = e.target.result;
+        renderCardsTable();
+        renderImgAssignTable();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  document.getElementById('edit-img-upload').click();
+}
+
+// ── IMAGES PANEL ──
+function triggerUpload(){ document.getElementById('img-upload').click(); }
+function onImagesUploaded(input){
+  Array.from(input.files).forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = e=>addImagePreview(f.name, e.target.result);
+    reader.readAsDataURL(f);
+  });
+}
+function onDropImages(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = ev=>addImagePreview(f.name, ev.target.result);
+    reader.readAsDataURL(f);
+  });
+}
+function addImagePreview(name, dataUrl){
+  uploadedImages.push({name, dataUrl});
+  const grid = document.getElementById('image-preview-grid');
+  const div = document.createElement('div');
+  div.className='img-thumb';
+  div.innerHTML=`<img src="${dataUrl}" alt="${name}"><div class="img-thumb-rm" onclick="this.parentElement.remove()">×</div>`;
+  grid.appendChild(div);
+}
+function renderImgAssignTable(){
+  const tbody = document.getElementById('img-assign-tbody');
+  tbody.innerHTML = CARD_DATA.map(c=>`
+    <tr>
+      <td>
+        <div class="card-img-box ${c.img?'':'empty'}" onclick="openImgPicker('${c.id}','neutral')" title="Upload Gender Neutral">
+          ${c.img?`<img src="${c.img}" alt="">`:`<svg><use href="#a-image"/></svg>`}
+          <div class="upload-hint"><svg><use href="#a-upload"/></svg></div>
+        </div>
+      </td>
+      <td>
+        <div class="card-img-box ${c.img_boy?'':'empty'}" style="border-color:#B8DCF0" onclick="openImgPicker('${c.id}','boy')" title="Upload Boy">
+          ${c.img_boy?`<img src="${c.img_boy}" alt="">`:`<svg><use href="#a-image"/></svg>`}
+          <div class="upload-hint"><svg><use href="#a-upload"/></svg></div>
+        </div>
+      </td>
+      <td>
+        <div class="card-img-box ${c.img_girl?'':'empty'}" style="border-color:#F0C8DC" onclick="openImgPicker('${c.id}','girl')" title="Upload Girl">
+          ${c.img_girl?`<img src="${c.img_girl}" alt="">`:`<svg><use href="#a-image"/></svg>`}
+          <div class="upload-hint"><svg><use href="#a-upload"/></svg></div>
+        </div>
+      </td>
+      <td class="pri">${c.en}</td>
+      <td><span class="badge ${c.cat==='daily'?'badge-free':'badge-paid'}">${c.cat}</span></td>
+      <td>
+        <div style="display:flex;gap:3px;flex-direction:column">
+          <button class="act" onclick="openImgPicker('${c.id}','neutral')">Neutral</button>
+          <button class="act" style="border-color:#B8DCF0;color:#1A6699" onclick="openImgPicker('${c.id}','boy')">Boy</button>
+          <button class="act" style="border-color:#F0C8DC;color:#994466" onclick="openImgPicker('${c.id}','girl')">Girl</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function filterImgCat(cat){
+  document.querySelectorAll('#img-assign-tbl tbody tr').forEach(row=>{
+    if(!cat || row.cells[2].textContent.includes(cat)) row.style.display='';
+    else row.style.display='none';
+  });
+}
+
+// ── CATEGORIES ──
+function renderCatSettings(){
+  document.getElementById('cat-settings-grid').innerHTML = CAT_SETTINGS.map(c=>`
+    <div class="cat-item">
+      <div class="cat-item-head">
+        <div>
+          <p class="cat-item-title">${c.name}</p>
+          <p class="cat-item-sub">${c.id}</p>
+        </div>
+        <button class="toggle${c.enabled?' on':''}" onclick="this.classList.toggle('on')"></button>
+      </div>
+      ${c.free ? '<span class="badge badge-free">Always free</span>' : `
+        <div class="cat-item-price">
+          <label>Price ₹</label>
+          <input value="${c.price}" placeholder="199">
+        </div>`}
+      <p class="cat-item-count">${c.cards} cards · <span class="${c.enabled?'':''}"> ${c.enabled?'Visible to users':'Hidden from users'}</span></p>
+    </div>`).join('');
+}
+
+// ── LANGUAGES ──
+function renderLangGrid(){
+  document.getElementById('lang-grid').innerHTML = LANGUAGES.map(l=>`
+    <div class="lang-card${l.enabled?' enabled':''}" onclick="toggleLang(this,'${l.code}')">
+      <div class="lang-check"><svg><use href="#a-check"/></svg></div>
+      <p class="lang-name">${l.name}</p>
+      <p class="lang-native">${l.native}</p>
+      <p class="lang-status" style="color:${l.enabled?'var(--green)':'var(--ink3)'}">${l.translations==='complete'?'All translations complete':'Partial translations'}</p>
+    </div>`).join('');
+}
+function toggleLang(el){ el.classList.toggle('enabled'); }
+
+// ── TABLE FILTER ──
+function filterTbl(input, tblId){
+  const q = input.value.toLowerCase();
+  document.querySelectorAll('#'+tblId+' tbody tr').forEach(row=>{
+    row.style.display = row.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+
+// ── MODAL ──
+function openModal(id){document.getElementById(id).classList.add('open')}
+// ── LICENSE ADMIN FUNCTIONS ──
+function syncPermalink(type, url) {
+  const match = url.match(/gumroad\.com\/l\/([^?#\/]+)/);
+  if (match) {
+    document.getElementById('permalink-'+type).value = match[1];
+  }
+}
+
+function savePermalinks() {
+  const all = document.getElementById('permalink-all').value.trim();
+  const single = document.getElementById('permalink-single').value.trim();
+  // In production: save to backend/config. For now show confirmation.
+  if (all && single) {
+    alert('Permalinks saved!\n\nAll categories: ' + all + '\nSingle: ' + single +
+          '\n\nCopy these into app.html GUMROAD_PRODUCTS object.');
+  }
+}
+
+function revokeKey(btn, key) {
+  if (!confirm('Revoke key ' + key + '?\nThe user will lose access on their next session.')) return;
+  const row = btn.closest('tr');
+  row.style.opacity = '0.4';
+  const statusCell = row.cells[6];
+  if (statusCell) statusCell.innerHTML = '<span class="badge badge-draft">Revoked</span>';
+  btn.textContent = 'Restore';
+  btn.className = 'act';
+  btn.onclick = () => { row.style.opacity='1'; statusCell.innerHTML='<span class="badge badge-live">Active</span>'; btn.textContent='Revoke'; btn.className='act act-red'; };
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'))});
+
+// init
+renderCardsTable();
+</script>
+</body>
+</html>
