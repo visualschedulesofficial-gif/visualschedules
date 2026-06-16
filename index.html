@@ -4,31 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Create Schedule — Grow Gently</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@300;400;500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#1C1B19;--ink2:#5C5855;--ink3:#6B6560;
   --accent:#8B5E2A;--border:#DDD9D0;
   --green:#2D6A2D;
-  --sans:'Jost',system-ui,sans-serif;
+  --sans:'Atkinson Hyperlegible',system-ui,sans-serif;
+  --body-color:#2C2C2C;
 }
 html,body{height:100%;overflow:hidden;font-size:14px}
-body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300;display:flex;flex-direction:column}
+body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;display:flex;flex-direction:column}
 
 /* TOP NAV */
 .topnav{
-  height:50px;background:#FFFFFF;border-bottom:1px solid var(--border);
+  height:48px;background:#FFFFFF;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 1.25rem;flex-shrink:0;gap:1.5rem;
+  padding:0 1rem;flex-shrink:0;gap:1rem;
 }
-.tnav-logo{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:var(--ink);text-decoration:none;white-space:nowrap;flex-shrink:0}
+.tnav-logo{font-family:'Playfair Display',serif;font-size:1.25rem;font-style:italic;color:#1C1B19;text-decoration:none;white-space:nowrap;flex-shrink:0;line-height:1}
 
 .lang-row{display:flex;align-items:center;gap:0.4rem;flex-shrink:0}
-.lang-lbl{font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3);white-space:nowrap}
-.lang-sel{font-family:var(--sans);font-size:11px;padding:0.3rem 0.5rem;border:1px solid var(--border);background:#FFFFFF;color:var(--ink2);outline:none;max-width:140px}
+.lang-lbl{font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink3);white-space:nowrap;font-weight:600}
+.lang-sel{font-family:var(--sans);font-size:12px;padding:0.32rem 0.5rem;border:1px solid var(--border);background:#FFFFFF;color:var(--ink2);outline:none;max-width:150px;font-weight:500}
 .nav-acts{display:flex;align-items:center;gap:0.4rem;flex-shrink:0}
-.nbtn{font-size:11px;letter-spacing:0.06em;text-transform:uppercase;padding:0.35rem 0.75rem;border:1px solid var(--border);background:none;color:var(--ink2);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:0.3rem;white-space:nowrap;transition:all 0.15s}
+.nbtn{font-size:12px;letter-spacing:0.06em;text-transform:uppercase;padding:0.38rem 0.85rem;border:1px solid var(--border);background:none;color:var(--ink2);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:0.3rem;white-space:nowrap;transition:all 0.15s;font-weight:600}
 .nbtn:hover{border-color:var(--ink);color:var(--ink)}
 .nbtn-primary{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}
 .nbtn-primary:hover{background:#333}
@@ -38,34 +39,34 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 
 /* SIDEBAR */
 .sidebar{
-  width:210px;flex-shrink:0;
+  width:240px;flex-shrink:0;
   background:#FFFFFF;border-right:1px solid var(--border);
   display:flex;flex-direction:column;overflow:hidden;
 }
 .sb-search-wrap{padding:0.65rem 0.65rem 0;flex-shrink:0}
 .sb-search{
-  width:100%;padding:0.38rem 0.6rem;
+  width:100%;padding:0.42rem 0.65rem;
   border:1px solid var(--border);background:#F8F7F4;
-  font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;
+  font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;
   margin-bottom:0.4rem;
 }
 .sb-search::placeholder{color:var(--ink3)}
 .cat-wrap{position:relative;margin-bottom:0.5rem}
 .cat-sel{
-  width:100%;padding:0.38rem 0.6rem;
+  width:100%;padding:0.42rem 0.65rem;
   border:1px solid var(--border);background:#FFFFFF;
-  font-family:var(--sans);font-size:12px;color:var(--ink2);
-  outline:none;appearance:none;cursor:pointer;
+  font-family:var(--sans);font-size:13px;color:var(--ink2);
+  outline:none;appearance:none;cursor:pointer;font-weight:500;
 }
 .cat-arrow{position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:var(--ink3)}
 .cat-badge-row{
-  padding:0.3rem 0.65rem 0.4rem;
+  padding:0.35rem 0.75rem 0.4rem;
   display:flex;align-items:center;gap:0.35rem;
   border-bottom:1px solid var(--border);flex-shrink:0;
-  font-size:11px;color:var(--ink3);
+  font-size:12px;color:var(--ink3);
 }
-.badge-free{background:#EAF5EA;color:var(--green);padding:1px 6px;font-size:11px}
-.badge-paid{background:#FFF5EA;color:var(--accent);padding:1px 6px;font-size:11px}
+.badge-free{background:#EAF5EA;color:var(--green);padding:2px 7px;font-size:12px;font-weight:600;letter-spacing:0.04em}
+.badge-paid{background:#FFF5EA;color:var(--accent);padding:2px 7px;font-size:12px;font-weight:600;letter-spacing:0.04em}
 
 /* TILE GRID */
 .tile-grid{
@@ -94,18 +95,18 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 .tile-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 .tile-img-ph svg{width:26px;height:26px;stroke:#CCCCCC;stroke-width:1.5;fill:none;stroke-linecap:round}
 .tile-lbl{
-  padding:4px 4px 6px;background:#FFFFFF;
-  border-top:1px solid #F0EEEA;
-  font-size:11px;color:#3A3A3A;text-align:center;
+  padding:5px 4px 7px;background:#FFFFFF;
+  border-top:1px solid #EEEEEE;
+  font-size:13px;color:#2C2C2C;text-align:center;
   line-height:1.2;font-weight:400;
-  font-family:'Atkinson Hyperlegible','Jost',sans-serif;
+  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
 }
 .tile-lock-icon{position:absolute;top:4px;right:4px;width:12px;height:12px;stroke:var(--ink3);stroke-width:2;fill:none;z-index:2}
 
 /* UNLOCK BANNER */
 .unlock-banner{padding:0.6rem 0.65rem;background:#FFF5EA;border-top:1px solid #F0D8B8;flex-shrink:0}
 .unlock-banner p{font-size:11px;color:var(--accent);line-height:1.5;margin-bottom:0.35rem}
-.unlock-btn{width:100%;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;padding:0.4rem;background:var(--accent);color:#FFFFFF;border:none;cursor:pointer;font-family:var(--sans)}
+.unlock-btn{width:100%;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;padding:0.45rem;background:var(--accent);color:#FFFFFF;border:none;cursor:pointer;font-family:var(--sans);font-weight:600}
 .unlock-btn:hover{background:#7A5224}
 .unlock-banner.hidden{display:none}
 
@@ -116,7 +117,7 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
   background:#C8C4BC;
   display:flex;flex-direction:column;
   align-items:center;
-  padding:2rem;gap:1.5rem;
+  padding:0.75rem 1rem;gap:0.75rem;
 }
 
 /* A4 PAGE */
@@ -134,8 +135,8 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 }
 .a4-label{
   width:794px;flex-shrink:0;
-  font-size:11px;letter-spacing:0.09em;text-transform:uppercase;
-  color:#A8A4A0;margin-bottom:0.5rem;
+  font-size:12px;letter-spacing:0.08em;text-transform:uppercase;
+  color:#A8A4A0;margin-bottom:0.5rem;font-weight:600;
 }
 
 /* A4 HEADER */
@@ -144,8 +145,8 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
   padding-bottom:14px;border-bottom:1.5px solid #EEEEEE;
   margin-bottom:18px;flex-shrink:0;
 }
-.a4-title-text{font-family:'Playfair Display',serif;font-size:20px;font-style:italic;color:#111111;line-height:1}
-.a4-lang-badge{font-size:11px;letter-spacing:0.07em;color:var(--ink3);border:1px solid var(--border);padding:3px 8px}
+.a4-title-text{font-family:'Playfair Display',serif;font-size:22px;font-style:italic;color:#1C1B19;line-height:1}
+.a4-lang-badge{font-size:12px;letter-spacing:0.07em;color:var(--ink3);border:1px solid var(--border);padding:4px 10px;font-weight:600}
 
 /* A4 GRID */
 .a4-grid{
@@ -171,7 +172,7 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 .dz.filled{border-style:solid;border-color:#E0E0E0;cursor:default}
 .dz-hint{display:flex;flex-direction:column;align-items:center;gap:5px}
 .dz-hint svg{width:18px;height:18px;stroke:#CCCCCC;stroke-width:1.5;fill:none;stroke-linecap:round}
-.dz-hint span{font-size:11px;color:#CCCCCC}
+.dz-hint span{font-size:12px;color:#CCCCCC;font-weight:500}
 
 /* PLACED CARD inside drop zone */
 .slot{
@@ -218,10 +219,10 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 .a4-foot{
   flex-shrink:0;margin-top:auto;
   padding-top:10px;border-top:1px solid #EEEEEE;
-  display:flex;justify-content:space-between;align-items:center;
+  display:flex;justify-content:space-between;align-items:flex-end;
 }
-.a4-foot-brand{font-family:'Playfair Display',serif;font-size:12px;font-style:italic;color:#AAAAAA}
-.a4-foot-url{font-size:11px;color:#AAAAAA;letter-spacing:0.04em}
+.a4-foot-brand{font-family:'Playfair Display',serif;font-size:13px;font-style:italic;color:#AAAAAA}
+.a4-foot-url{font-size:12px;color:#AAAAAA;letter-spacing:0.04em}
 
 /* PAGE FULL NOTICE */
 .page-notice{
@@ -235,26 +236,26 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 
 /* RIGHT PANEL */
 .rp{
-  width:188px;flex-shrink:0;
+  width:220px;flex-shrink:0;
   background:#FFFFFF;border-left:1px solid var(--border);
   display:flex;flex-direction:column;overflow-y:auto;
 }
 .rp::-webkit-scrollbar{width:3px}.rp::-webkit-scrollbar-thumb{background:var(--border)}
 .rp-sec{padding:0.75rem 0.85rem;border-bottom:1px solid var(--border)}
-.rp-lbl{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.5rem}
-.rp-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}
-.rp-row-k{color:var(--ink3)}.rp-row-v{color:var(--ink);font-weight:400}
+.rp-lbl{font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:#5C5855;margin-bottom:0.55rem;font-weight:700}
+.rp-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.rp-row-k{color:#6B6560;font-weight:400}.rp-row-v{color:#2C2C2C;font-weight:600}
 .rp-gbns{display:flex;gap:3px}
-.rp-gb{flex:1;padding:5px 0;font-size:11px;border:1px solid var(--border);background:none;color:var(--ink3);cursor:pointer;font-family:var(--sans);text-align:center;transition:all 0.12s}
+.rp-gb{flex:1;padding:6px 0;font-size:13px;border:1px solid var(--border);background:none;color:var(--ink3);cursor:pointer;font-family:var(--sans);text-align:center;transition:all 0.12s;font-weight:600}
 .rp-gb.active,.rp-gb:hover{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}
-.rp-inp{width:100%;padding:0.38rem 0.5rem;border:1px solid var(--border);background:#F8F7F4;font-family:var(--sans);font-size:12px;color:var(--ink);outline:none;margin-bottom:0.4rem}
+.rp-inp{width:100%;padding:0.42rem 0.6rem;border:1px solid var(--border);background:#F8F7F4;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;margin-bottom:0.4rem}
 .rp-inp:focus{border-color:var(--accent)}
-.rp-btn{width:100%;font-size:11px;letter-spacing:0.07em;text-transform:uppercase;padding:0.5rem;border:1px solid var(--border);background:none;color:var(--ink2);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:0.35rem;transition:all 0.15s}
+.rp-btn{width:100%;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;padding:0.55rem;border:1px solid var(--border);background:none;color:var(--ink2);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:0.4rem;transition:all 0.15s;font-weight:600}
 .rp-btn svg{width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
 .rp-btn:hover{border-color:var(--ink);color:var(--ink)}
 .rp-btn-dk{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}.rp-btn-dk:hover{background:#333}
 .rp-btn-ac{background:var(--accent);color:#FFFFFF;border-color:var(--accent)}.rp-btn-ac:hover{background:#7A5224}
-.rp-tip{font-size:11px;color:var(--ink3);line-height:1.55;padding:3px 0}
+.rp-tip{font-size:12px;color:var(--ink3);line-height:1.6;padding:4px 0}
 
 /* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(28,27,25,0.55);z-index:500;align-items:center;justify-content:center}
@@ -266,9 +267,9 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 .modal p{font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:1rem}
 .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem}
 .plan{border:1px solid var(--border);padding:1rem;text-align:center}
-.plan-name{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.25rem}
+.plan-name{font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.25rem;font-weight:600}
 .plan-price{font-family:'Playfair Display',serif;font-size:1.4rem;font-style:italic;color:var(--ink);margin-bottom:0.2rem}
-.plan-desc{font-size:11px;color:var(--ink3);line-height:1.4}
+.plan-desc{font-size:12px;color:var(--ink3);line-height:1.4}
 .plan.feat{border-color:var(--accent);background:#FEFCF8}
 .plan.feat .plan-name{color:var(--accent)}
 .modal-btn{width:100%;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;padding:0.65rem;background:var(--ink);color:#FFFFFF;border:none;cursor:pointer;font-family:var(--sans)}
@@ -280,6 +281,12 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
   .canvas-wrap{padding:0;background:none;display:block;overflow:visible}
   .a4-page{box-shadow:none;margin:0 auto;page-break-after:always;min-height:0;max-height:none}
   .slot-rm{display:none!important}
+}
+
+/* Scale A4 to fit canvas width */
+.a4-scaler{
+  transform-origin: top center;
+  /* width set to 794px, scaled down via JS */
 }
 </style>
 </head>
@@ -317,21 +324,57 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 </svg>
 <!-- TOP NAV -->
 <div class="topnav">
-  <a class="tnav-logo" href="growgently.html">Grow Gently</a>
+  <a class="tnav-logo" href="growgently.html"><span style="font-size:1.25rem">Visual Schedules</span><span style="display:block;font-family:'Atkinson Hyperlegible',sans-serif;font-size:10px;font-style:normal;letter-spacing:0.1em;text-transform:uppercase;color:#8B5E2A;font-weight:400;margin-top:1px">by Grow Gently</span></a>
 
   <div class="lang-row">
     <span class="lang-lbl">Language</span>
     <select class="lang-sel" id="lang-sel" onchange="onLangChange()">
-      <option value="en">English</option>
-      <option value="hi">Hindi · हिंदी</option>
-      <option value="mr">Marathi · मराठी</option>
-      <option value="pa">Punjabi · ਪੰਜਾਬੀ</option>
-      <option value="gu">Gujarati · ગુજરાતી</option>
-      <option value="ta">Tamil · தமிழ்</option>
-      <option value="te">Telugu · తెలుగు</option>
-      <option value="bn">Bengali · বাংলা</option>
-      <option value="ur">Urdu · اردو</option>
-      <option value="kn">Kannada · ಕನ್ನಡ</option>
+      <optgroup label="India">
+        <option value="en">English</option>
+        <option value="hi">Hindi · हिंदी</option>
+        <option value="mr">Marathi · मराठी</option>
+        <option value="pa">Punjabi · ਪੰਜਾਬੀ</option>
+        <option value="gu">Gujarati · ગુજરાતી</option>
+        <option value="ta">Tamil · தமிழ்</option>
+        <option value="te">Telugu · తెలుగు</option>
+        <option value="bn">Bengali · বাংলা</option>
+        <option value="ur">Urdu · اردو</option>
+        <option value="kn">Kannada · ಕನ್ನಡ</option>
+        <option value="ml">Malayalam · മലയാളം</option>
+        <option value="or">Odia · ଓଡ଼ିଆ</option>
+        <option value="as">Assamese · অসমীয়া</option>
+        <option value="si">Sindhi · سنڌي</option>
+      </optgroup>
+      <optgroup label="South Asia">
+        <option value="ne">Nepali · नेपाली</option>
+        <option value="si_lk">Sinhala · සිංහල</option>
+        <option value="dz">Dzongkha · རྫོང་ཁ</option>
+      </optgroup>
+      <optgroup label="Middle East &amp; Africa">
+        <option value="ar">Arabic · العربية</option>
+        <option value="fa">Persian · فارسی</option>
+        <option value="sw">Swahili · Kiswahili</option>
+      </optgroup>
+      <optgroup label="Europe &amp; Americas">
+        <option value="es">Spanish · Español</option>
+        <option value="fr">French · Français</option>
+        <option value="de">German · Deutsch</option>
+        <option value="pt">Portuguese · Português</option>
+        <option value="it">Italian · Italiano</option>
+        <option value="nl">Dutch · Nederlands</option>
+        <option value="pl">Polish · Polski</option>
+        <option value="ru">Russian · Русский</option>
+      </optgroup>
+      <optgroup label="East &amp; Southeast Asia">
+        <option value="zh">Chinese (Simplified) · 普通话</option>
+        <option value="ja">Japanese · 日本語</option>
+        <option value="ko">Korean · 한국어</option>
+        <option value="id">Indonesian · Bahasa Indonesia</option>
+        <option value="ms">Malay · Bahasa Melayu</option>
+        <option value="th">Thai · ภาษาไทย</option>
+        <option value="tl">Filipino · Tagalog</option>
+        <option value="vi">Vietnamese · Tiếng Việt</option>
+      </optgroup>
     </select>
     <span class="lang-lbl" style="margin-left:0.5rem">Character</span>
     <select class="lang-sel" id="gender-sel" onchange="onGenderChange()">
@@ -518,24 +561,31 @@ body{font-family:var(--sans);background:#EDEADE;color:var(--ink);font-weight:300
 </style>
 <script>
 const LANGS = {
-  en:'English',hi:'हिंदी',mr:'मराठी',pa:'ਪੰਜਾਬੀ',
-  gu:'ગુજરાતી',ta:'தமிழ்',te:'తెలుగు',bn:'বাংলা',ur:'اردو',kn:'ಕನ್ನಡ'
+  en:'English', hi:'हिंदी', mr:'मराठी', pa:'ਪੰਜਾਬੀ',
+  gu:'ગુજરાતી', ta:'தமிழ்', te:'తెలుగు', bn:'বাংলা', ur:'اردو', kn:'ಕನ್ನಡ',
+  ml:'മലയാളം', or:'ଓଡ଼ିଆ', as:'অসমীয়া', si:'سنڌي',
+  ne:'नेपाली', si_lk:'සිංහල', dz:'རྫོང་ཁ',
+  ar:'العربية', fa:'فارسی', sw:'Kiswahili',
+  es:'Español', fr:'Français', de:'Deutsch', pt:'Português',
+  it:'Italiano', nl:'Nederlands', pl:'Polski', ru:'Русский',
+  zh:'普通话', ja:'日本語', ko:'한국어', id:'Bahasa Indonesia',
+  ms:'Bahasa Melayu', th:'ภาษาไทย', tl:'Tagalog', vi:'Tiếng Việt'
 };
 
 const CARDS = {
   daily:[
-    {id:'wake',  icon:'s-sun',      en:'Wake Up',        hi:'उठना',            mr:'उठणे',       pa:'ਜਾਗੋ',       gu:'જાગો',        ta:'எழுந்திரு',   te:'లేవడం',    bn:'উঠুন',     ur:'اٹھو',     kn:'ಏಳು'},
-    {id:'potty', icon:'s-droplet',  en:'Potty Time',     hi:'टॉयलेट',          mr:'टॉयलेट',     pa:'ਟਾਇਲਟ',      gu:'ટોઇલેટ',      ta:'கழிப்பறை',   te:'టాయిలెట్', bn:'টয়লেট',   ur:'ٹائلٹ',   kn:'ಶೌಚಾಲಯ'},
-    {id:'teeth', icon:'s-tooth',    en:'Brush Teeth',    hi:'दाँत साफ',         mr:'दात घासा',   pa:'ਦੰਦ ਸਾਫ਼',   gu:'દાંત સાફ',    ta:'பல் தேய்',   te:'పళ్ళు',    bn:'দাঁত মাজো',ur:'دانت صاف', kn:'ಹಲ್ಲು ಉಜ್ಜು'},
+    {id:'wake',  icon:'s-sun',      en:'Wake Up',        hi:'उठना',            mr:'उठणे',       pa:'ਜਾਗੋ',       gu:'જાગો',        ta:'எழுந்திரு',   te:'లేవడం',    bn:'উঠুন',     ur:'اٹھو',     kn:'ಏಳು',      ml:'ഉണരുക',    es:'Levantarse',  fr:'Se Lever',   de:'Aufstehen',  ar:'الاستيقاظ',  zh:'起床',  ja:'起きる',  ko:'일어나기', pt:'Acordar', id:'Bangun',   ms:'Bangun',   th:'ตื่นนอน', ru:'Просыпаться', tl:'Gumising', vi:'Thức Dậy'},
+    {id:'potty', icon:'s-droplet',  en:'Potty Time',     hi:'टॉयलेट',          mr:'टॉयलेट',     pa:'ਟਾਇਲਟ',      gu:'ટોઇલેટ',      ta:'கழிப்பறை',   te:'టాయిలెట్', bn:'টয়লেট',   ur:'ٹائلٹ',   kn:'ಶೌಚಾಲಯ',   ml:'ടോയ്ലറ്റ്',  es:'El Baño',     fr:'Toilettes',  de:'Toilette',   ar:'دورة المياه', zh:'上厕所', ja:'トイレ', ko:'화장실',  pt:'Banheiro', id:'Toilet',   ms:'Tandas',   th:'ห้องน้ำ', ru:'Туалет',      tl:'CR',       vi:'Nhà Vệ Sinh'},
+    {id:'teeth', icon:'s-tooth',    en:'Brush Teeth',    hi:'दाँत साफ',         mr:'दात घासा',   pa:'ਦੰਦ ਸਾਫ਼',   gu:'દાંત સાફ',    ta:'பல் தேய்',   te:'పళ్ళు',    bn:'দাঁত মাজো',ur:'دانت صاف', kn:'ಹಲ್ಲು ಉಜ್ಜು', ml:'പല്ലു തേക്കുക', es:'Cepillarse', fr:'Se Brosser', de:'Zähne Putzen', ar:'تنظيف الأسنان', zh:'刷牙', ja:'歯磨き', ko:'양치질', pt:'Escovar', id:'Sikat Gigi', ms:'Gosok Gigi', th:'แปรงฟัน', ru:'Чистить Зубы', tl:'Magsipilyo', vi:'Đánh Răng'},
     {id:'bath',  icon:'s-droplet',  en:'Bath Time',      hi:'नहाना',            mr:'आंघोळ',      pa:'ਇਸ਼ਨਾਨ',      gu:'સ્નાન',        ta:'குளி',        te:'స్నానం',   bn:'গোসল',     ur:'نہانا',    kn:'ಸ್ನಾನ'},
     {id:'dress', icon:'s-shirt',    en:'Get Dressed',    hi:'कपड़े पहनो',       mr:'कपडे घाला',  pa:'ਕੱਪੜੇ ਪਾਓ', gu:'કપડાં પહેરો', ta:'ஆடை அணி',   te:'బట్టలు',   bn:'পোশাক পরো',ur:'کپڑے پہنو',kn:'ಬಟ್ಟೆ ತೊಡಿ'},
-    {id:'bfast', icon:'s-bowl',     en:'Breakfast',      hi:'नाश्ता',           mr:'नाश्ता',     pa:'ਨਾਸ਼ਤਾ',      gu:'નાસ્તો',       ta:'காலை உணவு',  te:'అల్పాహారం',bn:'সকালের নাস্তা',ur:'ناشتہ',  kn:'ತಿಂಡಿ'},
+    {id:'bfast', icon:'s-bowl',     en:'Breakfast',      hi:'नाश्ता',           mr:'नाश्ता',     pa:'ਨਾਸ਼ਤਾ',      gu:'નાસ્તો',       ta:'காலை உணவு',  te:'అల్పాహారం',bn:'সকালের নাস্তা',ur:'ناشتہ',  kn:'ತಿಂಡಿ',     ml:'പ്രഭാതഭക്ഷണം', es:'Desayuno', fr:'Petit-Déjeuner', de:'Frühstück', ar:'الفطور', zh:'早餐', ja:'朝ごはん', ko:'아침식사', pt:'Café da Manhã', id:'Sarapan', ms:'Sarapan', th:'อาหารเช้า', ru:'Завтрак', tl:'Almusal', vi:'Ăn Sáng'},
     {id:'bag',   icon:'s-backpack', en:'Pack Bag',       hi:'बैग तैयार',        mr:'बॅग भरा',    pa:'ਬੈਗ ਪੈਕ',    gu:'બેગ પૅક',     ta:'பை எடு',     te:'బ్యాగ్',   bn:'ব্যাগ',    ur:'بیگ پیک',  kn:'ಬ್ಯಾಗ್'},
     {id:'lunch', icon:'s-fork',     en:'Lunch',          hi:'दोपहर खाना',       mr:'जेवण',        pa:'ਦੁਪਹਿਰ',     gu:'બપોરનું ભોજન',ta:'மதிய உணவு', te:'భోజనం',    bn:'দুপুরের খাবার',ur:'دوپہر کا کھانا',kn:'ಮಧ್ಯಾಹ್ನ ಊಟ'},
     {id:'dinner',icon:'s-meal',     en:'Dinner',         hi:'रात खाना',         mr:'रात्रीचे जेवण',pa:'ਰਾਤ ਦਾ ਖਾਣਾ',gu:'રાત્રિ ભોજન',ta:'இரவு உணவு', te:'రాత్రి భోజనం',bn:'রাতের খাবার',ur:'رات کا کھانا',kn:'ರಾತ್ರಿ ಊಟ'},
     {id:'play',  icon:'s-tree',     en:'Outdoor Play',   hi:'बाहर खेलो',        mr:'बाहेर खेळा', pa:'ਬਾਹਰ ਖੇਡੋ',  gu:'બહાર રમો',    ta:'வெளி விளையாடு',te:'బయట ఆటలు',bn:'বাইরে খেলো',ur:'باہر کھیلو',kn:'ಹೊರಗೆ ಆಟ'},
     {id:'quiet', icon:'s-puzzle',   en:'Quiet Time',     hi:'शांत समय',         mr:'शांत वेळ',   pa:'ਸ਼ਾਂਤ ਸਮਾਂ',  gu:'શાંત સમય',    ta:'அமைதி நேரம்',te:'నిశ్శబ్ద సమయం',bn:'শান্ত সময়',ur:'خاموش وقت',kn:'ನಿಶ್ಶಬ್ದ ಸಮಯ'},
-    {id:'sleep', icon:'s-moon',     en:'Sleep',          hi:'सोना',             mr:'झोपणे',       pa:'ਸੌਣਾ',        gu:'ઊઘ',           ta:'தூக்கம்',     te:'నిద్ర',    bn:'ঘুম',      ur:'سونا',     kn:'ನಿದ್ರೆ'},
+    {id:'sleep', icon:'s-moon',     en:'Sleep',          hi:'सोना',             mr:'झोपणे',       pa:'ਸੌਣਾ',        gu:'ઊઘ',           ta:'தூக்கம்',     te:'నిద్ర',    bn:'ঘুম',      ur:'سونا',     kn:'ನಿದ್ರೆ',    ml:'ഉറക്കം',   es:'Dormir',      fr:'Dormir',     de:'Schlafen',   ar:'النوم',       zh:'睡觉', ja:'ねむる', ko:'잠자기',  pt:'Dormir',   id:'Tidur',    ms:'Tidur',    th:'นอนหลับ', ru:'Спать',       tl:'Matulog', vi:'Ngủ'},
     {id:'story', icon:'s-book',     en:'Bedtime Story',  hi:'सोने की कहानी',    mr:'झोपेची गोष्ट',pa:'ਸੌਣ ਕਹਾਣੀ',  gu:'સૂવાની વાર્તા',ta:'தூக்க கதை', te:'నిద్ర కథ',  bn:'ঘুমের গল্প',ur:'سوتے وقت کہانی',kn:'ಮಲಗುವ ಕಥೆ'},
   ],
   school:[
@@ -766,8 +816,13 @@ function makeA4() {
       ${zonesHTML}
     </div>
     <div class="a4-foot">
-      <span class="a4-foot-brand">Grow Gently</span>
-      <span class="a4-foot-url">growgently.co · @grow_gently_official</span>
+      <div>
+        <span class="a4-foot-brand">Visual Schedules by Grow Gently</span>
+      </div>
+      <div style="text-align:right">
+        <span class="a4-foot-url" style="display:block">visualschedule.app · @grow_gently_official</span>
+        <span style="font-size:10px;color:#CCCCCC;display:block;margin-top:2px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-style:normal">⚠ Labels are AI-generated — please verify translations before use.</span>
+      </div>
     </div>`;
 
   page.querySelectorAll('.dz').forEach(z => attachZoneDrop(z));
@@ -1116,6 +1171,26 @@ function getCardImage(cardId) {
 
 // INIT
 window._cardFontSize = '14px';
+
+function scaleCanvas() {
+  const canvas = document.getElementById('canvas-wrap');
+  const pages = document.querySelectorAll('.a4-page');
+  if (!canvas || !pages.length) return;
+  const available = canvas.clientWidth - 40; // 20px padding each side
+  const pageW = 794;
+  const scale = available < pageW ? (available / pageW) : 1;
+  // Apply scale to all page labels and pages via a wrapper approach
+  document.querySelectorAll('.a4-page, .a4-label, .page-notice').forEach(el => {
+    el.style.transform = scale < 1 ? `scale(${scale.toFixed(3)}) translateX(0)` : '';
+    el.style.transformOrigin = 'top center';
+    if (scale < 1) {
+      el.style.marginBottom = scale < 0.9
+        ? `${-(1123 * (1 - scale) / 2).toFixed(0)}px`
+        : '';
+    }
+  });
+}
+
 function init() {
   restoreUnlocksFromStorage();
   const canvas = document.getElementById('canvas-wrap');
@@ -1141,8 +1216,10 @@ function init() {
   samples.forEach((s, i) => { if (zones[i]) fillZone(zones[i], s.id, s.cat); });
 
   renderTiles();
+  scaleCanvas();
 }
 
+window.addEventListener('resize', scaleCanvas);
 init();
 </script>
 </body>
