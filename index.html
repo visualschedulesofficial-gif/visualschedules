@@ -19,9 +19,9 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 /* TOP NAV */
 .topnav{
-  height:56px;background:#FFFFFF;border-bottom:1px solid var(--border);
+  height:66px;background:#FFFFFF;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 1.5rem;flex-shrink:0;gap:1.25rem;
+  padding:0 1.75rem;flex-shrink:0;gap:1.25rem;
 }
 .tnav-logo{font-family:'Playfair Display',serif;font-size:1.25rem;font-style:italic;color:#1C1B19;text-decoration:none;white-space:nowrap;flex-shrink:0;line-height:1}
 
@@ -39,7 +39,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 /* SIDEBAR */
 .sidebar{
-  width:260px;flex-shrink:0;
+  width:285px;flex-shrink:0;
   background:#FFFFFF;border-right:1px solid var(--border);
   display:flex;flex-direction:column;overflow:hidden;
 }
@@ -181,6 +181,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   align-items:stretch;
   background:#FFFFFF;
   overflow:hidden;
+  position:relative;
 }
 .slot-img-wrap{
   flex:0 0 70%;
@@ -236,7 +237,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 /* RIGHT PANEL */
 .rp{
-  width:250px;flex-shrink:0;
+  width:270px;flex-shrink:0;
   background:#FFFFFF;border-left:1px solid var(--border);
   display:flex;flex-direction:column;overflow-y:auto;
 }
@@ -276,11 +277,29 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 /* PRINT */
 @media print{
-  .topnav,.sidebar,.rp,.page-notice,.a4-label{display:none!important}
-  .app-body{display:block}
-  .canvas-wrap{padding:0;background:none;display:block;overflow:visible}
-  .a4-page{box-shadow:none;margin:0 auto;page-break-after:always;min-height:0;max-height:none}
-  .slot-rm{display:none!important}
+  @page{size:A4 portrait;margin:0}
+  html,body{height:auto!important;overflow:visible!important;background:#FFFFFF!important}
+  .topnav,.sidebar,.rp,.mob-actions,.mob-overlay,
+  .page-notice,.a4-label,.slot-rm{display:none!important}
+  .app-body{display:block!important;overflow:visible!important}
+  .canvas-wrap{
+    display:block!important;overflow:visible!important;
+    background:#FFFFFF!important;padding:0!important;
+    min-height:unset!important;
+  }
+  .a4-page{
+    width:210mm!important;
+    min-height:297mm!important;max-height:none!important;
+    box-shadow:none!important;
+    margin:0!important;padding:12mm 14mm 10mm!important;
+    page-break-after:always!important;break-after:page!important;
+    transform:none!important;overflow:visible!important;
+  }
+  .a4-page:last-child{page-break-after:avoid!important;break-after:avoid!important}
+  .slot-img-wrap img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .dz.black-card .slot,.dz.black-card .slot-lbl-wrap,.dz.black-card .slot-img-wrap{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact
+  }
 }
 
 /* Scale A4 to fit canvas width */
@@ -288,6 +307,112 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   transform-origin: top center;
   /* width set to 794px, scaled down via JS */
 }
+
+/* ── MOBILE ── */
+.mob-menu-btn{display:none;background:none;border:none;cursor:pointer;padding:4px;flex-direction:column;gap:5px;flex-shrink:0}
+.mob-menu-btn span{display:block;width:20px;height:2px;background:#1C1B19;border-radius:1px;transition:all 0.2s}
+.mob-rp-btn{display:none;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(28,27,25,0.45);z-index:299}
+.mob-overlay.open{display:block}
+.mob-actions{display:none;position:fixed;bottom:0;left:0;right:0;background:#FFFFFF;border-top:1px solid var(--border);padding:0.6rem 0.85rem;gap:0.5rem;z-index:200;align-items:center}
+.mob-actions .nbtn{flex:1;justify-content:center;font-size:11px;padding:0.5rem 0.25rem}
+
+@media(max-width:900px){
+  html,body{overflow:auto;height:auto}
+  .mob-menu-btn{display:flex}
+  .mob-rp-btn{display:flex}
+  .nav-acts{display:none}
+  .lang-row .lang-lbl{display:none}
+  .lang-sel{max-width:110px}
+  .topnav{padding:0 1rem;gap:0.5rem}
+  .app-body{flex-direction:column;overflow:visible;min-height:0}
+
+  /* Panels slide in as drawers */
+  .sidebar{
+    position:fixed;top:66px;left:0;bottom:0;
+    width:290px;max-width:88vw;
+    transform:translateX(-100%);
+    transition:transform 0.25s ease;
+    z-index:300;
+    box-shadow:4px 0 24px rgba(0,0,0,0.14);
+  }
+  .sidebar.mob-open{transform:translateX(0)}
+  .rp{
+    position:fixed;top:66px;right:0;bottom:0;
+    width:280px;max-width:88vw;
+    transform:translateX(100%);
+    transition:transform 0.25s ease;
+    z-index:300;
+    box-shadow:-4px 0 24px rgba(0,0,0,0.14);
+  }
+  .rp.mob-open{transform:translateX(0)}
+
+  /* Canvas fills screen */
+  .canvas-wrap{width:100%;min-height:calc(100vh - 66px - 58px);padding:0.75rem}
+
+  /* A4 fills canvas width */
+  .a4-page,.a4-label,.page-notice{max-width:794px;width:100% !important}
+  .a4-page{transform:none !important;min-height:unset !important;max-height:unset !important}
+
+  /* Mobile bottom bar */
+  .mob-actions{display:flex}
+
+  /* Larger tap targets */
+  .tile-grid{padding:0.65rem;gap:0.6rem}
+  .lib-tile{cursor:pointer}
+  .dz{min-height:80px}
+  .modal{width:96%;padding:1.25rem}
+}
+
+@media(max-width:480px){
+  .topnav{height:56px;padding:0 0.85rem}
+  .tnav-logo{font-size:1rem}
+  .sidebar,.rp{top:56px}
+  .canvas-wrap{min-height:calc(100vh - 56px - 58px)}
+  .lang-sel{max-width:100px;font-size:11px}
+}
+
+/* Black card variant */
+.dz.black-card .slot{background:#1C1B19}
+.dz.black-card .slot-img-wrap{background:#2A2825;filter:brightness(0.92)}
+.dz.black-card .slot-lbl-wrap{background:#1C1B19;border-top-color:#333}
+.dz.black-card .slot-lbl{color:#FFFFFF}
+
+/* Card style toggle buttons */
+.card-style-btns{display:flex;gap:3px;margin-bottom:0.75rem}
+.cs-btn{
+  flex:1;padding:6px 0;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+  border:1px solid var(--border);background:none;color:#6B6560;
+  cursor:pointer;font-family:var(--sans);text-align:center;transition:all 0.12s;font-weight:500;
+}
+.cs-btn.active{background:#1C1B19;color:#FFFFFF;border-color:#1C1B19}
+.cs-btn.active.white-active{background:#FFFFFF;color:#1C1B19;border-color:#1C1B19}
+
+/* Time slot toggle — clock icon in card */
+.slot-time{
+  display:none;
+  align-items:center;justify-content:center;
+  gap:4px;
+  padding:2px 6px;
+  background:rgba(0,0,0,0.06);
+  font-size:11px;color:#888;
+  font-family:var(--sans);
+  border-top:1px solid #F0F0F0;
+  flex-shrink:0;
+}
+.slot-time svg{width:10px;height:10px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+.dz.show-time .slot-time{display:flex}
+.dz.black-card .slot-time{background:rgba(255,255,255,0.08);color:#AAA;border-top-color:#333}
+
+/* Time toggle button */
+.time-toggle-btn{
+  width:100%;padding:0.5rem;font-size:11px;letter-spacing:0.07em;text-transform:uppercase;
+  border:1px solid var(--border);background:none;color:#6B6560;
+  cursor:pointer;font-family:var(--sans);display:flex;align-items:center;
+  justify-content:center;gap:5px;margin-bottom:0.4rem;transition:all 0.15s;font-weight:500;
+}
+.time-toggle-btn.active{border-color:#8B5E2A;color:#8B5E2A;background:#FFF8F0}
+.time-toggle-btn svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
 </style>
 </head>
 <body>
@@ -323,7 +448,13 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   <symbol id="s-meal" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></symbol>
 </svg>
 <!-- TOP NAV -->
+<!-- Mobile overlay -->
+<div class="mob-overlay" id="mob-overlay" onclick="closeAllDrawers()"></div>
+
 <div class="topnav">
+  <button class="mob-menu-btn" onclick="toggleSidebar()" aria-label="Card library">
+    <span></span><span></span><span></span>
+  </button>
   <a class="tnav-logo" href="growgently.html">Visual Schedules</a>
 
   <div class="lang-row">
@@ -387,7 +518,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     <button class="nbtn" onclick="clearPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-undo"/></svg>Clear</button>
     <button class="nbtn" onclick="addPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-page"/></svg>Add page</button>
     <button class="nbtn" onclick="window.print()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-printer"/></svg>Print</button>
-    <button class="nbtn nbtn-primary"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-download"/></svg>Save PDF</button>
+    <button class="nbtn nbtn-primary" onclick="savePDF()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-download"/></svg>Save PDF</button>
   </div>
 </div>
 <div class="app-body">
@@ -440,8 +571,18 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         <button class="rp-gb" onclick="setGrid(2,this)">2</button>
         <button class="rp-gb" onclick="setGrid(3,this)">3</button>
         <button class="rp-gb active" onclick="setGrid(4,this)">4</button>
-        
       </div>
+    </div>
+    <div class="rp-sec">
+      <p class="rp-lbl">Card style</p>
+      <div class="card-style-btns">
+        <button class="cs-btn white-active active" id="cs-white" onclick="setCardStyle('white',this)">White</button>
+        <button class="cs-btn" id="cs-black" onclick="setCardStyle('black',this)">Black</button>
+      </div>
+      <button class="time-toggle-btn" id="time-toggle-btn" onclick="toggleTime()">
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Time slot
+      </button>
     </div>
     <div class="rp-sec">
       <p class="rp-lbl">Schedule title</p>
@@ -450,7 +591,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     <div class="rp-sec">
       <p class="rp-lbl">Actions</p>
       <button class="rp-btn rp-btn-ac" onclick="window.print()"><svg><use href="#s-printer"/></svg>Print A4</button>
-      <button class="rp-btn rp-btn-dk"><svg><use href="#s-download"/></svg>Save PDF</button>
+      <button class="rp-btn rp-btn-dk" onclick="savePDF()"><svg><use href="#s-download"/></svg>Save PDF</button>
       <button class="rp-btn" onclick="addPage()"><svg><use href="#s-page"/></svg>Add next page</button>
       <button class="rp-btn" onclick="clearPage()"><svg><use href="#s-trash"/></svg>Clear page</button>
     </div>
@@ -735,6 +876,10 @@ function makeCardHTML(c, cat) {
   return `<div class="slot" data-cid="${c.id}" data-cat="${cat}">
     <div class="slot-img-wrap">${imgPart}</div>
     <div class="slot-lbl-wrap"><div class="slot-lbl" style="font-size:${fs}">${label}</div></div>
+    <div class="slot-time">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span class="slot-time-val">--:--</span>
+    </div>
     <div class="slot-rm" onclick="removeZone(this.closest('.dz'))">×</div>
   </div>`;
 }
@@ -746,6 +891,7 @@ function fillZone(zone, cardId, cat) {
   if (!c) return;
   zone.classList.add('filled');
   zone.innerHTML = makeCardHTML(c, cat);
+  applyCardStyleToZone(zone);
   attachZoneDrop(zone);
   updateCount();
   checkFull();
@@ -821,7 +967,7 @@ function makeA4() {
       </div>
       <div style="text-align:right">
         <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official · visualschedulesofficial@gmail.com</span>
-        <span style="font-size:10px;color:#CCCCCC;display:block;margin-top:2px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-style:normal">⚠ Labels are AI-generated — please verify translations before use.</span>
+        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-style:normal;letter-spacing:0.01em">⚠ AI-generated labels — verify translations before use.</span>
       </div>
     </div>`;
 
@@ -933,6 +1079,37 @@ function setGrid(n, btn) {
   });
   // Store for new cards placed after resize
   window._cardFontSize = fontSize;
+}
+
+// CARD STYLE
+let cardStyle = 'white';
+let showTime = false;
+
+function setCardStyle(style, btn) {
+  cardStyle = style;
+  document.querySelectorAll('.cs-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.a4-page .dz').forEach(dz => {
+    if (style === 'black') {
+      dz.classList.add('black-card');
+    } else {
+      dz.classList.remove('black-card');
+    }
+  });
+}
+
+function toggleTime() {
+  showTime = !showTime;
+  const btn = document.getElementById('time-toggle-btn');
+  btn.classList.toggle('active', showTime);
+  document.querySelectorAll('.a4-page .dz').forEach(dz => {
+    dz.classList.toggle('show-time', showTime);
+  });
+}
+
+function applyCardStyleToZone(zone) {
+  if (cardStyle === 'black') zone.classList.add('black-card');
+  if (showTime) zone.classList.add('show-time');
 }
 
 // CAT
@@ -1221,6 +1398,53 @@ function init() {
 
 window.addEventListener('resize', scaleCanvas);
 init();
+// ── MOBILE DRAWERS ──
+function toggleSidebar(){
+  const sb=document.querySelector('.sidebar');
+  const ov=document.getElementById('mob-overlay');
+  const rp=document.querySelector('.rp');
+  if(sb.classList.contains('mob-open')){
+    sb.classList.remove('mob-open');ov.classList.remove('open');
+  } else {
+    sb.classList.add('mob-open');ov.classList.add('open');
+    rp.classList.remove('mob-open');
+  }
+}
+function toggleRightPanel(){
+  const rp=document.querySelector('.rp');
+  const ov=document.getElementById('mob-overlay');
+  const sb=document.querySelector('.sidebar');
+  if(rp.classList.contains('mob-open')){
+    rp.classList.remove('mob-open');ov.classList.remove('open');
+  } else {
+    rp.classList.add('mob-open');ov.classList.add('open');
+    sb.classList.remove('mob-open');
+  }
+}
+function closeAllDrawers(){
+  document.querySelector('.sidebar').classList.remove('mob-open');
+  document.querySelector('.rp').classList.remove('mob-open');
+  document.getElementById('mob-overlay').classList.remove('open');
+}
+// Auto-close sidebar after placing a card on mobile
+const _origPlaceNext = placeNext;
+// Close after tile click on mobile
+document.addEventListener('click', e=>{
+  if(window.innerWidth>900)return;
+  if(e.target.closest('.lib-tile')){
+    setTimeout(closeAllDrawers, 300);
+  }
+});
+
+</script>
+<script>
+function savePDF() {
+  const pages = document.querySelectorAll('.a4-page');
+  if (!pages.length) { alert('No pages to save.'); return; }
+  // Use browser print dialog — choose "Save as PDF" in destination
+  // Print CSS is already defined in the stylesheet above
+  window.print();
+}
 </script>
 </body>
 </html>
