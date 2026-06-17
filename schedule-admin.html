@@ -601,7 +601,6 @@ function logout() { try{sessionStorage.removeItem(SESSION_KEY);}catch(e){} locat
 function checkSession() {
   try { const s=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'{}'); return Date.now()<(s.expires||0); } catch(e){return false;}
 }
-document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.getElementById('login-gate').style.display!=='none') checkLogin(); });
 if (checkSession()) showAdmin();
 else setTimeout(()=>document.getElementById('admin-pass')?.focus(),100);
 
