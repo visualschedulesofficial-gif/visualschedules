@@ -124,16 +124,15 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 .a4-page{
   width:794px;
   height:1123px;
-  max-height:1123px;
   flex-shrink:0;
   background:#FFFFFF;
   box-shadow:0 4px 32px rgba(0,0,0,0.22);
-  display:flex;flex-direction:column;
-  padding:40px 48px 32px;
+  display:flex;
+  flex-direction:column;
+  padding:36px 48px 0;
+  box-sizing:border-box;
   overflow:hidden;
   position:relative;
-  box-sizing:border-box;
-  isolation:isolate;
 }
 .a4-label{
   width:794px;flex-shrink:0;
@@ -143,35 +142,38 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 /* A4 HEADER */
 .a4-head{
-  display:flex;justify-content:space-between;align-items:flex-end;
+  flex-shrink:0;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:flex-end;
   padding-bottom:10px;border-bottom:1px solid #EEEEEE;
-  margin-bottom:12px;flex-shrink:0;
+  margin-bottom:10px;
 }
-.a4-title-text{font-family:'Playfair Display',serif;font-size:22px;font-style:italic;color:#1C1B19;line-height:1}
+.a4-head > div:first-child{grid-column:2}
+.a4-head > .a4-lang-badge{grid-column:3;justify-self:end}
+.a4-title-text{font-family:'Playfair Display',serif;font-size:22px;font-style:italic;color:#1C1B19;line-height:1;text-align:center}
 .a4-lang-badge{font-size:11px;letter-spacing:0.07em;color:#8A8480;border:1px solid var(--border);padding:4px 10px;font-weight:500}
 
 /* A4 GRID */
+.a4-grid-wrap{
+  flex-shrink:0;
+  overflow:hidden;
+}
 .a4-grid{
   display:grid;
   gap:8px;
-  align-content:start;
-  flex-shrink:0;
-  flex-grow:0;
 }
 
 /* DROP ZONE */
 .dz{
   background:#FFFFFF;
   border:1.5px dashed #CCCCCC;
-  width:100%;
-  height:var(--cell-h,165px);
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
   cursor:pointer;
   transition:border-color 0.18s,background 0.18s;
   position:relative;
   overflow:hidden;
-  flex-shrink:0;
 }
 .dz:hover,.dz.over{border-color:var(--accent);background:#FEFCF8}
 .dz.filled{border-style:solid;border-color:#E0E0E0;cursor:default}
@@ -224,8 +226,9 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 /* A4 FOOTER */
 .a4-foot{
-  flex-shrink:0;margin-top:auto;
-  padding-top:8px;border-top:1px solid #EEEEEE;
+  flex-shrink:0;
+  padding:6px 0 16px;
+  border-top:1px solid #E8E4DC;
   display:flex;justify-content:space-between;align-items:flex-end;
 }
 .a4-foot-brand{font-family:'Playfair Display',serif;font-size:13px;font-style:italic;color:#AAAAAA}
@@ -297,10 +300,14 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     width:210mm!important;
     height:297mm!important;
     box-shadow:none!important;
-    margin:0!important;padding:12mm 14mm 10mm!important;
+    margin:0!important;
+    padding:12mm 14mm 0!important;
     page-break-after:always!important;break-after:page!important;
     transform:none!important;overflow:hidden!important;
     box-sizing:border-box!important;
+  }
+  .a4-page:not(.weekly) .a4-foot{
+    padding-bottom:10mm!important;
   }
   /* Landscape weekly page */
   .a4-page.weekly{
@@ -425,24 +432,26 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   gap:0;
   flex:1;
   min-height:0;
-  border:1px solid #C8DFC8;
+  border:1.5px solid #C5D2B8;
   overflow:hidden;
+  border-radius:2px;
 }
 .weekly-col{
   display:flex;flex-direction:column;
-  border-right:1px solid #D4E8D4;
+  border-right:1.5px solid #D5DDC8;
 }
 .weekly-col:last-child{border-right:none}
 .weekly-col-head{
-  background:#F0F7F0;
-  border-bottom:1.5px solid #D4E8D4;
-  padding:8px 6px;
+  background:#E8EDE0;
+  border-bottom:1.5px solid #C5D2B8;
+  padding:10px 6px;
   text-align:center;
   flex-shrink:0;
 }
 .weekly-col-head-day{
-  font-size:13px;font-weight:500;color:#2D5A2D;
+  font-size:14px;font-weight:400;color:#4A5A3E;
   font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  letter-spacing:0.02em;
 }
 .weekly-col-head-sub{
   font-size:10px;color:#B0ACA6;margin-top:1px;letter-spacing:0.04em;
@@ -453,23 +462,22 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   gap:4px;
   overflow:hidden;
   padding:4px;
-  background:#F8FCF8;
+  background:#FAFBF7;
   position:relative;
+  justify-content:center;
 }
-.weekly-col-body.over{ background:#EEF7EE; }
+.weekly-col-body.over{ background:#EFF2E8; }
 .weekly-drop-hint{
-  flex:1;min-height:24px;
-  border:1.5px dashed #C8DFC8;
+  height:24px;
+  border:1.5px dashed #C5D2B8;
   margin:0;
   transition:border-color 0.15s,background 0.15s;
+  opacity:0.6;
 }
-.weekly-drop-hint.weekly-full{
-  border-color:#E8D0D0;background:#FFF5F5;
-}
-.weekly-drop-hint.over{border-color:#4A8A4A;background:#EEF7EE;color:#4A8A4A}
+.weekly-drop-hint.over{border-color:#7A8F5E;background:#EFF2E8;color:#7A8F5E}
 .weekly-card{
   background:#FFFFFF;
-  border:1px solid #E4F0E4;
+  border:1px solid #E0E5D5;
   display:flex;flex-direction:column;
   align-items:stretch;
   position:relative;
@@ -479,7 +487,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 /* Image — fixed small height, not full aspect ratio */
 .weekly-card-img{
   width:100%;
-  height:40px;
+  height:80px;
   background:#FFFFFF;
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
@@ -493,10 +501,10 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 }
 /* Label — min 12px, readable */
 .weekly-card-lbl{
-  padding:3px 4px 4px;
+  padding:5px 4px 6px;
   border-top:1px solid #F0F0F0;
   background:#FFFFFF;
-  font-size:12px;color:#1C1B19;
+  font-size:13px;color:#1C1B19;
   font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
   text-align:center;line-height:1.2;font-weight:400;
   word-break:break-word;
@@ -513,7 +521,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 /* Drag-over state */
 .weekly-col-body.over .weekly-drop-hint{
-  border-color:#4A8A4A;background:#EEF7EE;
+  border-color:#7A8F5E;background:#EFF2E8;
 }
 
 /* ── SITE FOOTER ── */
@@ -554,6 +562,23 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   .footer-links{gap:0.75rem}
 }
 @media print{.site-footer{display:none!important}}
+
+/* Weekly schedule A4 header — centred hand-lettered title */
+.weekly-a4-head{
+  text-align:center;
+  padding:0 0 14px;
+  border-bottom:1.5px solid #C5D2B8;
+  margin-bottom:12px;
+  flex-shrink:0;
+}
+.weekly-a4-title{
+  font-family:'Playfair Display',serif;
+  font-style:italic;
+  font-size:28px;
+  font-weight:400;
+  color:#4A5A3E;
+  line-height:1.1;
+}
 </style>
 </head>
 <body>
@@ -695,7 +720,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     </div>
     <div class="tile-grid" id="tile-grid"></div>
     <div class="unlock-banner hidden" id="unlock-banner">
-      <p>Unlock all categories from ₹199</p>
+      <p>Unlock 1 category for ₹199, or all 6 for ₹499</p>
       <button class="unlock-btn" onclick="openUnlockModal()">Unlock categories</button>
     </div>
   </aside>
@@ -768,6 +793,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
           <p class="plan-name">Single Category</p>
           <p class="plan-price">₹199</p>
           <p class="plan-desc">Choose one category</p>
+          <p style="font-size:10px;color:#8A8480;margin-top:0.3rem;letter-spacing:0.02em">Valid for 1 year from purchase</p>
           <div id="cat-picker" style="display:none;margin-top:0.6rem">
             <select id="single-cat-sel" style="width:100%;padding:0.35rem 0.4rem;border:1px solid #DDD9D0;font-size:11px;font-family:'Jost',sans-serif;background:#FFFFFF;outline:none" onclick="event.stopPropagation()">
               <option value="school">School Routine</option>
@@ -782,7 +808,8 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         <div class="plan feat" id="plan-all" onclick="selectPlan('all')" style="cursor:pointer;transition:border-color 0.15s">
           <p class="plan-name">All Categories</p>
           <p class="plan-price">₹499</p>
-          <p class="plan-desc">All 6 paid categories · Best value</p>
+          <p class="plan-desc">6 paid categories · Best value</p>
+          <p style="font-size:10px;color:#8A8480;margin-top:0.3rem;letter-spacing:0.02em">Valid for 1 year from purchase</p>
         </div>
       </div>
       <button class="modal-btn" id="buy-btn" onclick="goToBuy()" style="margin-bottom:0.75rem">
@@ -950,12 +977,14 @@ let pageCount = 0;
 // A4 inner: 1043px. Head: 56px. Footer+spacer: 47px. Grid available: 940px.
 // cellH = cellW * 0.85 so more rows fit while keeping images readable.
 // 2-col: 291*3+2*12=897px ✓  3-col: 190*4+3*12=796px ✓  4-col: 140*6+5*12=900px ✓
-// EXACT FIT: 2-col=2×3=6, 3-col=3×4=12, 4-col=4×6=24
-// grid heights: 2col=934px, 3col=924px, 4col=934px — all ≤935px available. gap=8px.
+// Grid starts at top:100px (after header).
+// Footer top = 1123-28-50 = 1045px. Grid must end < 1045px.
+// grid_bottom = 100 + rows*cellH + (rows-1)*8
+// 2-col: 100+3*282+2*8 = 962px ✓  3-col: 100+4*186+3*8 = 868px ✓  4-col: 100+6*137+5*8 = 962px ✓
 const GRID_SPECS = {
-  2: { cols:2, cellW:343, cellH:306, rows:3, slots:6  },
-  3: { cols:3, cellW:224, cellH:225, rows:4, slots:12 },
-  4: { cols:4, cellW:165, cellH:149, rows:6, slots:24 },
+  2: { cols:2, cellW:345, cellH:282, rows:3, slots:6  },
+  3: { cols:3, cellW:227, cellH:186, rows:4, slots:12 },
+  4: { cols:4, cellW:168, cellH:137, rows:6, slots:24 },
 };
 
 function slotsPerPage() {
@@ -1081,27 +1110,84 @@ function attachZoneDrop(zone) {
 }
 
 function placeNext(cardId, cat) {
-  // Find first empty slot across all daily pages
+  // On weekly schedule, clicking a tile shows a picker to choose which day
+  if (scheduleType === 'weekly') {
+    showWeeklyDayPicker(cardId, cat);
+    return;
+  }
+
+  // Daily schedule — find first empty slot across all pages
   const all = Array.from(document.querySelectorAll('.a4-page:not(.weekly)'));
   for (const page of all) {
     const slots = Array.from(page.querySelectorAll('.dz'));
     const maxSlots = GRID_SPECS[gridCols].slots;
     const filledCount = slots.filter(z => z.classList.contains('filled')).length;
-    if (filledCount >= maxSlots) continue; // page is logically full
+    if (filledCount >= maxSlots) continue;
     const empty = slots.find(z => !z.classList.contains('filled'));
     if (empty) {
       fillZone(empty, cardId, cat);
-      // If this was the last slot on this page, pre-create next page
       const nowFilled = page.querySelectorAll('.dz.filled').length;
-      if (nowFilled >= maxSlots) {
-        setTimeout(addPage, 30);
-      }
+      if (nowFilled >= maxSlots) setTimeout(addPage, 30);
       return;
     }
   }
-  // No space found — add page and retry
   addPage();
   setTimeout(() => placeNext(cardId, cat), 80);
+}
+
+// Day picker for weekly click-to-add
+function showWeeklyDayPicker(cardId, cat) {
+  const { days, keys } = getActiveDays();
+  const existing = document.getElementById('day-picker-popup');
+  if (existing) existing.remove();
+
+  // Target the last weekly page (most recently added) when there are multiple
+  const weeklyPages = document.querySelectorAll('.a4-page.weekly');
+  const targetPageNum = weeklyPages.length
+    ? parseInt(weeklyPages[weeklyPages.length - 1].dataset.pagenum, 10)
+    : 1;
+
+  const popup = document.createElement('div');
+  popup.id = 'day-picker-popup';
+  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible",system-ui,sans-serif';
+  const cards = CARDS[cat] || [];
+  const c = cards.find(x => x.id === cardId);
+  const label = c ? (c[lang] || c.en) : cardId;
+  const pageNote = weeklyPages.length > 1 ? ` (Page ${targetPageNum})` : '';
+
+  popup.innerHTML = `
+    <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#8A8480;margin-bottom:0.75rem;font-weight:500">Add "${label}" to day${pageNote}</p>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      ${keys.map((key,i) => `
+        <button onclick="addToWeeklyDay('${cardId}','${cat}','${targetPageNum}_${key}');document.getElementById('day-picker-popup').remove()"
+          style="padding:8px 12px;border:1px solid #E0DDD8;background:none;text-align:left;font-size:13px;color:#2C2C2C;cursor:pointer;font-family:inherit;transition:background 0.1s"
+          onmouseover="this.style.background='#F0F7F0'" onmouseout="this.style.background='none'">
+          ${days[i]}
+        </button>`).join('')}
+    </div>
+    <button onclick="document.getElementById('day-picker-popup').remove()"
+      style="width:100%;margin-top:0.75rem;padding:6px;border:1px solid #DDD;background:none;font-size:11px;color:#888;cursor:pointer;font-family:inherit">
+      Cancel
+    </button>`;
+
+  document.body.appendChild(popup);
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', handler); }
+    });
+  }, 10);
+}
+
+function addToWeeklyDay(cardId, cat, dayKey) {
+  if (!weeklyCards[dayKey]) weeklyCards[dayKey] = [];
+  if (weeklyCards[dayKey].length >= MAX_WEEKLY_CARDS) return;
+  const cards = CARDS[cat] || [];
+  const c = cards.find(x => x.id === cardId);
+  if (!c) return;
+  weeklyCards[dayKey].push(Object.assign({}, c, { _cat: cat }));
+  refreshWeeklyCol(dayKey);
 }
 
 // MAKE A4 PAGE
@@ -1125,10 +1211,12 @@ function makeA4() {
   const spec = GRID_SPECS[gridCols] || GRID_SPECS[4];
   const cellH = spec.cellH;
   const zonesHTML = Array(slots).fill(0).map(() =>
-    `<div class="dz" style="height:${cellH}px">${emptyZoneHTML()}</div>`
+    `<div class="dz">${emptyZoneHTML()}</div>`
   ).join('');
 
   const gridH = spec.rows * cellH + (spec.rows - 1) * 8;
+  // Grid wrapper height = exact rows*cellH + (rows-1)*gap
+  const gridWrapH = spec.rows * cellH + (spec.rows - 1) * 8;
   page.innerHTML = `
     <div class="a4-head">
       <div>
@@ -1136,10 +1224,12 @@ function makeA4() {
       </div>
       <div class="a4-lang-badge" id="a4-lang-${num}">${langName}</div>
     </div>
-    <div class="a4-grid" id="a4-grid-${num}" style="grid-template-columns:repeat(${gridCols},1fr);--cell-h:${cellH}px;height:${gridH}px;flex-shrink:0">
-      ${zonesHTML}
+    <div class="a4-grid-wrap" style="height:${gridWrapH}px">
+      <div class="a4-grid" id="a4-grid-${num}" style="grid-template-columns:repeat(${gridCols},${spec.cellW}px);grid-template-rows:repeat(${spec.rows},${cellH}px)">
+        ${zonesHTML}
+      </div>
     </div>
-    <div style="flex:1;min-height:4px;max-height:40px"></div>
+    <div style="flex:1;min-height:12px"></div>
     <div class="a4-foot">
       <div>
         <span class="a4-foot-brand">Visual Schedules by Grow Gently</span>
@@ -1157,6 +1247,10 @@ function makeA4() {
 
 // ADD PAGE
 function addPage() {
+  if (scheduleType === 'weekly') {
+    buildWeeklyPage(); // add another weekly page (e.g. for a second week)
+    return;
+  }
   hideFull();
   const canvas = document.getElementById('canvas-wrap');
   const { label, page } = makeA4();
@@ -1167,6 +1261,7 @@ function addPage() {
   const notice = document.createElement('div');
   notice.className = 'page-notice';
   notice.id = 'page-notice-' + pageCount;
+  setTimeout(() => scaleCanvas(), 30);
   notice.innerHTML = `<p>Page ${pageCount} is full.</p><button class="pfn-btn" onclick="addPage()">Add page ${pageCount + 1}</button>`;
   canvas.appendChild(notice);
 
@@ -1242,15 +1337,15 @@ function setGrid(n, btn) {
   gridCols = n;
   document.querySelectorAll('.rp-gb').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const fontMap = { 2: '20px', 3: '16px', 4: '13px' };
+  const fontMap = { 2: '18px', 3: '15px', 4: '12px' };
   const fontSize = fontMap[n] || '14px';
   const spec = GRID_SPECS[n] || GRID_SPECS[4];
 
-  const gridH = spec.rows * spec.cellH + (spec.rows - 1) * 8;
+  const wrapH = spec.rows * spec.cellH + (spec.rows - 1) * 8;
+  document.querySelectorAll('.a4-grid-wrap').forEach(w => { w.style.height = wrapH + 'px'; });
   document.querySelectorAll('.a4-grid').forEach(g => {
-    g.style.gridTemplateColumns = `repeat(${n},1fr)`;
-    g.style.setProperty('--cell-h', spec.cellH + 'px');
-    g.style.height = gridH + 'px';
+    g.style.gridTemplateColumns = `repeat(${n},${spec.cellW}px)`;
+    g.style.gridTemplateRows = `repeat(${spec.rows},${spec.cellH}px)`;
   });
   document.querySelectorAll('.dz').forEach(dz => {
     dz.style.height = spec.cellH + 'px';
@@ -1452,14 +1547,14 @@ function applyUnlock(type, key, email, cat) {
     showStep(3);
     document.getElementById('success-title').textContent = 'All categories unlocked!';
     document.getElementById('success-msg').textContent =
-      'You now have access to all 6 paid categories. Happy scheduling!';
+      'You now have access to all 6 paid categories for 1 year. Happy scheduling!';
   } else {
     unlockedCats.add(cat);
     saveLicense({ type:'single', cat, key, email, date: new Date().toISOString() });
     showStep(3);
     document.getElementById('success-title').textContent = (CAT_LABELS[cat]||cat) + ' unlocked!';
     document.getElementById('success-msg').textContent =
-      'This category is now available in your card library.';
+      'This category is now available in your card library for 1 year.';
   }
   renderTiles();
 }
@@ -1570,18 +1665,18 @@ function scaleCanvas() {
   if (!canvas) return;
   const available = Math.max(canvas.clientWidth - 32, 100);
 
-  // Portrait pages (794px wide)
+  // Portrait pages (794px wide) — scale from top-center, re-center via margin:auto
   const scale794 = Math.min(available / 794, 1);
   document.querySelectorAll('.a4-page:not(.weekly)').forEach(el => {
     el.style.transform = scale794 < 1 ? `scale(${scale794.toFixed(4)})` : '';
     el.style.transformOrigin = 'top center';
-    el.style.marginBottom = scale794 < 1 ? `${Math.round(1123 * (scale794 - 1) - 16)}px` : '';
-    el.style.alignSelf = 'center';
+    el.style.margin = scale794 < 1 ? `0 auto ${Math.round(1123 * (scale794 - 1) - 16)}px` : '0 auto';
   });
   document.querySelectorAll('.a4-label:not(.weekly), .page-notice:not(.weekly)').forEach(el => {
     el.style.transform = scale794 < 1 ? `scale(${scale794.toFixed(4)})` : '';
     el.style.transformOrigin = 'top center';
-    el.style.width = scale794 < 1 ? `${Math.round(794 * scale794)}px` : '794px';
+    el.style.width = '794px';
+    el.style.margin = '0 auto';
   });
 
   // Landscape weekly (1123px wide)
@@ -1589,11 +1684,11 @@ function scaleCanvas() {
   document.querySelectorAll('.a4-page.weekly').forEach(el => {
     el.style.transform = scale1123 < 1 ? `scale(${scale1123.toFixed(4)})` : '';
     el.style.transformOrigin = 'top center';
-    el.style.marginBottom = scale1123 < 1 ? `${Math.round(794 * (scale1123 - 1) - 16)}px` : '';
-    el.style.alignSelf = 'center';
+    el.style.margin = scale1123 < 1 ? `0 auto ${Math.round(794 * (scale1123 - 1) - 16)}px` : '0 auto';
   });
   document.querySelectorAll('.a4-label.weekly').forEach(el => {
-    el.style.width = scale1123 < 1 ? `${Math.round(1123 * scale1123)}px` : '1123px';
+    el.style.width = '1123px';
+    el.style.margin = '0 auto';
   });
 }
 
@@ -1631,7 +1726,7 @@ init();
 // ── WEEKLY SCHEDULE ──
 let scheduleType = 'daily';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-let weeklyCards = { Sun:[], Mon:[], Tue:[], Wed:[], Thu:[], Fri:[], Sat:[] };
+let weeklyCards = {}; // keys are scoped as "pageNum_DayKey", e.g. "1_Mon"
 const DAY_KEYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function onScheduleTypeChange() {
@@ -1644,6 +1739,10 @@ function onScheduleTypeChange() {
     canvas.classList.add('weekly-mode');
     document.getElementById('rp-week-toggle-sec').style.display = '';
     document.getElementById('rp-cols-sec').style.display = 'none';
+    const titleInp = document.getElementById('inp-title');
+    if (titleInp && (titleInp.value === 'Morning Routine' || !titleInp.value.trim())) {
+      titleInp.value = 'Weekly Schedule';
+    }
     // Clear daily pages
     canvas.querySelectorAll('.a4-page:not(.weekly), .a4-label:not(.weekly), .page-notice').forEach(el => el.remove());
     pageCount = 0;
@@ -1657,7 +1756,7 @@ function onScheduleTypeChange() {
     // Remove weekly pages
     canvas.querySelectorAll('.a4-page.weekly, .a4-label.weekly').forEach(el => el.remove());
     pageCount = 0;
-    weeklyCards = { Sun:[], Mon:[], Tue:[], Wed:[], Thu:[], Fri:[], Sat:[] };
+    weeklyCards = {}; // scoped keys (e.g. "1_Mon") are rebuilt fresh when weekly mode is re-entered
     // Rebuild daily page
     const { label, page } = makeA4();
     canvas.appendChild(label);
@@ -1676,49 +1775,48 @@ function onScheduleTypeChange() {
 function buildWeeklyPage() {
   const canvas = document.getElementById('canvas-wrap');
   pageCount++;
+  const pNum = pageCount; // capture for this page's scoped keys
 
   const label = document.createElement('div');
   label.className = 'a4-label weekly';
-  label.textContent = 'Weekly Schedule';
+  label.textContent = pNum > 1 ? `Weekly Schedule — Page ${pNum}` : 'Weekly Schedule';
   canvas.appendChild(label);
 
   const page = document.createElement('div');
   page.className = 'a4-page weekly';
-  page.dataset.pagenum = pageCount;
+  page.dataset.pagenum = pNum;
 
-  const titleVal = document.getElementById('inp-title')?.value || 'My Weekly Schedule';
+  const titleVal = document.getElementById('inp-title')?.value || 'Weekly Schedule';
   const langName = LANGS[lang] || lang;
 
   const { days: activeDays, keys: activeKeys } = getActiveDays();
   const colCount = activeKeys.length;
   let colsHTML = activeKeys.map((key, i) => {
     const day = activeDays[i];
-    const cards = weeklyCards[key] || [];
-    const cardsHTML = cards.map((c, ci) => makeWeeklyCardHTML(c, key, ci)).join('');
+    const scopedKey = pNum + '_' + key;
+    const cards = weeklyCards[scopedKey] || [];
+    const cardsHTML = cards.map((c, ci) => makeWeeklyCardHTML(c, scopedKey, ci)).join('');
     return `<div class="weekly-col" data-day="${key}">
       <div class="weekly-col-head">
         <div class="weekly-col-head-day">${day}</div>
 
       </div>
-      <div class="weekly-col-body" id="wcol-${key}"
+      <div class="weekly-col-body" id="wcol-${scopedKey}"
         ondragover="onWeeklyDragOver(event,this)"
         ondragleave="onWeeklyDragLeave(event,this)"
-        ondrop="onWeeklyDrop(event,'${key}')">
+        ondrop="onWeeklyDrop(event,'${scopedKey}')">
         ${cardsHTML}
-        <div class="weekly-drop-hint" id="whint-${key}"></div>
+        <div class="weekly-drop-hint" id="whint-${scopedKey}"></div>
       </div>
     </div>`;
   }).join('');
 
   page.innerHTML = `
-    <div class="a4-head" style="margin-bottom:12px">
-      <div>
-        <div class="a4-title-text" id="a4-title-${pageCount}">${titleVal}</div>
-      </div>
-      <div class="a4-lang-badge">${langName}</div>
+    <div class="weekly-a4-head">
+      <div class="weekly-a4-title" id="a4-title-${pNum}">${titleVal}</div>
     </div>
     <div class="weekly-grid" style="grid-template-columns:repeat(${colCount},1fr)">${colsHTML}</div>
-    <div class="a4-foot" style="margin-top:12px">
+    <div class="a4-foot" style="margin-top:8px">
       <div><span class="a4-foot-brand">Visual Schedules by Grow Gently</span></div>
       <div style="text-align:right">
         <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official</span>
@@ -1756,7 +1854,7 @@ function onWeeklyDragLeave(e, el) {
     if (hint) hint.classList.remove('over');
   }
 }
-const MAX_WEEKLY_CARDS = 6;
+const MAX_WEEKLY_CARDS = 5;
 
 function onWeeklyDrop(e, dayKey) {
   e.preventDefault();
@@ -1767,11 +1865,7 @@ function onWeeklyDrop(e, dayKey) {
   if (!dragInfo) return;
   if (!weeklyCards[dayKey]) weeklyCards[dayKey] = [];
   if (weeklyCards[dayKey].length >= MAX_WEEKLY_CARDS) {
-    // Flash the column to signal full
-    if (col) {
-      col.style.background = '#FFF5F0';
-      setTimeout(() => { col.style.background = ''; }, 500);
-    }
+
     return;
   }
   const cards = CARDS[dragInfo.cat] || [];
@@ -1792,20 +1886,18 @@ function refreshWeeklyCol(dayKey) {
   if (!col) return;
   const cards = weeklyCards[dayKey] || [];
   const isFull = cards.length >= MAX_WEEKLY_CARDS;
+  const hasCards = cards.length > 0;
   const cardsHTML = cards.map((c, i) => makeWeeklyCardHTML(c, dayKey, i)).join('');
-  const hintHTML = isFull
-    ? `<div class="weekly-drop-hint weekly-full" id="whint-${dayKey}"></div>`
-    : `<div class="weekly-drop-hint" id="whint-${dayKey}"></div>`;
+  // Show hint only when empty (no cards at all)
+  const hintHTML = (!isFull && !hasCards)
+    ? `<div class="weekly-drop-hint" id="whint-${dayKey}"></div>`
+    : '';
   col.innerHTML = cardsHTML + hintHTML;
-  // Re-attach drag handlers (still allow dragover to show full feedback)
   col.ondragover = (e) => {
     e.preventDefault();
-    if (isFull) { col.style.background='#FFF0EE'; } else { onWeeklyDragOver(e, col); }
+    if (!isFull) onWeeklyDragOver(e, col);
   };
-  col.ondragleave = (e) => {
-    col.style.background = '';
-    onWeeklyDragLeave(e, col);
-  };
+  col.ondragleave = (e) => onWeeklyDragLeave(e, col);
   col.ondrop = (e) => onWeeklyDrop(e, dayKey);
 }
 
@@ -1813,8 +1905,8 @@ function refreshWeeklyCol(dayKey) {
 let weekMode = 'week'; // 'week' = all 7 days, 'weekdays' = Mon-Fri
 const ALL_DAYS    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const ALL_KEYS    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const WEEK_DAYS   = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const WEEK_KEYS   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const WEEK_DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const WEEK_KEYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const WD_DAYS     = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const WD_KEYS     = ['Mon','Tue','Wed','Thu','Fri'];
 
@@ -1822,11 +1914,13 @@ function setWeekDays(mode, btn) {
   weekMode = mode;
   document.querySelectorAll('#cs-week,#cs-weekdays').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  // Rebuild weekly page with new day set
+  // Rebuild weekly page(s) with new day set — preserve existing page count
   const canvas = document.getElementById('canvas-wrap');
+  const existingPageCount = canvas.querySelectorAll('.a4-page.weekly').length || 1;
   canvas.querySelectorAll('.a4-page.weekly, .a4-label.weekly').forEach(el => el.remove());
+  weeklyCards = {}; // day keys are mode-dependent (Mon-Fri vs Mon-Sun), so reset to avoid stale data
   pageCount = 0;
-  buildWeeklyPage();
+  for (let i = 0; i < existingPageCount; i++) buildWeeklyPage();
 }
 
 function getActiveDays() {
@@ -1838,9 +1932,10 @@ function getActiveDays() {
 // Update weekly card labels when language changes
 function updateWeeklyLabels() {
   if (scheduleType !== 'weekly') return;
-  DAY_KEYS.forEach(key => refreshWeeklyCol(key));
-  // Update lang badge
-  document.querySelectorAll('.a4-page.weekly .a4-lang-badge').forEach(el => el.textContent = LANGS[lang] || lang);
+  document.querySelectorAll('.weekly-col-body').forEach(col => {
+    const scopedKey = col.id.replace('wcol-', '');
+    refreshWeeklyCol(scopedKey);
+  });
 }
 
 // ── MOBILE DRAWERS ──
