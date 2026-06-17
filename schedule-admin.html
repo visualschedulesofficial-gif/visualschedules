@@ -618,8 +618,9 @@ function logout() { try{sessionStorage.removeItem(SESSION_KEY);}catch(e){} locat
 function checkSession() {
   try { const s=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'{}'); return Date.now()<(s.expires||0); } catch(e){return false;}
 }
-if (checkSession()) showAdmin();
-else setTimeout(()=>document.getElementById('admin-pass')?.focus(),100);
+// NOTE: the actual checkSession()/showAdmin() call is deferred to the end of this script
+// (after CARDS and all render functions are declared) to avoid a "Cannot access before
+// initialization" crash when a valid session already exists on page load/reload.
 
 // ── DATA ──
 let CARDS = [
@@ -1097,6 +1098,11 @@ function exportToExcel() {
   const stamp = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `visual-schedules-admin-${stamp}.xlsx`);
 }
+
+// ── INIT ──
+// Runs last, after CARDS/CAT_DATA/showAdmin/renderCardGrid etc. are all declared.
+if (checkSession()) showAdmin();
+else setTimeout(()=>document.getElementById('admin-pass')?.focus(),100);
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
