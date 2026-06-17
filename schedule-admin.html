@@ -162,6 +162,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-weight:4
 .img-drop.girl-slot{border-color:#F0C8DC;background:#FFF0F5}.img-drop.girl-slot:hover{border-color:#994466}
 .img-rm{position:absolute;top:4px;right:4px;width:18px;height:18px;background:rgba(28,27,25,0.6);border-radius:50%;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#FFFFFF;z-index:2;line-height:1}
 .img-drop.has-img:hover .img-rm{display:flex}
+.img-url-input{width:100%;margin-top:6px;padding:5px 7px;font-size:11px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;border:1px solid var(--border);background:#FFFFFF;color:var(--ink);box-sizing:border-box}
+.img-url-input::placeholder{color:var(--ink3)}
+.img-url-input:focus{outline:none;border-color:var(--accent)}
 
 /* LANG SECTION */
 .lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;max-height:240px;overflow-y:auto;padding-right:4px}
@@ -496,7 +499,7 @@ td.pri{color:var(--ink);font-weight:400}
 
       <!-- IMAGES -->
       <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem;font-weight:400">Card images</p>
-      <p style="font-size:11px;color:var(--ink3);margin-bottom:0.75rem">Upload one image per character variant. Neutral is used as fallback if Boy/Girl images aren't uploaded. PNG or WebP, square, min 1080×1080px.</p>
+      <p style="font-size:11px;color:var(--ink3);margin-bottom:0.75rem">Upload a file, or paste an image URL (e.g. a GitHub-hosted image link) per variant. Neutral is used as fallback if Boy/Girl images aren't set. PNG or WebP, square, min 1080×1080px.</p>
       <div class="img-upload-grid" style="margin-bottom:1.25rem">
         <div class="img-slot">
           <span class="img-slot-lbl">Gender Neutral</span>
@@ -505,6 +508,7 @@ td.pri{color:var(--ink);font-weight:400}
             <div class="img-rm" onclick="clearImg(event,'neutral')">×</div>
           </div>
           <input type="file" id="file-neutral" accept="image/*" style="display:none" onchange="onImgFile(this,'neutral')">
+          <input type="text" id="url-neutral" placeholder="or paste image URL" class="img-url-input" onchange="onImgUrl(this,'neutral')">
         </div>
         <div class="img-slot">
           <span class="img-slot-lbl boy">Boy</span>
@@ -513,6 +517,7 @@ td.pri{color:var(--ink);font-weight:400}
             <div class="img-rm" onclick="clearImg(event,'boy')">×</div>
           </div>
           <input type="file" id="file-boy" accept="image/*" style="display:none" onchange="onImgFile(this,'boy')">
+          <input type="text" id="url-boy" placeholder="or paste image URL" class="img-url-input" onchange="onImgUrl(this,'boy')">
         </div>
         <div class="img-slot">
           <span class="img-slot-lbl girl">Girl</span>
@@ -521,6 +526,7 @@ td.pri{color:var(--ink);font-weight:400}
             <div class="img-rm" onclick="clearImg(event,'girl')">×</div>
           </div>
           <input type="file" id="file-girl" accept="image/*" style="display:none" onchange="onImgFile(this,'girl')">
+          <input type="text" id="url-girl" placeholder="or paste image URL" class="img-url-input" onchange="onImgUrl(this,'girl')">
         </div>
       </div>
 
@@ -745,9 +751,9 @@ function editCard(id) {
   document.getElementById('f-status').value = c.status||'live';
   modalImgs = {neutral: c.img_n, boy: c.img_b, girl: c.img_g};
   resetImgSlots();
-  if(c.img_n) setImgPreview('neutral', c.img_n);
-  if(c.img_b) setImgPreview('boy', c.img_b);
-  if(c.img_g) setImgPreview('girl', c.img_g);
+  if(c.img_n) { setImgPreview('neutral', c.img_n); document.getElementById('url-neutral').value = c.img_n; }
+  if(c.img_b) { setImgPreview('boy', c.img_b); document.getElementById('url-boy').value = c.img_b; }
+  if(c.img_g) { setImgPreview('girl', c.img_g); document.getElementById('url-girl').value = c.img_g; }
   openModal('modal-card');
 }
 
@@ -801,6 +807,15 @@ function confirmDelete(id) {
 
 // ── IMAGE UPLOAD ──
 function triggerImgUpload(variant) { document.getElementById('file-'+variant).click(); }
+
+// Lets a GitHub-hosted (or any) image URL be used directly instead of uploading a file.
+function onImgUrl(input, variant) {
+  const url = input.value.trim();
+  if (!url) return;
+  modalImgs[variant] = url;
+  setImgPreview(variant, url);
+}
+
 function onImgFile(input, variant) {
   const file = input.files[0]; if(!file) return;
   if (!file.type.startsWith('image/')) { alert('Please select an image file.'); return; }
@@ -853,6 +868,8 @@ function clearImg(e, variant) {
   const img=slot.querySelector('img'); if(img) img.remove();
   const hint=slot.querySelector('.img-drop-hint'); if(hint) hint.style.display='';
   document.getElementById('file-'+variant).value='';
+  const urlInput = document.getElementById('url-'+variant);
+  if (urlInput) urlInput.value = '';
 }
 function resetImgSlots() {
   ['neutral','boy','girl'].forEach(v=>{
@@ -861,6 +878,8 @@ function resetImgSlots() {
     const img=slot.querySelector('img'); if(img) img.remove();
     const hint=slot.querySelector('.img-drop-hint'); if(hint) hint.style.display='';
     document.getElementById('file-'+v).value='';
+    const urlInput = document.getElementById('url-'+v);
+    if (urlInput) urlInput.value = '';
   });
 }
 
