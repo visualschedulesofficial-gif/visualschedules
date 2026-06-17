@@ -945,7 +945,7 @@ function renderCardCatOptions() {
   }
   const filterRow = document.getElementById('cat-filter-btns');
   if(filterRow) {
-    filterRow.innerHTML = '<button class="cfbtn active" onclick="filterCat(\\'all\\',this)">All</button>' +
+    filterRow.innerHTML = `<button class="cfbtn active" onclick="filterCat('all',this)">All</button>` +
       CAT_DATA.map(c=>`<button class="cfbtn" onclick="filterCat('${c.id}',this)">${c.name}</button>`).join('');
   }
 }
