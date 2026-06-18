@@ -288,35 +288,23 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 @media print{
   html,body{height:auto!important;overflow:visible!important;background:#FFFFFF!important}
   .topnav,.sidebar,.rp,.mob-actions,.mob-overlay,
-  .page-notice,.a4-label,.slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.ft-drop-hint,.ft-card-rm{display:none!important}
+  .page-notice,.a4-label,.slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm{display:none!important}
   .app-body{display:block!important;overflow:visible!important}
   .canvas-wrap{
     display:block!important;overflow:visible!important;
     background:#FFFFFF!important;padding:0!important;
     min-height:unset!important;
   }
-  /* Portrait pages */
-  .a4-page:not(.weekly):not(.custom):not(.firstthen){
-    width:210mm!important;
-    height:297mm!important;
+  /* Pages keep their native fixed pixel size — 794×1123 (portrait) and
+     1123×794 (landscape) already match A4 almost exactly at 96dpi, so no
+     unit conversion is needed. Forcing a different height here previously
+     broke the flex:1 card-image areas (they need a definite container
+     height to size against — an unconstrained/auto height collapses them). */
+  .a4-page{
     box-shadow:none!important;
     margin:0!important;
-    padding:12mm 14mm 0!important;
     page-break-after:always!important;break-after:page!important;
-    transform:none!important;overflow:hidden!important;
-    box-sizing:border-box!important;
-  }
-  .a4-page:not(.weekly):not(.custom):not(.firstthen) .a4-foot{
-    padding-bottom:10mm!important;
-  }
-  /* Landscape weekly / custom / first-then page */
-  .a4-page.weekly,.a4-page.custom,.a4-page.firstthen{
-    width:297mm!important;
-    min-height:210mm!important;max-height:none!important;
-    box-shadow:none!important;
-    margin:0!important;padding:10mm 12mm 8mm!important;
-    page-break-after:always!important;break-after:page!important;
-    transform:none!important;overflow:visible!important;
+    transform:none!important;
   }
   .a4-page:last-child{page-break-after:avoid!important;break-after:avoid!important}
   .slot-img-wrap img,.weekly-card img,.ft-card img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -528,6 +516,34 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 .weekly-card:hover .weekly-card-rm{display:flex}
 .weekly-card-rm:hover{background:#1C1B19;color:#FFF;border-color:#1C1B19}
 
+/* Solo card — when a weekly/custom column has exactly one card, it fills the column
+   (similar treatment to the First-Then big card) instead of sitting small at the top */
+.weekly-card.solo{
+  flex:1;min-height:0;
+}
+.weekly-card.solo .weekly-card-img{
+  height:auto;flex:1;min-height:0;
+}
+.weekly-card.solo .weekly-card-lbl{
+  font-size:19px;padding:10px 6px 12px;
+}
+.weekly-card.solo .weekly-card-rm{
+  width:20px;height:20px;font-size:14px;
+}
+/* Small drag-drop indicator shown below a solo card so more cards can still be added */
+.weekly-mini-drop{
+  flex-shrink:0;
+  width:28px;height:28px;
+  margin:6px auto 0;
+  border:1.5px dashed #C5D2B8;
+  border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0.7;
+  transition:border-color 0.15s,background 0.15s;
+}
+.weekly-mini-drop svg{width:13px;height:13px;stroke:#9AA890;stroke-width:1.8;fill:none;stroke-linecap:round}
+.weekly-col-body.over .weekly-mini-drop{border-color:#7A8F5E;background:#EFF2E8}
+
 /* Drag-over state */
 .weekly-col-body.over .weekly-drop-hint{
   border-color:#7A8F5E;background:#EFF2E8;
@@ -674,7 +690,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 </style>
 </head>
 <body>
-<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<svg id="icon-sprite" style="display:none" xmlns="http://www.w3.org/2000/svg">
   <symbol id="s-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/></symbol>
   <symbol id="s-tooth" viewBox="0 0 24 24"><path d="M12 5.5C10.5 4 8.5 3 6.5 3 4.5 3 3 4.5 3 7c0 3 1.5 5.5 2 8 .5 2.5 1 4 2.5 4s2-2 2.5-3.5c.5-1.5 1-2 1.5-2s1 .5 1.5 2C13.5 17 14 19 15.5 19s2-1.5 2.5-4c.5-2.5 2-5 2-8 0-2.5-1.5-4-3.5-4C14.5 3 13.5 4 12 5.5z"/></symbol>
   <symbol id="s-bowl" viewBox="0 0 24 24"><path d="M3 11c0 4.4 3.6 8 8 8s8-3.6 8-8H3z"/><line x1="2" y1="11" x2="22" y2="11"/></symbol>
@@ -777,8 +793,8 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   <div class="nav-acts">
     <button class="nbtn" onclick="clearPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-undo"/></svg>Clear</button>
     <button class="nbtn" onclick="addPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-page"/></svg>Add page</button>
-    <button class="nbtn" onclick="printSchedule()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-printer"/></svg>Print</button>
-    <button class="nbtn nbtn-primary" onclick="savePDF()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-download"/></svg>Save PDF</button>
+    <button class="nbtn" onclick="openPrintView()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-printer"/></svg>Print</button>
+    <button class="nbtn nbtn-primary" onclick="openPrintView()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-download"/></svg>Save PDF</button>
   </div>
 </div>
 <div class="app-body">
@@ -875,8 +891,8 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     </div>
     <div class="rp-sec">
       <p class="rp-lbl">Actions</p>
-      <button class="rp-btn rp-btn-ac" onclick="printSchedule()"><svg><use href="#s-printer"/></svg>Print A4</button>
-      <button class="rp-btn rp-btn-dk" onclick="savePDF()"><svg><use href="#s-download"/></svg>Save PDF</button>
+      <button class="rp-btn rp-btn-ac" onclick="openPrintView()"><svg><use href="#s-printer"/></svg>Print A4</button>
+      <button class="rp-btn rp-btn-dk" onclick="openPrintView()"><svg><use href="#s-download"/></svg>Save PDF</button>
       <button class="rp-btn" onclick="addPage()"><svg><use href="#s-page"/></svg>Add next page</button>
       <button class="rp-btn" onclick="clearPage()"><svg><use href="#s-trash"/></svg>Clear page</button>
     </div>
@@ -1942,6 +1958,24 @@ function onScheduleTypeChange() {
   }
 }
 
+// Shared by weekly & custom schedules: renders a column's inner HTML.
+// Empty -> dashed drop hint. Exactly one card -> that card fills the column,
+// with a small drag-drop icon below it so more can still be added. 2+ cards
+// -> the normal compact stacked list.
+function renderColInner(cards, max, scopedKey, hintPrefix, makeCardFn) {
+  if (!cards.length) {
+    return `<div class="weekly-drop-hint" id="${hintPrefix}-${scopedKey}"></div>`;
+  }
+  if (cards.length === 1) {
+    const cardHTML = makeCardFn(cards[0], scopedKey, 0, true);
+    const miniDrop = cards.length < max
+      ? `<div class="weekly-mini-drop"><svg viewBox="0 0 24 24"><use href="#s-plus"/></svg></div>`
+      : '';
+    return cardHTML + miniDrop;
+  }
+  return cards.map((c, i) => makeCardFn(c, scopedKey, i, false)).join('');
+}
+
 function buildWeeklyPage() {
   const canvas = document.getElementById('canvas-wrap');
   pageCount++;
@@ -1965,7 +1999,7 @@ function buildWeeklyPage() {
     const day = activeDays[i];
     const scopedKey = pNum + '_' + key;
     const cards = weeklyCards[scopedKey] || [];
-    const cardsHTML = cards.map((c, ci) => makeWeeklyCardHTML(c, scopedKey, ci)).join('');
+    const cardsHTML = renderColInner(cards, MAX_WEEKLY_CARDS, scopedKey, 'whint', makeWeeklyCardHTML);
     return `<div class="weekly-col" data-day="${key}">
       <div class="weekly-col-head">
         <div class="weekly-col-head-day">${day}</div>
@@ -1976,7 +2010,6 @@ function buildWeeklyPage() {
         ondragleave="onWeeklyDragLeave(event,this)"
         ondrop="onWeeklyDrop(event,'${scopedKey}')">
         ${cardsHTML}
-        <div class="weekly-drop-hint" id="whint-${scopedKey}"></div>
       </div>
     </div>`;
   }).join('');
@@ -2018,7 +2051,7 @@ function buildCustomPage() {
   for (let i = 0; i < customColCount; i++) {
     const scopedKey = pNum + '_' + i;
     const cards = customCards[scopedKey] || [];
-    const cardsHTML = cards.map((c, ci) => makeCustomCardHTML(c, scopedKey, ci)).join('');
+    const cardsHTML = renderColInner(cards, MAX_CUSTOM_CARDS, scopedKey, 'chint', makeCustomCardHTML);
     const colName = customColNames[i] || `Column ${i + 1}`;
     colsHTML += `<div class="weekly-col" data-col="${i}">
       <div class="weekly-col-head">
@@ -2029,7 +2062,6 @@ function buildCustomPage() {
         ondragleave="onWeeklyDragLeave(event,this)"
         ondrop="onCustomDrop(event,'${scopedKey}')">
         ${cardsHTML}
-        <div class="weekly-drop-hint" id="chint-${scopedKey}"></div>
       </div>
     </div>`;
   }
@@ -2051,13 +2083,13 @@ function buildCustomPage() {
   setTimeout(() => scaleCanvas(), 50);
 }
 
-function makeCustomCardHTML(c, colKey, idx) {
+function makeCustomCardHTML(c, colKey, idx, solo) {
   const label = c[lang] || c.en;
   const imgSrc = getCardImage(c.id);
   const imgPart = imgSrc
     ? `<img src="${imgSrc}" alt="${label}">`
     : `<svg style="width:40%;height:40%;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${c.icon}"/></svg>`;
-  return `<div class="weekly-card">
+  return `<div class="weekly-card${solo ? ' solo' : ''}">
     <div class="weekly-card-img">${imgPart}</div>
     <div class="weekly-card-lbl">${label}</div>
     <div class="weekly-card-rm" onclick="removeCustomCard('${colKey}',${idx})">×</div>
@@ -2091,13 +2123,7 @@ function refreshCustomCol(colKey) {
   if (!col) return;
   const cards = customCards[colKey] || [];
   const isFull = cards.length >= MAX_CUSTOM_CARDS;
-  const hasCards = cards.length > 0;
-  const cardsHTML = cards.map((c, i) => makeCustomCardHTML(c, colKey, i)).join('');
-  // Show hint only when empty (no cards at all)
-  const hintHTML = (!isFull && !hasCards)
-    ? `<div class="weekly-drop-hint" id="chint-${colKey}"></div>`
-    : '';
-  col.innerHTML = cardsHTML + hintHTML;
+  col.innerHTML = renderColInner(cards, MAX_CUSTOM_CARDS, colKey, 'chint', makeCustomCardHTML);
   col.ondragover = (e) => {
     e.preventDefault();
     if (!isFull) onWeeklyDragOver(e, col);
@@ -2335,13 +2361,13 @@ function addToFtCol(cardId, cat, colKey) {
   refreshFtCol(colKey);
 }
 
-function makeWeeklyCardHTML(c, dayKey, idx) {
+function makeWeeklyCardHTML(c, dayKey, idx, solo) {
   const label = c[lang] || c.en;
   const imgSrc = getCardImage(c.id);
   const imgPart = imgSrc
     ? `<img src="${imgSrc}" alt="${label}">`
     : `<svg style="width:40%;height:40%;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${c.icon}"/></svg>`;
-  return `<div class="weekly-card">
+  return `<div class="weekly-card${solo ? ' solo' : ''}">
     <div class="weekly-card-img">${imgPart}</div>
     <div class="weekly-card-lbl">${label}</div>
     <div class="weekly-card-rm" onclick="removeWeeklyCard('${dayKey}',${idx})">×</div>
@@ -2393,13 +2419,7 @@ function refreshWeeklyCol(dayKey) {
   if (!col) return;
   const cards = weeklyCards[dayKey] || [];
   const isFull = cards.length >= MAX_WEEKLY_CARDS;
-  const hasCards = cards.length > 0;
-  const cardsHTML = cards.map((c, i) => makeWeeklyCardHTML(c, dayKey, i)).join('');
-  // Show hint only when empty (no cards at all)
-  const hintHTML = (!isFull && !hasCards)
-    ? `<div class="weekly-drop-hint" id="whint-${dayKey}"></div>`
-    : '';
-  col.innerHTML = cardsHTML + hintHTML;
+  col.innerHTML = renderColInner(cards, MAX_WEEKLY_CARDS, dayKey, 'whint', makeWeeklyCardHTML);
   col.ondragover = (e) => {
     e.preventDefault();
     if (!isFull) onWeeklyDragOver(e, col);
@@ -2485,31 +2505,87 @@ document.addEventListener('click', e=>{
 
 </script>
 <script>
-function printSchedule() {
-  // Inject correct @page rule for the current schedule type — weekly,
-  // custom and first-then schedules are landscape (1123px-wide layout), daily is portrait.
-  const isLandscape = scheduleType === 'weekly' || scheduleType === 'custom' || scheduleType === 'firstthen';
-  const pageRule = isLandscape
-    ? '@page { size: A4 landscape; margin: 0; }'
-    : '@page { size: A4 portrait; margin: 0; }';
-  let style = document.getElementById('pdf-page-rule');
-  if (!style) {
-    style = document.createElement('style');
-    style.id = 'pdf-page-rule';
-    document.head.appendChild(style);
-  }
-  style.textContent = pageRule;
-  window.print();
-  setTimeout(() => {
-    const el = document.getElementById('pdf-page-rule');
-    if (el) el.remove();
-  }, 1500);
-}
+function openPrintView() {
+  const pages = Array.from(document.querySelectorAll('#canvas-wrap .a4-page'));
+  if (!pages.length) { alert('No pages to print or save.'); return; }
 
-function savePDF() {
-  const pages = document.querySelectorAll('.a4-page');
-  if (!pages.length) { alert('No pages to save.'); return; }
-  printSchedule();
+  const isLandscape = scheduleType === 'weekly' || scheduleType === 'custom' || scheduleType === 'firstthen';
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    alert('Please allow pop-ups for this site, then try again — the A4 print view opens in a new tab.');
+    return;
+  }
+
+  // Reuse the app's own stylesheet so the print view matches exactly —
+  // pages keep their native fixed pixel size (already ≈A4 at 96dpi).
+  const styleText = Array.from(document.querySelectorAll('style')).map(s => s.textContent).join('\n');
+  const fontLink = document.querySelector('link[href*="fonts.googleapis.com"]');
+  const fontLinkHTML = fontLink ? fontLink.outerHTML : '';
+  const spriteEl = document.getElementById('icon-sprite');
+  const spriteHTML = spriteEl ? spriteEl.outerHTML : '';
+
+  // Clone pages as static, non-interactive snapshots — strip the on-screen
+  // fit-to-viewport scaling and any handlers that depend on this app's JS.
+  const pagesHTML = pages.map(p => {
+    const clone = p.cloneNode(true);
+    clone.style.transform = '';
+    clone.style.transformOrigin = '';
+    clone.style.margin = '';
+    clone.querySelectorAll('[onclick],[oninput],[ondrop],[ondragover],[ondragleave]').forEach(el => {
+      el.removeAttribute('onclick');
+      el.removeAttribute('oninput');
+      el.removeAttribute('ondrop');
+      el.removeAttribute('ondragover');
+      el.removeAttribute('ondragleave');
+    });
+    clone.querySelectorAll('input').forEach(inp => inp.setAttribute('readonly', 'true'));
+    return clone.outerHTML;
+  }).join('\n');
+
+  win.document.open();
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Print Schedule — Grow Gently</title>
+${fontLinkHTML}
+<style>${styleText}</style>
+<style>
+  @page{ size: A4 ${orientation}; margin: 0; }
+  body{ margin:0; background:#EAE7E0; font-family:'Atkinson Hyperlegible',system-ui,sans-serif; }
+  .pv-toolbar{
+    position:sticky;top:0;z-index:50;background:#FFFFFF;border-bottom:1px solid #E0DDD8;
+    padding:14px 20px;display:flex;gap:10px;align-items:center;justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .pv-btn{
+    padding:10px 22px;border-radius:4px;border:1px solid #2C2C2C;background:#2C2C2C;color:#FFFFFF;
+    font-size:14px;cursor:pointer;font-family:inherit;
+  }
+  .pv-btn:hover{background:#000000}
+  .pv-btn.secondary{background:#FFFFFF;color:#2C2C2C}
+  .pv-btn.secondary:hover{background:#F0F0F0}
+  .pv-pages{display:flex;flex-direction:column;align-items:center;gap:28px;padding:28px 0 48px}
+  .pv-pages .a4-page{box-shadow:0 4px 24px rgba(0,0,0,0.18)}
+  @media print{
+    .pv-toolbar{display:none!important}
+    body{background:#FFFFFF!important}
+    .pv-pages{gap:0!important;padding:0!important}
+  }
+</style>
+</head>
+<body>
+  <div class="pv-toolbar">
+    <button class="pv-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <button class="pv-btn secondary" onclick="window.close()">Close</button>
+  </div>
+  <div class="pv-pages">${pagesHTML}</div>
+  ${spriteHTML}
+</body>
+</html>`);
+  win.document.close();
 }
 </script>
 
