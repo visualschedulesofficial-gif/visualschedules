@@ -288,6 +288,7 @@ td.pri{color:var(--ink);font-weight:400}
     <div class="topbar-right">
       <a href="index.html" target="_blank" class="tbtn"><svg><use href="#ic-eye"/></svg>Open app</a>
       <button class="tbtn" onclick="exportToExcel()"><svg><use href="#ic-download"/></svg>Export Excel</button>
+      <button class="tbtn" onclick="exportDataFile()"><svg><use href="#ic-download"/></svg>Export Data File</button>
       <button class="tbtn tbtn-accent" onclick="openAddCard()"><svg><use href="#ic-plus"/></svg>Add card</button>
     </div>
   </div>
@@ -579,6 +580,7 @@ td.pri{color:var(--ink);font-weight:400}
   </div>
 </div>
 
+<script src="cards-data.js"></script>
 <script>
 // ── AUTH ──
 const ADMIN_PASSWORD = 'growgently2025';
@@ -623,31 +625,43 @@ function checkSession() {
 // initialization" crash when a valid session already exists on page load/reload.
 
 // ── DATA ──
-let CARDS = [
-  {id:'wake',   cat:'daily',   en:'Wake Up',        hi:'उठना',         icon:'s-sun',     img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'potty',  cat:'daily',   en:'Potty Time',     hi:'टॉयलेट',       icon:'s-droplet', img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'teeth',  cat:'daily',   en:'Brush Teeth',    hi:'दाँत साफ',     icon:'s-tooth',   img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'bath',   cat:'daily',   en:'Bath Time',      hi:'नहाना',         icon:'s-droplet', img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'dress',  cat:'daily',   en:'Get Dressed',    hi:'कपड़े पहनो',   icon:'s-shirt',   img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'bfast',  cat:'daily',   en:'Breakfast',      hi:'नाश्ता',        icon:'s-bowl',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'bag',    cat:'daily',   en:'Pack Bag',       hi:'बैग तैयार',    icon:'s-backpack',img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'lunch',  cat:'daily',   en:'Lunch',          hi:'दोपहर खाना',   icon:'s-fork',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'dinner', cat:'daily',   en:'Dinner',         hi:'रात खाना',     icon:'s-meal',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'play',   cat:'daily',   en:'Outdoor Play',   hi:'बाहर खेलो',    icon:'s-tree',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'quiet',  cat:'daily',   en:'Quiet Time',     hi:'शांत समय',     icon:'s-puzzle',  img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'sleep',  cat:'daily',   en:'Sleep',          hi:'सोना',          icon:'s-moon',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'story',  cat:'daily',   en:'Bedtime Story',  hi:'सोने की कहानी',icon:'s-book',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'sbus',   cat:'school',  en:'School Bus',     hi:'स्कूल बस',     icon:'s-bus',     img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'assm',   cat:'school',  en:'Assembly',       hi:'प्रार्थना',    icon:'s-users',   img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'class',  cat:'school',  en:'Class Work',     hi:'कक्षा कार्य',  icon:'s-pencil',  img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'pt',     cat:'school',  en:'PT and Break',   hi:'खेल का समय',   icon:'s-run',     img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'lib',    cat:'school',  en:'Library',        hi:'पुस्तकालय',    icon:'s-book',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'hw',     cat:'school',  en:'Homework',       hi:'गृहकार्य',     icon:'s-pencil',  img_n:null,img_b:null,img_g:null,status:'draft'},
-  {id:'ot',     cat:'therapy', en:'OT Session',     hi:'OT सत्र',      icon:'s-therapy', img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'speech', cat:'therapy', en:'Speech Therapy', hi:'स्पीच थेरेपी', icon:'s-heart',   img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'calm',   cat:'therapy', en:'Calm Down',      hi:'शांत होना',    icon:'s-leaf',    img_n:null,img_b:null,img_g:null,status:'live'},
-  {id:'sbreak', cat:'therapy', en:'Sensory Break',  hi:'संवेदी विराम', icon:'s-star',    img_n:null,img_b:null,img_g:null,status:'live'},
-];
+// cards-data.js declares the shared, category-nested data as CARDS_DATA (plus
+// CARD_IMAGES, CAT_META, CAT_DATA_DEFAULTS). Those names are distinct from this admin
+// panel's own flat CARDS array and mutable CAT_DATA below, so no renaming/capturing is
+// needed here — both files can load the same cards-data.js with no identifier clashes.
+
+// CARDS here is a flat working array the admin UI renders from. It is built once at
+// load time by flattening CARDS_DATA (the same object index.html uses), so the
+// admin panel always starts from real data instead of a separate hardcoded list. Edits
+// made here (add/edit/delete/save) modify this flat array in memory; use "Export Data
+// File" to write the changes back out to a new cards-data.js to commit to GitHub.
+let CARDS = buildAdminCardList();
+
+// Converts the shared, category-nested CARDS/CARD_IMAGES (from cards-data.js) into the
+// flat {id, cat, en, hi, icon, img_n, img_b, img_g, status} shape this admin UI uses.
+// Each flat card also keeps a hidden `_full` reference to its original, complete
+// multi-language object (all 37 language fields), so Export Data File can write those
+// fields back out untouched even though this admin UI only edits en/hi/icon/cat/status.
+function buildAdminCardList() {
+  const flat = [];
+  for (const cat in CARDS_DATA) {
+    CARDS_DATA[cat].forEach(c => {
+      flat.push({
+        id: c.id,
+        cat: cat,
+        en: c.en,
+        hi: c.hi || '',
+        icon: c.icon || '',
+        img_n: CARD_IMAGES[c.id + '_neutral'] || CARD_IMAGES[c.id] || null,
+        img_b: CARD_IMAGES[c.id + '_boy'] || null,
+        img_g: CARD_IMAGES[c.id + '_girl'] || null,
+        status: 'live',
+        _full: c,
+      });
+    });
+  }
+  return flat;
+}
 
 const LANGS_LIST = [
   {code:'hi',name:'Hindi',native:'हिंदी'},
@@ -778,11 +792,18 @@ function saveCard() {
     if(c) {
       c.en=name; c.cat=cat; c.icon=icon; c.status=status;
       c.img_n=modalImgs.neutral; c.img_b=modalImgs.boy; c.img_g=modalImgs.girl;
+      // Keep the original full multi-language object in sync for the fields this UI
+      // actually edits, so Export Data File doesn't lose the change. Other languages
+      // (translated separately, per the note in the card modal) are left untouched.
+      if (c._full) { c._full.en = name; c._full.icon = icon; }
     }
   } else {
     const newId = name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,10) + '_' + Date.now().toString(36);
     const newCard = {id:newId, cat, en:name, icon, status,
-      img_n:modalImgs.neutral, img_b:modalImgs.boy, img_g:modalImgs.girl};
+      img_n:modalImgs.neutral, img_b:modalImgs.boy, img_g:modalImgs.girl,
+      // New cards start with only English; other languages get filled in later
+      // (AI-generated post-save, per the existing note in this modal).
+      _full: {id:newId, icon, en:name}};
     CARDS.push(newCard);
   }
   closeModal('modal-card');
@@ -886,15 +907,11 @@ function resetImgSlots() {
 
 // ── LANG GRID IN MODAL ──
 // ── CATEGORIES ──
-let CAT_DATA = [
-  {id:'daily',   name:'Daily Schedule',     free:true,  price:'',    enabled:true,  cards:13},
-  {id:'school',  name:'School Routine',     free:false, price:'199', enabled:true,  cards:6},
-  {id:'therapy', name:'Therapy and OT',    free:false, price:'199', enabled:true,  cards:4},
-  {id:'meals',   name:'Meals and Nutrition',free:false, price:'199', enabled:true,  cards:4},
-  {id:'social',  name:'Social and Emotions',free:false, price:'199', enabled:true,  cards:4},
-  {id:'art',     name:'Art and Play',       free:false, price:'199', enabled:true,  cards:4},
-  {id:'home',    name:'Home Life',          free:false, price:'199', enabled:false, cards:4},
-];
+// CAT_DATA's category list/pricing comes from cards-data.js's CAT_DATA_DEFAULTS (shared
+// with the app). Admin functions below reassign CAT_DATA on delete
+// (CAT_DATA = CAT_DATA.filter(...)), so it's declared here as a mutable `let`, seeded
+// from the shared defaults with live per-category card counts.
+let CAT_DATA = CAT_DATA_DEFAULTS.map(c => ({...c, cards: CARDS.filter(card => card.cat === c.id).length}));
 function getCatName(catId) {
   const c = CAT_DATA.find(x=>x.id===catId);
   return c ? c.name : catId;
@@ -1097,6 +1114,87 @@ function exportToExcel() {
 
   const stamp = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `visual-schedules-admin-${stamp}.xlsx`);
+}
+
+// ── EXPORT DATA FILE (cards-data.js) ──
+// Rebuilds cards-data.js from the current in-memory CARDS/CAT_DATA, preserving every
+// card's full multi-language fields (via the hidden _full reference kept in sync by
+// saveCard/buildAdminCardList) and only overwriting the fields this admin UI actually
+// edits (en, icon, cat, status's effect on which images apply). New images pasted as
+// GitHub URLs are written out as plain URL strings in CARD_IMAGES, not re-encoded —
+// only the 4 originally-embedded base64 images stay as base64, keeping this file from
+// ballooning as more cards are added. Download the result and commit/replace
+// cards-data.js in your GitHub repo to publish the changes to the live app.
+function exportDataFile() {
+  // Rebuild the category-nested CARDS_DATA structure from the flat admin CARDS array.
+  const rebuiltCards = {};
+  CARDS.forEach(c => {
+    if (!rebuiltCards[c.cat]) rebuiltCards[c.cat] = [];
+    // Use the preserved full multi-language object as the base (keeps all 37 language
+    // fields), then make sure the fields this admin UI can edit are current.
+    const full = { ...(c._full || { id: c.id }) };
+    full.id = c.id;
+    full.icon = c.icon;
+    full.en = c.en;
+    rebuiltCards[c.cat].push(full);
+  });
+
+  // Rebuild CARD_IMAGES: bare id key (or _boy/_girl/_neutral keyed) → value.
+  // Preserve any pre-existing base64 values untouched; write new/changed values
+  // (typically GitHub URLs pasted in the admin) as-is.
+  const rebuiltImages = {};
+  CARDS.forEach(c => {
+    if (c.img_n) rebuiltImages[c.id] = c.img_n;
+    if (c.img_b) rebuiltImages[c.id + '_boy'] = c.img_b;
+    if (c.img_g) rebuiltImages[c.id + '_girl'] = c.img_g;
+    // Only write a separate _neutral key if a neutral image exists AND a boy/girl
+    // variant also exists for this card (matches the original convention where bare
+    // `id` was the fallback default and `_neutral` was an explicit alternate).
+    if (c.img_n && (c.img_b || c.img_g)) rebuiltImages[c.id + '_neutral'] = c.img_n;
+  });
+
+  // Rebuild CAT_META (lean free/paid flags the live app reads) from CAT_DATA.
+  const rebuiltCatMeta = {};
+  CAT_DATA.forEach(cat => { rebuiltCatMeta[cat.id] = { free: cat.free }; });
+
+  const stamp = new Date().toISOString().slice(0,10);
+
+  const fileContents = `// ============================================================
+// cards-data.js — Shared data source for Visual Schedules
+// ============================================================
+// Exported from the admin panel on ${stamp}.
+// Read by BOTH index.html (the live app) and schedule-admin.html (the admin panel),
+// via a script tag with src="cards-data.js".
+//
+// HOW THIS STAYS IN SYNC:
+// This is a manually-managed file, not a live database. After adding, editing, or
+// deleting cards in the admin panel, use this "Export Data File" button again to
+// download an updated cards-data.js, then replace this file in your GitHub repo
+// (commit + push, or upload via the GitHub web UI) so the live app picks up the
+// changes.
+//
+// DATA SHAPE: see the comments in the original cards-data.js for full details on
+// CARDS_DATA, CAT_META, CARD_IMAGES, and CAT_DATA_DEFAULTS.
+// ============================================================
+
+const CARDS_DATA = ${JSON.stringify(rebuiltCards, null, 2)};
+
+const CAT_META = ${JSON.stringify(rebuiltCatMeta, null, 2)};
+
+const CARD_IMAGES = ${JSON.stringify(rebuiltImages, null, 2)};
+
+const CAT_DATA_DEFAULTS = ${JSON.stringify(CAT_DATA.map(({cards, ...rest}) => rest), null, 2)};
+`;
+
+  const blob = new Blob([fileContents], { type: 'text/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cards-data.js';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ── INIT ──
