@@ -288,7 +288,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 @media print{
   html,body{height:auto!important;overflow:visible!important;background:#FFFFFF!important}
   .topnav,.sidebar,.rp,.mob-actions,.mob-overlay,
-  .page-notice,.a4-label,.slot-rm,.weekly-card-rm{display:none!important}
+  .page-notice,.a4-label,.slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.ft-drop-hint,.ft-card-rm{display:none!important}
   .app-body{display:block!important;overflow:visible!important}
   .canvas-wrap{
     display:block!important;overflow:visible!important;
@@ -296,7 +296,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     min-height:unset!important;
   }
   /* Portrait pages */
-  .a4-page:not(.weekly){
+  .a4-page:not(.weekly):not(.custom):not(.firstthen){
     width:210mm!important;
     height:297mm!important;
     box-shadow:none!important;
@@ -306,11 +306,11 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     transform:none!important;overflow:hidden!important;
     box-sizing:border-box!important;
   }
-  .a4-page:not(.weekly) .a4-foot{
+  .a4-page:not(.weekly):not(.custom):not(.firstthen) .a4-foot{
     padding-bottom:10mm!important;
   }
-  /* Landscape weekly page */
-  .a4-page.weekly{
+  /* Landscape weekly / custom / first-then page */
+  .a4-page.weekly,.a4-page.custom,.a4-page.firstthen{
     width:297mm!important;
     min-height:210mm!important;max-height:none!important;
     box-shadow:none!important;
@@ -319,11 +319,12 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     transform:none!important;overflow:visible!important;
   }
   .a4-page:last-child{page-break-after:avoid!important;break-after:avoid!important}
-  .slot-img-wrap img,.weekly-card img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .slot-img-wrap img,.weekly-card img,.ft-card img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .dz.black-card .slot,.dz.black-card .slot-lbl-wrap,.dz.black-card .slot-img-wrap{
     -webkit-print-color-adjust:exact;print-color-adjust:exact
   }
   .dz{height:auto!important;aspect-ratio:1!important}
+  .custom-col-input,.ft-col-input{background:transparent!important;box-shadow:none!important}
 }
 @page{size:A4 portrait;margin:0}
 @page :landscape{size:A4 landscape;margin:0}
@@ -417,15 +418,15 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 
 
 /* ── WEEKLY SCHEDULE ── */
-.a4-page.weekly{
+.a4-page.weekly,.a4-page.custom,.a4-page.firstthen{
   width:1123px;
   min-height:794px;
   max-height:794px;
   padding:28px 32px 24px;
   display:flex;flex-direction:column;
 }
-.a4-label.weekly{ width:1123px }
-.page-notice.weekly{ width:1123px }
+.a4-label.weekly,.a4-label.custom,.a4-label.firstthen{ width:1123px }
+.page-notice.weekly,.page-notice.custom,.page-notice.firstthen{ width:1123px }
 .weekly-grid{
   display:grid;
   grid-template-columns:repeat(7,1fr);
@@ -457,6 +458,14 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   font-size:10px;color:#B0ACA6;margin-top:1px;letter-spacing:0.04em;
   font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
 }
+.custom-col-input{
+  width:100%;text-align:center;border:none;background:transparent;
+  font-size:14px;font-weight:400;color:#4A5A3E;
+  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  letter-spacing:0.02em;outline:none;padding:3px 4px;border-radius:2px;
+}
+.custom-col-input:hover{background:rgba(255,255,255,0.65)}
+.custom-col-input:focus{background:#FFFFFF;box-shadow:0 0 0 1.5px #7A8F5E inset}
 .weekly-col-body{
   flex:1;display:flex;flex-direction:column;
   gap:4px;
@@ -579,6 +588,89 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   color:#4A5A3E;
   line-height:1.1;
 }
+
+/* ── FIRST-THEN SCHEDULE (big cards, big font, for young children) ── */
+.ft-grid{
+  display:grid;
+  gap:20px;
+  flex:1;
+  min-height:0;
+}
+.ft-col{
+  display:flex;flex-direction:column;
+  border:2px solid #C5D2B8;
+  border-radius:10px;
+  overflow:hidden;
+  background:#FAFBF7;
+}
+.ft-col-head{
+  background:#E8EDE0;
+  border-bottom:2px solid #C5D2B8;
+  padding:14px 8px;
+  text-align:center;
+  flex-shrink:0;
+}
+.ft-col-input{
+  width:100%;text-align:center;border:none;background:transparent;
+  font-size:30px;font-weight:600;color:#4A5A3E;
+  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  letter-spacing:0.01em;outline:none;padding:4px;border-radius:4px;
+}
+.ft-col-input:hover{background:rgba(255,255,255,0.65)}
+.ft-col-input:focus{background:#FFFFFF;box-shadow:0 0 0 2px #7A8F5E inset}
+.ft-col-body{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:18px;position:relative;min-height:0;
+}
+.ft-col-body.over{ background:#EFF2E8; }
+.ft-card{
+  width:100%;height:100%;max-width:460px;
+  background:#FFFFFF;
+  border:2px solid #E0E5D5;border-radius:10px;
+  display:flex;flex-direction:column;
+  align-items:stretch;overflow:hidden;position:relative;
+}
+.ft-card-img{
+  flex:1;min-height:0;
+  background:#FFFFFF;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.ft-card-img img{
+  width:auto;height:100%;max-width:100%;object-fit:contain;display:block;
+}
+.ft-card-img svg{
+  width:90px;height:90px;stroke:#CCCCCC;stroke-width:1.2;fill:none;
+}
+.ft-card-lbl{
+  flex-shrink:0;
+  padding:16px 10px 18px;
+  border-top:2px solid #F0F0F0;
+  background:#FFFFFF;
+  font-size:32px;font-weight:600;color:#1C1B19;
+  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  text-align:center;line-height:1.2;
+  word-break:break-word;
+}
+.ft-card-rm{
+  position:absolute;top:8px;right:8px;
+  width:30px;height:30px;
+  background:rgba(255,255,255,0.95);border:1.5px solid #DDD;
+  border-radius:50%;display:none;align-items:center;justify-content:center;
+  cursor:pointer;font-size:19px;color:#888;line-height:1;z-index:2;
+}
+.ft-card:hover .ft-card-rm{display:flex}
+.ft-card-rm:hover{background:#1C1B19;color:#FFF;border-color:#1C1B19}
+.ft-drop-hint{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  width:100%;height:100%;max-width:460px;
+  border:3px dashed #C5D2B8;border-radius:10px;
+  transition:border-color 0.15s,background 0.15s;
+  opacity:0.65;
+}
+.ft-drop-hint svg{width:52px;height:52px;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round}
+.ft-drop-hint span{font-size:19px;color:#CCCCCC;font-weight:500;font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
+.ft-col-body.over .ft-drop-hint{border-color:#7A8F5E;background:#EFF2E8;color:#7A8F5E}
 </style>
 </head>
 <body>
@@ -589,6 +681,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   <symbol id="s-shirt" viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></symbol>
   <symbol id="s-backpack" viewBox="0 0 24 24"><path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10z"/><path d="M9 6V5a3 3 0 0 1 6 0v1"/><line x1="9" y1="14" x2="15" y2="14"/></symbol>
   <symbol id="s-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+
   <symbol id="s-droplet" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></symbol>
   <symbol id="s-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
   <symbol id="s-fork" viewBox="0 0 24 24"><line x1="7" y1="2" x2="7" y2="8"/><line x1="11" y1="2" x2="11" y2="8"/><path d="M9 8a4 4 0 0 0 0 8v6"/><line x1="17" y1="2" x2="17" y2="20"/></symbol>
@@ -675,16 +768,16 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     </select>
     <span class="lang-lbl" style="margin-left:0.5rem">Character</span>
     <select class="lang-sel" id="gender-sel" onchange="onGenderChange()">
-      <option value="neutral">Gender Neutral</option>
-      <option value="boy" selected>Boy</option>
-      <option value="girl">Girl</option>
-      <option value="brown">Brown Skin</option>
+      <option value="neutral">Child with Glasses</option>
+      <option value="boy" selected>Boy – Brown Hair</option>
+      <option value="girl">Girl – Brown Hair</option>
+      <option value="brown">Child with Curly Hair</option>
     </select>
   </div>
   <div class="nav-acts">
     <button class="nbtn" onclick="clearPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-undo"/></svg>Clear</button>
     <button class="nbtn" onclick="addPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-page"/></svg>Add page</button>
-    <button class="nbtn" onclick="window.print()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-printer"/></svg>Print</button>
+    <button class="nbtn" onclick="printSchedule()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-printer"/></svg>Print</button>
     <button class="nbtn nbtn-primary" onclick="savePDF()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-download"/></svg>Save PDF</button>
   </div>
 </div>
@@ -699,6 +792,8 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         <select class="cat-sel" id="schedule-type-sel" onchange="onScheduleTypeChange()">
           <option value="daily">Daily Schedule</option>
           <option value="weekly">Weekly Schedule</option>
+          <option value="custom">Custom Schedule</option>
+          <option value="firstthen">First-Then Schedule</option>
         </select>
       </div>
       <div class="cat-wrap" id="card-cat-wrap">
@@ -738,7 +833,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
       <div class="rp-row"><span class="rp-row-k">Pages</span><span class="rp-row-v" id="rp-pages">1</span></div>
       <div class="rp-row"><span class="rp-row-k">Cards placed</span><span class="rp-row-v" id="rp-count">0</span></div>
       <div class="rp-row"><span class="rp-row-k">Language</span><span class="rp-row-v" id="rp-lang">English</span></div>
-      <div class="rp-row"><span class="rp-row-k">Character</span><span class="rp-row-v" id="rp-gender">Boy</span></div>
+      <div class="rp-row"><span class="rp-row-k">Character</span><span class="rp-row-v" id="rp-gender">Boy – Brown Hair</span></div>
     </div>
     <div class="rp-sec" id="rp-week-toggle-sec" style="display:none">
       <p class="rp-lbl">Show days</p>
@@ -746,6 +841,24 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         <button class="cs-btn white-active active" id="cs-week" onclick="setWeekDays('week',this)">Week</button>
         <button class="cs-btn" id="cs-weekdays" onclick="setWeekDays('weekdays',this)">Weekdays</button>
       </div>
+    </div>
+    <div class="rp-sec" id="rp-custom-cols-sec" style="display:none">
+      <p class="rp-lbl">Number of columns</p>
+      <div class="rp-gbns">
+        <button class="rp-gb" onclick="setCustomColCount(2,this)">2</button>
+        <button class="rp-gb" onclick="setCustomColCount(3,this)">3</button>
+        <button class="rp-gb active" onclick="setCustomColCount(4,this)">4</button>
+        <button class="rp-gb" onclick="setCustomColCount(5,this)">5</button>
+      </div>
+      <p class="rp-tip" style="margin-top:6px">Click a column title on the page to rename it. Max 6 cards per column.</p>
+    </div>
+    <div class="rp-sec" id="rp-ft-cols-sec" style="display:none">
+      <p class="rp-lbl">Number of columns</p>
+      <div class="rp-gbns">
+        <button class="rp-gb active" onclick="setFtColCount(2,this)">2</button>
+        <button class="rp-gb" onclick="setFtColCount(3,this)">3</button>
+      </div>
+      <p class="rp-tip" style="margin-top:6px">Click a column title to rename it — e.g. First, Then, Now. One big card per column, with extra-large text — great for younger children.</p>
     </div>
     <div class="rp-sec" id="rp-cols-sec">
       <p class="rp-lbl">Columns per row</p>
@@ -762,7 +875,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     </div>
     <div class="rp-sec">
       <p class="rp-lbl">Actions</p>
-      <button class="rp-btn rp-btn-ac" onclick="window.print()"><svg><use href="#s-printer"/></svg>Print A4</button>
+      <button class="rp-btn rp-btn-ac" onclick="printSchedule()"><svg><use href="#s-printer"/></svg>Print A4</button>
       <button class="rp-btn rp-btn-dk" onclick="savePDF()"><svg><use href="#s-download"/></svg>Save PDF</button>
       <button class="rp-btn" onclick="addPage()"><svg><use href="#s-page"/></svg>Add next page</button>
       <button class="rp-btn" onclick="clearPage()"><svg><use href="#s-trash"/></svg>Clear page</button>
@@ -1051,9 +1164,19 @@ function placeNext(cardId, cat) {
     showWeeklyDayPicker(cardId, cat);
     return;
   }
+  // On custom schedule, clicking a tile shows a picker to choose which column
+  if (scheduleType === 'custom') {
+    showCustomColPicker(cardId, cat);
+    return;
+  }
+  // On first-then schedule, clicking a tile shows a picker to choose which column
+  if (scheduleType === 'firstthen') {
+    showFtColPicker(cardId, cat);
+    return;
+  }
 
   // Daily schedule — find first empty slot across all pages
-  const all = Array.from(document.querySelectorAll('.a4-page:not(.weekly)'));
+  const all = Array.from(document.querySelectorAll('.a4-page:not(.weekly):not(.custom):not(.firstthen)'));
   for (const page of all) {
     const slots = Array.from(page.querySelectorAll('.dz'));
     const maxSlots = GRID_SPECS[gridCols].slots;
@@ -1124,6 +1247,73 @@ function addToWeeklyDay(cardId, cat, dayKey) {
   if (!c) return;
   weeklyCards[dayKey].push(Object.assign({}, c, { _cat: cat }));
   refreshWeeklyCol(dayKey);
+}
+
+// Escape free-text user input (column names) before embedding in HTML
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Column picker for custom schedule click-to-add
+function showCustomColPicker(cardId, cat) {
+  const existing = document.getElementById('day-picker-popup');
+  if (existing) existing.remove();
+
+  // Target the last custom page (most recently added) when there are multiple
+  const customPages = document.querySelectorAll('.a4-page.custom');
+  const targetPageNum = customPages.length
+    ? parseInt(customPages[customPages.length - 1].dataset.pagenum, 10)
+    : 1;
+
+  const popup = document.createElement('div');
+  popup.id = 'day-picker-popup';
+  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible",system-ui,sans-serif';
+  const cards = CARDS_DATA[cat] || [];
+  const c = cards.find(x => x.id === cardId);
+  const label = c ? (c[lang] || c.en) : cardId;
+  const pageNote = customPages.length > 1 ? ` (Page ${targetPageNum})` : '';
+
+  const colNames = [];
+  for (let i = 0; i < customColCount; i++) colNames.push(customColNames[i] || `Column ${i + 1}`);
+
+  popup.innerHTML = `
+    <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#8A8480;margin-bottom:0.75rem;font-weight:500">Add "${label}" to column${pageNote}</p>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      ${colNames.map((name, i) => `
+        <button onclick="addToCustomCol('${cardId}','${cat}','${targetPageNum}_${i}');document.getElementById('day-picker-popup').remove()"
+          style="padding:8px 12px;border:1px solid #E0DDD8;background:none;text-align:left;font-size:13px;color:#2C2C2C;cursor:pointer;font-family:inherit;transition:background 0.1s"
+          onmouseover="this.style.background='#F0F7F0'" onmouseout="this.style.background='none'">
+          ${escapeHtml(name)}
+        </button>`).join('')}
+    </div>
+    <button onclick="document.getElementById('day-picker-popup').remove()"
+      style="width:100%;margin-top:0.75rem;padding:6px;border:1px solid #DDD;background:none;font-size:11px;color:#888;cursor:pointer;font-family:inherit">
+      Cancel
+    </button>`;
+
+  document.body.appendChild(popup);
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', handler); }
+    });
+  }, 10);
+}
+
+function addToCustomCol(cardId, cat, colKey) {
+  if (!customCards[colKey]) customCards[colKey] = [];
+  if (customCards[colKey].length >= MAX_CUSTOM_CARDS) return;
+  const cards = CARDS_DATA[cat] || [];
+  const c = cards.find(x => x.id === cardId);
+  if (!c) return;
+  customCards[colKey].push(Object.assign({}, c, { _cat: cat }));
+  refreshCustomCol(colKey);
 }
 
 // MAKE A4 PAGE
@@ -1326,7 +1516,7 @@ function reflowCards() {
 
   // Collect all placed cards in order
   const allCards = [];
-  document.querySelectorAll('.a4-page:not(.weekly)').forEach(page => {
+  document.querySelectorAll('.a4-page:not(.weekly):not(.custom):not(.firstthen)').forEach(page => {
     page.querySelectorAll('.dz.filled').forEach(dz => {
       const slot = dz.querySelector('.slot');
       if (slot?.dataset.cid) allCards.push({ id: slot.dataset.cid, cat: slot.dataset.cat });
@@ -1337,7 +1527,7 @@ function reflowCards() {
 
   // Wipe existing daily pages
   const canvas = document.getElementById('canvas-wrap');
-  canvas.querySelectorAll('.a4-page:not(.weekly), .a4-label:not(.weekly), .page-notice').forEach(el => el.remove());
+  canvas.querySelectorAll('.a4-page:not(.weekly):not(.custom):not(.firstthen), .a4-label:not(.weekly):not(.custom):not(.firstthen), .page-notice').forEach(el => el.remove());
   pageCount = 0;
 
   // Rebuild — one page per maxPerPage cards
@@ -1565,7 +1755,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') document.que
 // GENDER
 function onGenderChange() {
   gender = document.getElementById('gender-sel').value;
-  const names = {neutral:'Gender Neutral', boy:'Boy', girl:'Girl', brown:'Brown Skin'};
+  const names = {neutral:'Child with Glasses', boy:'Boy – Brown Hair', girl:'Girl – Brown Hair', brown:'Child with Curly Hair'};
   const rpG = document.getElementById('rp-gender');
   if (rpG) rpG.textContent = names[gender] || gender;
   // Update CARD_IMAGES lookup to use gender variant if available
@@ -1603,26 +1793,26 @@ function scaleCanvas() {
 
   // Portrait pages (794px wide) — scale from top-center, re-center via margin:auto
   const scale794 = Math.min(available / 794, 1);
-  document.querySelectorAll('.a4-page:not(.weekly)').forEach(el => {
+  document.querySelectorAll('.a4-page:not(.weekly):not(.custom):not(.firstthen)').forEach(el => {
     el.style.transform = scale794 < 1 ? `scale(${scale794.toFixed(4)})` : '';
     el.style.transformOrigin = 'top center';
     el.style.margin = scale794 < 1 ? `0 auto ${Math.round(1123 * (scale794 - 1) - 16)}px` : '0 auto';
   });
-  document.querySelectorAll('.a4-label:not(.weekly), .page-notice:not(.weekly)').forEach(el => {
+  document.querySelectorAll('.a4-label:not(.weekly):not(.custom):not(.firstthen), .page-notice:not(.weekly):not(.custom):not(.firstthen)').forEach(el => {
     el.style.transform = scale794 < 1 ? `scale(${scale794.toFixed(4)})` : '';
     el.style.transformOrigin = 'top center';
     el.style.width = '794px';
     el.style.margin = '0 auto';
   });
 
-  // Landscape weekly (1123px wide)
+  // Landscape weekly / custom / first-then (1123px wide)
   const scale1123 = Math.min(available / 1123, 1);
-  document.querySelectorAll('.a4-page.weekly').forEach(el => {
+  document.querySelectorAll('.a4-page.weekly, .a4-page.custom, .a4-page.firstthen').forEach(el => {
     el.style.transform = scale1123 < 1 ? `scale(${scale1123.toFixed(4)})` : '';
     el.style.transformOrigin = 'top center';
     el.style.margin = scale1123 < 1 ? `0 auto ${Math.round(794 * (scale1123 - 1) - 16)}px` : '0 auto';
   });
-  document.querySelectorAll('.a4-label.weekly').forEach(el => {
+  document.querySelectorAll('.a4-label.weekly, .a4-label.custom, .a4-label.firstthen').forEach(el => {
     el.style.width = '1123px';
     el.style.margin = '0 auto';
   });
@@ -1665,34 +1855,78 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 let weeklyCards = {}; // keys are scoped as "pageNum_DayKey", e.g. "1_Mon"
 const DAY_KEYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+// ── CUSTOM SCHEDULE ──
+let customColCount = 4; // 2-5 user-chosen columns
+let customColNames = ['Column 1','Column 2','Column 3','Column 4','Column 5'];
+let customCards = {}; // keys are scoped as "pageNum_colIndex", e.g. "1_0"
+const MAX_CUSTOM_CARDS = 6;
+
+// ── FIRST-THEN SCHEDULE ──
+let ftColCount = 2; // 2-3 user-chosen columns
+let ftColNames = ['First','Then','Now'];
+let ftCards = {}; // keys are scoped as "pageNum_colIndex", e.g. "1_0" — at most 1 card each
+const MAX_FT_CARDS = 1;
+
 function onScheduleTypeChange() {
   scheduleType = document.getElementById('schedule-type-sel').value;
   const canvas = document.getElementById('canvas-wrap');
   const cardCatWrap = document.getElementById('card-cat-wrap');
   const badgeRow = document.querySelector('.cat-badge-row');
 
+  // Reset all type-specific right-panel sections before showing the relevant one
+  document.getElementById('rp-week-toggle-sec').style.display = 'none';
+  document.getElementById('rp-custom-cols-sec').style.display = 'none';
+  document.getElementById('rp-ft-cols-sec').style.display = 'none';
+  document.getElementById('rp-cols-sec').style.display = 'none';
+
   if (scheduleType === 'weekly') {
     canvas.classList.add('weekly-mode');
     document.getElementById('rp-week-toggle-sec').style.display = '';
-    document.getElementById('rp-cols-sec').style.display = 'none';
     const titleInp = document.getElementById('inp-title');
     if (titleInp && (titleInp.value === 'Morning Routine' || !titleInp.value.trim())) {
       titleInp.value = 'Weekly Schedule';
     }
-    // Clear daily pages
+    // Clear daily, custom and first-then pages
     canvas.querySelectorAll('.a4-page:not(.weekly), .a4-label:not(.weekly), .page-notice').forEach(el => el.remove());
     pageCount = 0;
     // Build weekly page
     buildWeeklyPage();
     renderTiles(); // show all cards in sidebar for drag to weekly
+  } else if (scheduleType === 'custom') {
+    canvas.classList.add('weekly-mode');
+    document.getElementById('rp-custom-cols-sec').style.display = '';
+    const titleInp = document.getElementById('inp-title');
+    if (titleInp && (titleInp.value === 'Morning Routine' || !titleInp.value.trim())) {
+      titleInp.value = 'My Schedule';
+    }
+    // Clear daily, weekly and first-then pages
+    canvas.querySelectorAll('.a4-page:not(.custom), .a4-label:not(.custom), .page-notice').forEach(el => el.remove());
+    pageCount = 0;
+    // Build custom page
+    buildCustomPage();
+    renderTiles(); // show all cards in sidebar for drag to custom columns
+  } else if (scheduleType === 'firstthen') {
+    canvas.classList.add('weekly-mode');
+    document.getElementById('rp-ft-cols-sec').style.display = '';
+    const titleInp = document.getElementById('inp-title');
+    if (titleInp && (titleInp.value === 'Morning Routine' || !titleInp.value.trim())) {
+      titleInp.value = 'First, Then';
+    }
+    // Clear daily, weekly and custom pages
+    canvas.querySelectorAll('.a4-page:not(.firstthen), .a4-label:not(.firstthen), .page-notice').forEach(el => el.remove());
+    pageCount = 0;
+    // Build first-then page
+    buildFirstThenPage();
+    renderTiles(); // show all cards in sidebar for drag to first-then columns
   } else {
     canvas.classList.remove('weekly-mode');
-    document.getElementById('rp-week-toggle-sec').style.display = 'none';
     document.getElementById('rp-cols-sec').style.display = '';
-    // Remove weekly pages
-    canvas.querySelectorAll('.a4-page.weekly, .a4-label.weekly').forEach(el => el.remove());
+    // Remove weekly, custom and first-then pages
+    canvas.querySelectorAll('.a4-page.weekly, .a4-page.custom, .a4-page.firstthen, .a4-label.weekly, .a4-label.custom, .a4-label.firstthen').forEach(el => el.remove());
     pageCount = 0;
     weeklyCards = {}; // scoped keys (e.g. "1_Mon") are rebuilt fresh when weekly mode is re-entered
+    customCards = {}; // scoped keys (e.g. "1_0") are rebuilt fresh when custom mode is re-entered
+    ftCards = {}; // scoped keys (e.g. "1_0") are rebuilt fresh when first-then mode is re-entered
     // Rebuild daily page
     const { label, page } = makeA4();
     canvas.appendChild(label);
@@ -1762,6 +1996,343 @@ function buildWeeklyPage() {
 
   canvas.appendChild(page);
   setTimeout(() => scaleCanvas(), 50);
+}
+
+function buildCustomPage() {
+  const canvas = document.getElementById('canvas-wrap');
+  pageCount++;
+  const pNum = pageCount; // capture for this page's scoped keys
+
+  const label = document.createElement('div');
+  label.className = 'a4-label custom';
+  label.textContent = pNum > 1 ? `My Schedule — Page ${pNum}` : 'My Schedule';
+  canvas.appendChild(label);
+
+  const page = document.createElement('div');
+  page.className = 'a4-page custom';
+  page.dataset.pagenum = pNum;
+
+  const titleVal = document.getElementById('inp-title')?.value || 'My Schedule';
+
+  let colsHTML = '';
+  for (let i = 0; i < customColCount; i++) {
+    const scopedKey = pNum + '_' + i;
+    const cards = customCards[scopedKey] || [];
+    const cardsHTML = cards.map((c, ci) => makeCustomCardHTML(c, scopedKey, ci)).join('');
+    const colName = customColNames[i] || `Column ${i + 1}`;
+    colsHTML += `<div class="weekly-col" data-col="${i}">
+      <div class="weekly-col-head">
+        <input class="custom-col-input" data-colidx="${i}" value="${escapeHtml(colName)}" maxlength="24" oninput="onCustomColNameInput(this)">
+      </div>
+      <div class="weekly-col-body" id="ccol-${scopedKey}"
+        ondragover="onWeeklyDragOver(event,this)"
+        ondragleave="onWeeklyDragLeave(event,this)"
+        ondrop="onCustomDrop(event,'${scopedKey}')">
+        ${cardsHTML}
+        <div class="weekly-drop-hint" id="chint-${scopedKey}"></div>
+      </div>
+    </div>`;
+  }
+
+  page.innerHTML = `
+    <div class="weekly-a4-head">
+      <div class="weekly-a4-title" id="a4-title-${pNum}">${titleVal}</div>
+    </div>
+    <div class="weekly-grid" style="grid-template-columns:repeat(${customColCount},1fr)">${colsHTML}</div>
+    <div class="a4-foot" style="margin-top:8px">
+      <div><span class="a4-foot-brand">Visual Schedules by Grow Gently</span></div>
+      <div style="text-align:right">
+        <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official</span>
+        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
+      </div>
+    </div>`;
+
+  canvas.appendChild(page);
+  setTimeout(() => scaleCanvas(), 50);
+}
+
+function makeCustomCardHTML(c, colKey, idx) {
+  const label = c[lang] || c.en;
+  const imgSrc = getCardImage(c.id);
+  const imgPart = imgSrc
+    ? `<img src="${imgSrc}" alt="${label}">`
+    : `<svg style="width:40%;height:40%;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${c.icon}"/></svg>`;
+  return `<div class="weekly-card">
+    <div class="weekly-card-img">${imgPart}</div>
+    <div class="weekly-card-lbl">${label}</div>
+    <div class="weekly-card-rm" onclick="removeCustomCard('${colKey}',${idx})">×</div>
+  </div>`;
+}
+
+function onCustomDrop(e, colKey) {
+  e.preventDefault();
+  const col = document.getElementById('ccol-' + colKey);
+  if (col) { col.classList.remove('over'); }
+  const hint = document.getElementById('chint-' + colKey);
+  if (hint) hint.classList.remove('over');
+  if (!dragInfo) return;
+  if (!customCards[colKey]) customCards[colKey] = [];
+  if (customCards[colKey].length >= MAX_CUSTOM_CARDS) return;
+  const cards = CARDS_DATA[dragInfo.cat] || [];
+  const c = cards.find(x => x.id === dragInfo.id);
+  if (!c) return;
+  const cCopy = Object.assign({}, c, { _cat: dragInfo.cat });
+  customCards[colKey].push(cCopy);
+  refreshCustomCol(colKey);
+}
+
+function removeCustomCard(colKey, idx) {
+  if (customCards[colKey]) customCards[colKey].splice(idx, 1);
+  refreshCustomCol(colKey);
+}
+
+function refreshCustomCol(colKey) {
+  const col = document.getElementById('ccol-' + colKey);
+  if (!col) return;
+  const cards = customCards[colKey] || [];
+  const isFull = cards.length >= MAX_CUSTOM_CARDS;
+  const hasCards = cards.length > 0;
+  const cardsHTML = cards.map((c, i) => makeCustomCardHTML(c, colKey, i)).join('');
+  // Show hint only when empty (no cards at all)
+  const hintHTML = (!isFull && !hasCards)
+    ? `<div class="weekly-drop-hint" id="chint-${colKey}"></div>`
+    : '';
+  col.innerHTML = cardsHTML + hintHTML;
+  col.ondragover = (e) => {
+    e.preventDefault();
+    if (!isFull) onWeeklyDragOver(e, col);
+  };
+  col.ondragleave = (e) => onWeeklyDragLeave(e, col);
+  col.ondrop = (e) => onCustomDrop(e, colKey);
+}
+
+// Live-sync a renamed column's header across every page that has the same column index
+function onCustomColNameInput(input) {
+  const idx = parseInt(input.dataset.colidx, 10);
+  customColNames[idx] = input.value;
+  document.querySelectorAll(`.custom-col-input[data-colidx="${idx}"]`).forEach(el => {
+    if (el !== input) el.value = input.value;
+  });
+}
+
+// NUMBER OF CUSTOM COLUMNS (2-5)
+function setCustomColCount(n, btn) {
+  customColCount = n;
+  document.querySelectorAll('#rp-custom-cols-sec .rp-gb').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Rebuild custom pages, preserving existing page count
+  const canvas = document.getElementById('canvas-wrap');
+  const existingPageCount = canvas.querySelectorAll('.a4-page.custom').length || 1;
+  canvas.querySelectorAll('.a4-page.custom, .a4-label.custom').forEach(el => el.remove());
+  // Drop cards belonging to columns that no longer exist; keep cards for columns that still do
+  Object.keys(customCards).forEach(key => {
+    const idx = parseInt(key.split('_')[1], 10);
+    if (idx >= n) delete customCards[key];
+  });
+  pageCount = 0;
+  for (let i = 0; i < existingPageCount; i++) buildCustomPage();
+}
+
+// ── FIRST-THEN SCHEDULE: big single-card columns for young children ──
+function buildFirstThenPage() {
+  const canvas = document.getElementById('canvas-wrap');
+  pageCount++;
+  const pNum = pageCount; // capture for this page's scoped keys
+
+  const label = document.createElement('div');
+  label.className = 'a4-label firstthen';
+  label.textContent = pNum > 1 ? `First, Then — Page ${pNum}` : 'First, Then';
+  canvas.appendChild(label);
+
+  const page = document.createElement('div');
+  page.className = 'a4-page firstthen';
+  page.dataset.pagenum = pNum;
+
+  const titleVal = document.getElementById('inp-title')?.value || 'First, Then';
+
+  let colsHTML = '';
+  for (let i = 0; i < ftColCount; i++) {
+    const scopedKey = pNum + '_' + i;
+    const cards = ftCards[scopedKey] || [];
+    const cardsHTML = cards.map((c, ci) => makeFtCardHTML(c, scopedKey, ci)).join('');
+    const hintHTML = !cards.length
+      ? `<div class="ft-drop-hint" id="fthint-${scopedKey}"><svg><use href="#s-plus"/></svg><span>Drop here</span></div>`
+      : '';
+    const colName = ftColNames[i] || `Column ${i + 1}`;
+    colsHTML += `<div class="ft-col" data-col="${i}">
+      <div class="ft-col-head">
+        <input class="ft-col-input" data-colidx="${i}" value="${escapeHtml(colName)}" maxlength="18" oninput="onFtColNameInput(this)">
+      </div>
+      <div class="ft-col-body" id="ftcol-${scopedKey}"
+        ondragover="onFtDragOver(event,this)"
+        ondragleave="onFtDragLeave(event,this)"
+        ondrop="onFtDrop(event,'${scopedKey}')">
+        ${cardsHTML}${hintHTML}
+      </div>
+    </div>`;
+  }
+
+  page.innerHTML = `
+    <div class="weekly-a4-head">
+      <div class="weekly-a4-title" id="a4-title-${pNum}">${titleVal}</div>
+    </div>
+    <div class="ft-grid" style="grid-template-columns:repeat(${ftColCount},1fr)">${colsHTML}</div>
+    <div class="a4-foot" style="margin-top:8px">
+      <div><span class="a4-foot-brand">Visual Schedules by Grow Gently</span></div>
+      <div style="text-align:right">
+        <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official</span>
+        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
+      </div>
+    </div>`;
+
+  canvas.appendChild(page);
+  setTimeout(() => scaleCanvas(), 50);
+}
+
+function makeFtCardHTML(c, colKey, idx) {
+  const label = c[lang] || c.en;
+  const imgSrc = getCardImage(c.id);
+  const imgPart = imgSrc
+    ? `<img src="${imgSrc}" alt="${label}">`
+    : `<svg><use href="#${c.icon}"/></svg>`;
+  return `<div class="ft-card">
+    <div class="ft-card-img">${imgPart}</div>
+    <div class="ft-card-lbl">${label}</div>
+    <div class="ft-card-rm" onclick="removeFtCard('${colKey}',${idx})">×</div>
+  </div>`;
+}
+
+function onFtDragOver(e, el) {
+  e.preventDefault();
+  el.classList.add('over');
+  const hint = el.querySelector('.ft-drop-hint');
+  if (hint) hint.classList.add('over');
+}
+function onFtDragLeave(e, el) {
+  if (!el.contains(e.relatedTarget)) {
+    el.classList.remove('over');
+    const hint = el.querySelector('.ft-drop-hint');
+    if (hint) hint.classList.remove('over');
+  }
+}
+
+function onFtDrop(e, colKey) {
+  e.preventDefault();
+  const col = document.getElementById('ftcol-' + colKey);
+  if (col) { col.classList.remove('over'); }
+  if (!dragInfo) return;
+  if (!ftCards[colKey]) ftCards[colKey] = [];
+  if (ftCards[colKey].length >= MAX_FT_CARDS) return; // one big card per column
+  const cards = CARDS_DATA[dragInfo.cat] || [];
+  const c = cards.find(x => x.id === dragInfo.id);
+  if (!c) return;
+  const cCopy = Object.assign({}, c, { _cat: dragInfo.cat });
+  ftCards[colKey] = [cCopy]; // replace — only one card allowed
+  refreshFtCol(colKey);
+}
+
+function removeFtCard(colKey, idx) {
+  if (ftCards[colKey]) ftCards[colKey].splice(idx, 1);
+  refreshFtCol(colKey);
+}
+
+function refreshFtCol(colKey) {
+  const col = document.getElementById('ftcol-' + colKey);
+  if (!col) return;
+  const cards = ftCards[colKey] || [];
+  const cardsHTML = cards.map((c, i) => makeFtCardHTML(c, colKey, i)).join('');
+  const hintHTML = !cards.length
+    ? `<div class="ft-drop-hint" id="fthint-${colKey}"><svg><use href="#s-plus"/></svg><span>Drop here</span></div>`
+    : '';
+  col.innerHTML = cardsHTML + hintHTML;
+  col.ondragover = (e) => {
+    e.preventDefault();
+    if (cards.length < MAX_FT_CARDS) onFtDragOver(e, col);
+  };
+  col.ondragleave = (e) => onFtDragLeave(e, col);
+  col.ondrop = (e) => onFtDrop(e, colKey);
+}
+
+// Live-sync a renamed First-Then column header across every page with the same column index
+function onFtColNameInput(input) {
+  const idx = parseInt(input.dataset.colidx, 10);
+  ftColNames[idx] = input.value;
+  document.querySelectorAll(`.ft-col-input[data-colidx="${idx}"]`).forEach(el => {
+    if (el !== input) el.value = input.value;
+  });
+}
+
+// NUMBER OF FIRST-THEN COLUMNS (2-3)
+function setFtColCount(n, btn) {
+  ftColCount = n;
+  document.querySelectorAll('#rp-ft-cols-sec .rp-gb').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Rebuild first-then pages, preserving existing page count
+  const canvas = document.getElementById('canvas-wrap');
+  const existingPageCount = canvas.querySelectorAll('.a4-page.firstthen').length || 1;
+  canvas.querySelectorAll('.a4-page.firstthen, .a4-label.firstthen').forEach(el => el.remove());
+  // Drop cards belonging to columns that no longer exist; keep cards for columns that still do
+  Object.keys(ftCards).forEach(key => {
+    const idx = parseInt(key.split('_')[1], 10);
+    if (idx >= n) delete ftCards[key];
+  });
+  pageCount = 0;
+  for (let i = 0; i < existingPageCount; i++) buildFirstThenPage();
+}
+
+// Column picker for first-then click-to-add
+function showFtColPicker(cardId, cat) {
+  const existing = document.getElementById('day-picker-popup');
+  if (existing) existing.remove();
+
+  const ftPages = document.querySelectorAll('.a4-page.firstthen');
+  const targetPageNum = ftPages.length
+    ? parseInt(ftPages[ftPages.length - 1].dataset.pagenum, 10)
+    : 1;
+
+  const popup = document.createElement('div');
+  popup.id = 'day-picker-popup';
+  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible",system-ui,sans-serif';
+  const cards = CARDS_DATA[cat] || [];
+  const c = cards.find(x => x.id === cardId);
+  const label = c ? (c[lang] || c.en) : cardId;
+  const pageNote = ftPages.length > 1 ? ` (Page ${targetPageNum})` : '';
+
+  const colNames = [];
+  for (let i = 0; i < ftColCount; i++) colNames.push(ftColNames[i] || `Column ${i + 1}`);
+
+  popup.innerHTML = `
+    <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#8A8480;margin-bottom:0.75rem;font-weight:500">Add "${label}" to column${pageNote}</p>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      ${colNames.map((name, i) => `
+        <button onclick="addToFtCol('${cardId}','${cat}','${targetPageNum}_${i}');document.getElementById('day-picker-popup').remove()"
+          style="padding:8px 12px;border:1px solid #E0DDD8;background:none;text-align:left;font-size:13px;color:#2C2C2C;cursor:pointer;font-family:inherit;transition:background 0.1s"
+          onmouseover="this.style.background='#F0F7F0'" onmouseout="this.style.background='none'">
+          ${escapeHtml(name)}
+        </button>`).join('')}
+    </div>
+    <button onclick="document.getElementById('day-picker-popup').remove()"
+      style="width:100%;margin-top:0.75rem;padding:6px;border:1px solid #DDD;background:none;font-size:11px;color:#888;cursor:pointer;font-family:inherit">
+      Cancel
+    </button>`;
+
+  document.body.appendChild(popup);
+
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', handler); }
+    });
+  }, 10);
+}
+
+function addToFtCol(cardId, cat, colKey) {
+  if (!ftCards[colKey]) ftCards[colKey] = [];
+  if (ftCards[colKey].length >= MAX_FT_CARDS) return;
+  const cards = CARDS_DATA[cat] || [];
+  const c = cards.find(x => x.id === cardId);
+  if (!c) return;
+  ftCards[colKey] = [Object.assign({}, c, { _cat: cat })];
+  refreshFtCol(colKey);
 }
 
 function makeWeeklyCardHTML(c, dayKey, idx) {
@@ -1914,23 +2485,31 @@ document.addEventListener('click', e=>{
 
 </script>
 <script>
-function savePDF() {
-  const pages = document.querySelectorAll('.a4-page');
-  if (!pages.length) { alert('No pages to save.'); return; }
-  // Inject correct @page rule for schedule type
-  const isWeekly = scheduleType === 'weekly';
-  const pageRule = isWeekly
+function printSchedule() {
+  // Inject correct @page rule for the current schedule type — weekly,
+  // custom and first-then schedules are landscape (1123px-wide layout), daily is portrait.
+  const isLandscape = scheduleType === 'weekly' || scheduleType === 'custom' || scheduleType === 'firstthen';
+  const pageRule = isLandscape
     ? '@page { size: A4 landscape; margin: 0; }'
     : '@page { size: A4 portrait; margin: 0; }';
-  const style = document.createElement('style');
-  style.id = 'pdf-page-rule';
+  let style = document.getElementById('pdf-page-rule');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'pdf-page-rule';
+    document.head.appendChild(style);
+  }
   style.textContent = pageRule;
-  document.head.appendChild(style);
   window.print();
   setTimeout(() => {
     const el = document.getElementById('pdf-page-rule');
     if (el) el.remove();
   }, 1500);
+}
+
+function savePDF() {
+  const pages = document.querySelectorAll('.a4-page');
+  if (!pages.length) { alert('No pages to save.'); return; }
+  printSchedule();
 }
 </script>
 
