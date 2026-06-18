@@ -676,8 +676,9 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
     <span class="lang-lbl" style="margin-left:0.5rem">Character</span>
     <select class="lang-sel" id="gender-sel" onchange="onGenderChange()">
       <option value="neutral">Gender Neutral</option>
-      <option value="boy">Boy</option>
+      <option value="boy" selected>Boy</option>
       <option value="girl">Girl</option>
+      <option value="brown">Brown Skin</option>
     </select>
   </div>
   <div class="nav-acts">
@@ -737,7 +738,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
       <div class="rp-row"><span class="rp-row-k">Pages</span><span class="rp-row-v" id="rp-pages">1</span></div>
       <div class="rp-row"><span class="rp-row-k">Cards placed</span><span class="rp-row-v" id="rp-count">0</span></div>
       <div class="rp-row"><span class="rp-row-k">Language</span><span class="rp-row-v" id="rp-lang">English</span></div>
-      <div class="rp-row"><span class="rp-row-k">Character</span><span class="rp-row-v" id="rp-gender">Gender Neutral</span></div>
+      <div class="rp-row"><span class="rp-row-k">Character</span><span class="rp-row-v" id="rp-gender">Boy</span></div>
     </div>
     <div class="rp-sec" id="rp-week-toggle-sec" style="display:none">
       <p class="rp-lbl">Show days</p>
@@ -893,7 +894,7 @@ const LANGS = {
 
 // STATE
 let lang = 'en';
-let gender = 'neutral';
+let gender = 'boy';
 let gridCols = 4;
 let currentCat = 'daily';
 let unlockedCats = new Set(['daily']);
@@ -1564,7 +1565,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') document.que
 // GENDER
 function onGenderChange() {
   gender = document.getElementById('gender-sel').value;
-  const names = {neutral:'Gender Neutral', boy:'Boy', girl:'Girl'};
+  const names = {neutral:'Gender Neutral', boy:'Boy', girl:'Girl', brown:'Brown Skin'};
   const rpG = document.getElementById('rp-gender');
   if (rpG) rpG.textContent = names[gender] || gender;
   // Update CARD_IMAGES lookup to use gender variant if available
