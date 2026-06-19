@@ -4,38 +4,116 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Create Schedule — Grow Gently</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* Visible keyboard-focus ring everywhere — many controls below set
+   outline:none for mouse-click aesthetics, so this restores a clear
+   indicator specifically for keyboard navigation. */
+:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
 :root{
   --ink:#1C1B19;--ink2:#5C5855;--ink3:#6B6560;
   --accent:#8B5E2A;--border:#DDD9D0;
   --green:#2D6A2D;
-  --sans:'Atkinson Hyperlegible',system-ui,sans-serif;
+  --sans:'Atkinson Hyperlegible Next',system-ui,sans-serif;
   --body-color:#2C2C2C;
+  color-scheme:light;
 }
+select,input,textarea,button{color-scheme:light}
 html{height:100%;font-size:14px}body{height:100%;overflow:hidden;}
 body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;display:flex;flex-direction:column;height:100%;overflow:hidden}
+
+/* ACCESSIBILITY BAR — top-most, above the main nav */
+.a11y-skip-link{
+  position:absolute;left:-9999px;top:0;
+  background:#FFFFFF;color:#1C1B19;padding:0.5rem 1rem;
+  font-size:13px;font-weight:600;z-index:1000;
+}
+.a11y-skip-link:focus{left:0.5rem;top:0.5rem;}
+.a11y-bar{
+  background:#1C1B19;color:#FFFFFF;
+  flex-shrink:0;
+  padding:0.35rem 1.25rem;
+}
+.a11y-bar-inner{
+  display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap;
+}
+.a11y-item{
+  display:flex;align-items:center;gap:0.35rem;
+  color:#FFFFFF;text-decoration:none;font-size:12px;
+  background:none;border:none;cursor:pointer;font-family:inherit;padding:0.15rem 0;
+}
+.a11y-item:hover{color:#F5F2EC;text-decoration:underline}
+.a11y-item svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;flex-shrink:0}
+.a11y-textsize{gap:0.4rem;cursor:default}
+.a11y-textsize:hover{text-decoration:none}
+.a11y-textsize-label{font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:#C9C5BE}
+.a11y-zoom-btn{
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);
+  color:#FFFFFF;width:26px;height:22px;border-radius:3px;
+  font-size:12px;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;
+}
+.a11y-zoom-btn:hover{background:rgba(255,255,255,0.25)}
+.a11y-zoom-label{
+  font-size:11px;color:#FFFFFF;min-width:36px;text-align:center;
+  background:none;border:none;cursor:pointer;font-family:inherit;
+}
+.a11y-zoom-label:hover{text-decoration:underline}
+@media(max-width:900px){
+  .a11y-bar{padding:0.35rem 0.85rem}
+  .a11y-bar-inner{gap:0.85rem}
+  .a11y-item span:not(.a11y-textsize-label){display:none}
+  .a11y-textsize-label{display:none}
+}
 
 /* TOP NAV */
 .topnav{
   height:66px;background:#FFFFFF;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
   padding:0 1.75rem;flex-shrink:0;gap:1.25rem;
+  position:relative;
 }
 .tnav-logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic;color:#1C1B19;text-decoration:none;white-space:nowrap;flex-shrink:0;line-height:1}
 
-.lang-row{display:flex;align-items:center;gap:0.4rem;flex-shrink:0}
+.lang-row{
+  display:flex;align-items:center;gap:0.4rem;flex-shrink:0;
+  position:absolute;left:50%;transform:translateX(-50%);
+}
 .lang-lbl{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#8A8480;white-space:nowrap;font-weight:500}
 .lang-sel{font-family:var(--sans);font-size:12px;padding:0.32rem 0.5rem;border:1px solid var(--border);background:#FFFFFF;color:var(--ink2);outline:none;max-width:150px;font-weight:500}
+
+/* Secondary (second-language) line under a card label — dormant for now, no UI toggle */
+.lbl-secondary{display:block;font-size:0.78em;color:#8A8480;margin-top:1px;font-weight:400}
+
+/* Bilingual mode — give labels a bit more room for the second line */
+body.bilingual-mode .slot-lbl-wrap{flex:0 0 40%}
+body.bilingual-mode .slot-img-wrap{flex:0 0 60%}
+body.bilingual-mode .weekly-card-img{height:62px}
+body.bilingual-mode .weekly-card-lbl{padding:4px 4px 5px}
+body.bilingual-mode .tile-lbl{line-height:1.25}
 .nav-acts{display:flex;align-items:center;gap:0.4rem;flex-shrink:0}
 .nbtn{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:0.42rem 1rem;border:1px solid var(--border);background:none;color:#4A4540;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:0.35rem;white-space:nowrap;transition:all 0.15s;font-weight:500}
 .nbtn:hover{border-color:var(--ink);color:var(--ink)}
 .nbtn-primary{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}
-.nbtn-primary:hover{background:#333}
+.nbtn-primary:hover{background:#333;color:#FFFFFF}
 
 /* APP BODY */
 .app-body{display:flex;flex:1;min-height:0;overflow:hidden}
+
+.resize-handle{
+  width:6px;flex-shrink:0;cursor:col-resize;
+  background:transparent;position:relative;z-index:10;
+}
+.resize-handle::after{
+  content:'';position:absolute;top:0;bottom:0;left:2px;width:2px;
+  background:transparent;transition:background 0.15s;
+}
+.resize-handle:hover::after,.resize-handle.dragging::after{background:var(--accent)}
+.resize-handle.dragging{background:rgba(139,94,42,0.08)}
 
 /* SIDEBAR */
 .sidebar{
@@ -44,8 +122,14 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   display:flex;flex-direction:column;overflow:hidden;
 }
 .sb-search-wrap{padding:0.85rem 0.85rem 0;flex-shrink:0}
+.sb-search-inner{position:relative}
+.sb-search-icon{
+  position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;stroke:var(--ink3);stroke-width:2;fill:none;
+  pointer-events:none;
+}
 .sb-search{
-  width:100%;padding:0.42rem 0.65rem;
+  width:100%;padding:0.42rem 0.65rem 0.42rem 2rem;
   border:1px solid var(--border);background:#F8F7F4;
   font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;
   margin-bottom:0.4rem;
@@ -56,9 +140,8 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   width:100%;padding:0.42rem 0.65rem;
   border:1px solid var(--border);background:#FFFFFF;
   font-family:var(--sans);font-size:13px;color:var(--ink2);
-  outline:none;appearance:none;cursor:pointer;font-weight:500;
+  outline:none;cursor:pointer;font-weight:500;
 }
-.cat-arrow{position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:var(--ink3)}
 .cat-badge-row{
   padding:0.35rem 0.75rem 0.4rem;
   display:flex;align-items:center;gap:0.35rem;
@@ -99,7 +182,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   border-top:1px solid #EEEEEE;
   font-size:13px;color:#2C2C2C;text-align:center;
   line-height:1.2;font-weight:400;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
 }
 .tile-lock-icon{position:absolute;top:4px;right:4px;width:12px;height:12px;stroke:var(--ink3);stroke-width:2;fill:none;z-index:2}
 
@@ -210,7 +293,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   font-size:17px;color:#2C2C2C;
   text-align:center;line-height:1.2;
   font-weight:400;
-  font-family:'Atkinson Hyperlegible','Jost',sans-serif;
+  font-family:'Atkinson Hyperlegible Next','Jost',sans-serif;
   letter-spacing:0;
 }
 .slot-rm{
@@ -220,8 +303,9 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   border-radius:50%;
   display:none;align-items:center;justify-content:center;
   cursor:pointer;font-size:13px;color:#666;line-height:1;z-index:3;
+  font-family:inherit;padding:0;
 }
-.dz.filled:hover .slot-rm{display:flex}
+.dz.filled:hover .slot-rm,.dz.filled:focus-within .slot-rm{display:flex}
 .slot-rm:hover{background:#111;color:#FFF;border-color:#111}
 
 /* A4 FOOTER */
@@ -263,9 +347,18 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 .rp-btn{width:100%;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem;border:1px solid var(--border);background:none;color:#4A4540;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:0.4rem;transition:all 0.15s;font-weight:500}
 .rp-btn svg{width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
 .rp-btn:hover{border-color:var(--ink);color:var(--ink)}
-.rp-btn-dk{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}.rp-btn-dk:hover{background:#333}
-.rp-btn-ac{background:var(--accent);color:#FFFFFF;border-color:var(--accent)}.rp-btn-ac:hover{background:#7A5224}
+.rp-btn-dk{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}.rp-btn-dk:hover{background:#333;color:#FFFFFF}
+.rp-btn-ac{background:var(--accent);color:#FFFFFF;border-color:var(--accent)}.rp-btn-ac:hover{background:#7A5224;color:#FFFFFF}
 .rp-tip{font-size:13px;color:#6B6560;line-height:1.65;padding:4px 0}
+.rp-social-links{display:flex;flex-direction:column;gap:0.45rem}
+.rp-social-link{
+  display:flex;align-items:center;gap:0.55rem;
+  font-size:12px;font-weight:500;color:var(--ink2);text-decoration:none;
+  padding:0.45rem 0.6rem;border:1px solid var(--border);background:#FFFFFF;
+  transition:background 0.12s,border-color 0.12s,color 0.12s;
+}
+.rp-social-link:hover{background:#F8F7F4;border-color:var(--accent);color:var(--ink)}
+.rp-social-link svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;flex-shrink:0}
 
 /* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(28,27,25,0.55);z-index:500;align-items:center;justify-content:center}
@@ -326,7 +419,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 /* ── MOBILE ── */
 .mob-menu-btn{display:none;background:none;border:none;cursor:pointer;padding:4px;flex-direction:column;gap:5px;flex-shrink:0}
 .mob-menu-btn span{display:block;width:20px;height:2px;background:#1C1B19;border-radius:1px;transition:all 0.2s}
-.mob-rp-btn{display:none;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0}
+.mob-rp-btn{display:none;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0}
 .mob-overlay{display:none;position:fixed;inset:0;background:rgba(28,27,25,0.45);z-index:299}
 .mob-overlay.open{display:block}
 .mob-actions{display:none;position:fixed;bottom:0;left:0;right:0;background:#FFFFFF;border-top:1px solid var(--border);padding:0.6rem 0.85rem;gap:0.5rem;z-index:200;align-items:center}
@@ -336,7 +429,9 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   html,body{overflow:auto;height:auto}
   .mob-menu-btn{display:flex}
   .mob-rp-btn{display:flex}
+  .resize-handle{display:none}
   .nav-acts{display:none}
+  .lang-row{position:static;transform:none;margin-left:auto}
   .lang-row .lang-lbl{display:none}
   .lang-sel{max-width:110px}
   .topnav{padding:0 1rem;gap:0.5rem}
@@ -428,6 +523,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 .weekly-col{
   display:flex;flex-direction:column;
   border-right:1.5px solid #D5DDC8;
+  min-width:0;overflow:hidden;
 }
 .weekly-col:last-child{border-right:none}
 .weekly-col-head{
@@ -439,17 +535,17 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 }
 .weekly-col-head-day{
   font-size:14px;font-weight:400;color:#4A5A3E;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
   letter-spacing:0.02em;
 }
 .weekly-col-head-sub{
   font-size:10px;color:#B0ACA6;margin-top:1px;letter-spacing:0.04em;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
 }
 .custom-col-input{
   width:100%;text-align:center;border:none;background:transparent;
   font-size:14px;font-weight:400;color:#4A5A3E;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
   letter-spacing:0.02em;outline:none;padding:3px 4px;border-radius:2px;
 }
 .custom-col-input:hover{background:rgba(255,255,255,0.65)}
@@ -491,7 +587,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   flex-shrink:0;
 }
 .weekly-card-img img{
-  width:auto;height:100%;max-width:100%;object-fit:contain;display:block;
+  width:100%;height:100%;object-fit:contain;display:block;
 }
 .weekly-card-img svg{
   width:28px;height:28px;stroke:#CCCCCC;stroke-width:1.4;fill:none;
@@ -502,7 +598,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   border-top:1px solid #F0F0F0;
   background:#FFFFFF;
   font-size:13px;color:#1C1B19;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
   text-align:center;line-height:1.2;font-weight:400;
   word-break:break-word;
 }
@@ -512,25 +608,28 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   background:rgba(255,255,255,0.9);border:1px solid #DDD;
   border-radius:50%;display:none;align-items:center;justify-content:center;
   cursor:pointer;font-size:11px;color:#888;line-height:1;z-index:2;
+  font-family:inherit;padding:0;
 }
-.weekly-card:hover .weekly-card-rm{display:flex}
+.weekly-card:hover .weekly-card-rm,.weekly-card:focus-within .weekly-card-rm{display:flex}
 .weekly-card-rm:hover{background:#1C1B19;color:#FFF;border-color:#1C1B19}
 
-/* Solo card — when a weekly/custom column has exactly one card, it fills the column
-   (similar treatment to the First-Then big card) instead of sitting small at the top */
-.weekly-card.solo{
+/* Fill card — every card in a weekly/custom column now equally fills the
+   column's height (flex:1 each) regardless of count, instead of sitting at
+   a fixed small thumbnail size. Label font-size is set inline per card,
+   scaled down a bit as more cards share the column. */
+.weekly-card.fill{
   flex:1;min-height:0;
 }
-.weekly-card.solo .weekly-card-img{
+.weekly-card.fill .weekly-card-img{
   height:auto;flex:1;min-height:0;
 }
-.weekly-card.solo .weekly-card-lbl{
-  font-size:19px;padding:10px 6px 12px;
+.weekly-card.fill .weekly-card-lbl{
+  padding:10px 6px 12px;
 }
-.weekly-card.solo .weekly-card-rm{
+.weekly-card.fill .weekly-card-rm{
   width:20px;height:20px;font-size:14px;
 }
-/* Small drag-drop indicator shown below a solo card so more cards can still be added */
+/* Small drag-drop indicator shown after the last card so more can still be added */
 .weekly-mini-drop{
   flex-shrink:0;
   width:28px;height:28px;
@@ -557,7 +656,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   padding:1.1rem 1.75rem;
   display:flex;align-items:center;justify-content:space-between;
   gap:1rem;flex-wrap:wrap;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
   font-size:12px;
 }
 .footer-brand{
@@ -617,6 +716,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   border:2px solid #C5D2B8;
   border-radius:10px;
   overflow:hidden;
+  min-width:0;
   background:#FAFBF7;
 }
 .ft-col-head{
@@ -629,7 +729,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 .ft-col-input{
   width:100%;text-align:center;border:none;background:transparent;
   font-size:30px;font-weight:600;color:#4A5A3E;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
   letter-spacing:0.01em;outline:none;padding:4px;border-radius:4px;
 }
 .ft-col-input:hover{background:rgba(255,255,255,0.65)}
@@ -653,7 +753,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   overflow:hidden;
 }
 .ft-card-img img{
-  width:auto;height:100%;max-width:100%;object-fit:contain;display:block;
+  width:100%;height:100%;object-fit:contain;display:block;
 }
 .ft-card-img svg{
   width:90px;height:90px;stroke:#CCCCCC;stroke-width:1.2;fill:none;
@@ -663,8 +763,8 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   padding:16px 10px 18px;
   border-top:2px solid #F0F0F0;
   background:#FFFFFF;
-  font-size:32px;font-weight:600;color:#1C1B19;
-  font-family:'Atkinson Hyperlegible',system-ui,sans-serif;
+  font-size:32px;font-weight:600;color:var(--ink2);
+  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;
   text-align:center;line-height:1.2;
   word-break:break-word;
 }
@@ -674,8 +774,9 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   background:rgba(255,255,255,0.95);border:1.5px solid #DDD;
   border-radius:50%;display:none;align-items:center;justify-content:center;
   cursor:pointer;font-size:19px;color:#888;line-height:1;z-index:2;
+  font-family:inherit;padding:0;
 }
-.ft-card:hover .ft-card-rm{display:flex}
+.ft-card:hover .ft-card-rm,.ft-card:focus-within .ft-card-rm{display:flex}
 .ft-card-rm:hover{background:#1C1B19;color:#FFF;border-color:#1C1B19}
 .ft-drop-hint{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
@@ -685,12 +786,35 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   opacity:0.65;
 }
 .ft-drop-hint svg{width:52px;height:52px;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round}
-.ft-drop-hint span{font-size:19px;color:#CCCCCC;font-weight:500;font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
+.ft-drop-hint span{font-size:19px;color:#CCCCCC;font-weight:500;font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif}
 .ft-col-body.over .ft-drop-hint{border-color:#7A8F5E;background:#EFF2E8;color:#7A8F5E}
 </style>
 </head>
 <body>
+<a href="#canvas-wrap" class="a11y-skip-link">Skip to schedule</a>
+<div class="a11y-bar" role="region" aria-label="Accessibility options">
+  <div class="a11y-bar-inner">
+    <a class="a11y-item" href="mailto:visualschedulesofficial@gmail.com" aria-label="Email us for accessibility help">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#s-mail"/></svg>
+      <span>Accessibility help</span>
+    </a>
+    <div class="a11y-item a11y-textsize" role="group" aria-label="Text size">
+      <span class="a11y-textsize-label">Text size</span>
+      <button type="button" class="a11y-zoom-btn" onclick="setA11yZoom(-10)" aria-label="Decrease text size">A−</button>
+      <button type="button" class="a11y-zoom-label" id="a11y-zoom-label" onclick="resetA11yZoom()" aria-label="Reset text size">100%</button>
+      <button type="button" class="a11y-zoom-btn" onclick="setA11yZoom(10)" aria-label="Increase text size">A+</button>
+    </div>
+    <button type="button" class="a11y-item" onclick="focusLangSelect()" aria-label="Jump to language selector">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#s-globe"/></svg>
+      <span>Language</span>
+    </button>
+  </div>
+</div>
 <svg id="icon-sprite" style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="s-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></symbol>
+  <symbol id="s-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="s-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+  <symbol id="s-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
   <symbol id="s-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/></symbol>
   <symbol id="s-tooth" viewBox="0 0 24 24"><path d="M12 5.5C10.5 4 8.5 3 6.5 3 4.5 3 3 4.5 3 7c0 3 1.5 5.5 2 8 .5 2.5 1 4 2.5 4s2-2 2.5-3.5c.5-1.5 1-2 1.5-2s1 .5 1.5 2C13.5 17 14 19 15.5 19s2-1.5 2.5-4c.5-2.5 2-5 2-8 0-2.5-1.5-4-3.5-4C14.5 3 13.5 4 12 5.5z"/></symbol>
   <symbol id="s-bowl" viewBox="0 0 24 24"><path d="M3 11c0 4.4 3.6 8 8 8s8-3.6 8-8H3z"/><line x1="2" y1="11" x2="22" y2="11"/></symbol>
@@ -733,7 +857,14 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   <a class="tnav-logo" href="growgently.html">Visual Schedules</a>
 
   <div class="lang-row">
-    <span class="lang-lbl">Language</span>
+    <span class="lang-lbl">Character</span>
+    <select class="lang-sel" id="gender-sel" onchange="onGenderChange()">
+      <option value="neutral">Child with Glasses</option>
+      <option value="boy" selected>Boy – Brown Hair</option>
+      <option value="girl">Girl – Brown Hair</option>
+      <option value="brown">Child with Curly Hair</option>
+    </select>
+    <span class="lang-lbl" style="margin-left:0.5rem">Language</span>
     <select class="lang-sel" id="lang-sel" onchange="onLangChange()">
       <optgroup label="India">
         <option value="en">English</option>
@@ -782,27 +913,20 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         <option value="vi">Vietnamese · Tiếng Việt</option>
       </optgroup>
     </select>
-    <span class="lang-lbl" style="margin-left:0.5rem">Character</span>
-    <select class="lang-sel" id="gender-sel" onchange="onGenderChange()">
-      <option value="neutral">Child with Glasses</option>
-      <option value="boy" selected>Boy – Brown Hair</option>
-      <option value="girl">Girl – Brown Hair</option>
-      <option value="brown">Child with Curly Hair</option>
-    </select>
   </div>
-  <div class="nav-acts">
-    <button class="nbtn" onclick="clearPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-undo"/></svg>Clear</button>
-    <button class="nbtn" onclick="addPage()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-page"/></svg>Add page</button>
-    <button class="nbtn" onclick="openPrintView()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-printer"/></svg>Print</button>
-    <button class="nbtn nbtn-primary" onclick="openPrintView()"><svg style="width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round"><use href="#s-download"/></svg>Save PDF</button>
-  </div>
+  <button class="mob-rp-btn" onclick="toggleRightPanel()" aria-label="Schedule settings and actions">
+    <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#1C1B19;stroke-width:2;fill:none;stroke-linecap:round" aria-hidden="true"><use href="#s-sliders"/></svg>
+  </button>
 </div>
 <div class="app-body">
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sb-search-wrap">
-      <input class="sb-search" id="card-search" placeholder="Search cards…" oninput="renderTiles()">
+      <div class="sb-search-inner">
+        <svg class="sb-search-icon" viewBox="0 0 24 24"><use href="#s-search"/></svg>
+        <input class="sb-search" id="card-search" placeholder="Search Visuals" aria-label="Search Visuals" oninput="renderTiles()">
+      </div>
       <div class="cat-wrap">
         <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#8A8480;margin-bottom:0.3rem;font-weight:500">Schedule type</p>
         <select class="cat-sel" id="schedule-type-sel" onchange="onScheduleTypeChange()">
@@ -813,9 +937,9 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         </select>
       </div>
       <div class="cat-wrap" id="card-cat-wrap">
-        <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#8A8480;margin-bottom:0.3rem;margin-top:0.4rem;font-weight:500">Card category</p>
+        <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#8A8480;margin-bottom:0.3rem;margin-top:0.4rem;font-weight:500">Visual category</p>
         <select class="cat-sel" id="cat-sel" onchange="onCatChange()">
-          <option value="daily">Daily Cards (Free)</option>
+          <option value="daily">Daily Visuals (Free)</option>
           <option value="school">School Routine (Paid)</option>
           <option value="therapy">Therapy and OT (Paid)</option>
           <option value="meals">Meals and Nutrition (Paid)</option>
@@ -823,12 +947,11 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
           <option value="art">Art and Play (Paid)</option>
           <option value="home">Home Life (Paid)</option>
         </select>
-        <span class="cat-arrow">▾</span>
       </div>
     </div>
     <div class="cat-badge-row">
       <span id="cat-badge" class="badge-free">Free</span>
-      <span id="cat-badge-text">Drag cards onto the schedule</span>
+      <span id="cat-badge-text">Drag visuals into schedule</span>
     </div>
     <div class="tile-grid" id="tile-grid"></div>
     <div class="unlock-banner hidden" id="unlock-banner">
@@ -836,11 +959,13 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
       <button class="unlock-btn" onclick="openUnlockModal()">Unlock categories</button>
     </div>
   </aside>
+  <div class="resize-handle" id="resize-sidebar" title="Drag to resize"></div>
 
   <!-- CANVAS -->
   <main class="canvas-wrap" id="canvas-wrap">
     <!-- A4 pages injected here by JS -->
   </main>
+  <div class="resize-handle" id="resize-rp" title="Drag to resize"></div>
 
   <!-- RIGHT PANEL -->
   <aside class="rp">
@@ -866,7 +991,7 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         <button class="rp-gb active" onclick="setCustomColCount(4,this)">4</button>
         <button class="rp-gb" onclick="setCustomColCount(5,this)">5</button>
       </div>
-      <p class="rp-tip" style="margin-top:6px">Click a column title on the page to rename it. Max 6 cards per column.</p>
+      <p class="rp-tip" style="margin-top:6px">Click a column title on the page to rename it. Max 6 visuals per column.</p>
     </div>
     <div class="rp-sec" id="rp-ft-cols-sec" style="display:none">
       <p class="rp-lbl">Number of columns</p>
@@ -874,14 +999,14 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
         <button class="rp-gb active" onclick="setFtColCount(2,this)">2</button>
         <button class="rp-gb" onclick="setFtColCount(3,this)">3</button>
       </div>
-      <p class="rp-tip" style="margin-top:6px">Click a column title to rename it — e.g. First, Then, Now. One big card per column, with extra-large text — great for younger children.</p>
+      <p class="rp-tip" style="margin-top:6px">Click a column title to rename it — e.g. First, Then, Now. One big visual per column, with extra-large text — great for younger children.</p>
     </div>
     <div class="rp-sec" id="rp-cols-sec">
       <p class="rp-lbl">Columns per row</p>
       <div class="rp-gbns">
         <button class="rp-gb" onclick="setGrid(2,this)">2</button>
-        <button class="rp-gb" onclick="setGrid(3,this)">3</button>
-        <button class="rp-gb active" onclick="setGrid(4,this)">4</button>
+        <button class="rp-gb active" onclick="setGrid(3,this)">3</button>
+        <button class="rp-gb" onclick="setGrid(4,this)">4</button>
       </div>
     </div>
 
@@ -890,17 +1015,37 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
       <input class="rp-inp" id="inp-title" value="Morning Routine" oninput="updateTitles()">
     </div>
     <div class="rp-sec">
-      <p class="rp-lbl">Actions</p>
       <button class="rp-btn rp-btn-ac" onclick="openPrintView()"><svg><use href="#s-printer"/></svg>Print A4</button>
-      <button class="rp-btn rp-btn-dk" onclick="openPrintView()"><svg><use href="#s-download"/></svg>Save PDF</button>
+      <button class="rp-btn rp-btn-dk" onclick="openModal('modal-export')"><svg><use href="#s-download"/></svg>Save/Export</button>
       <button class="rp-btn" onclick="addPage()"><svg><use href="#s-page"/></svg>Add next page</button>
       <button class="rp-btn" onclick="clearPage()"><svg><use href="#s-trash"/></svg>Clear page</button>
     </div>
     <div class="rp-sec">
       <p class="rp-lbl">Tips</p>
-      <p class="rp-tip">Drag cards from the left onto any empty slot.</p>
+      <p class="rp-tip">Drag visuals from the left onto any empty slot.</p>
       <p class="rp-tip" style="margin-top:5px">When a page is full, a new page is added automatically.</p>
-      <p class="rp-tip" style="margin-top:5px">Hover a placed card and click × to remove it.</p>
+      <p class="rp-tip" style="margin-top:5px">Hover a placed visual and click × to remove it.</p>
+    </div>
+    <div class="rp-sec">
+      <p class="rp-lbl">Follow &amp; contact</p>
+      <div class="rp-social-links">
+        <a class="rp-social-link" href="https://www.instagram.com/visual_schedule_official/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          <span>Instagram</span>
+        </a>
+        <a class="rp-social-link" href="https://wa.me/PLACEHOLDER_WHATSAPP_NUMBER" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
+          <span>WhatsApp</span>
+        </a>
+        <a class="rp-social-link" href="mailto:visualschedulesofficial@gmail.com">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Gmail</span>
+        </a>
+        <a class="rp-social-link" href="growgently.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8C8 10 5.9 16.17 3.82 22"/><path d="M21 2a19 19 0 0 1-2.5 10A19 19 0 0 1 3 22c0-7.18 2.5-13 8-16 2.5-1.33 7-3 10-4z"/></svg>
+          <span>Grow Gently</span>
+        </a>
+      </div>
     </div>
   </aside>
 </div>
@@ -909,14 +1054,14 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
 <div class="modal-bg" id="modal-unlock" onclick="closeModal('modal-unlock')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:460px">
     <div class="modal-hd">
-      <h3 id="unlock-modal-title">Unlock card categories</h3>
-      <button class="modal-cls" onclick="closeModal('modal-unlock')">×</button>
+      <h3 id="unlock-modal-title">Unlock visual categories</h3>
+      <button class="modal-cls" onclick="closeModal('modal-unlock')" aria-label="Close">×</button>
     </div>
 
     <!-- STEP 1: Choose plan -->
     <div id="unlock-step-1">
       <p style="font-size:13px;color:#5C5855;line-height:1.65;margin-bottom:1.1rem">
-        Daily Schedule cards are always free. Unlock more categories to build richer schedules for your child.
+        Daily Schedule visuals are always free. Unlock more categories to build richer schedules for your child.
       </p>
       <div class="plan-grid" style="margin-bottom:1rem">
         <div class="plan" id="plan-single" onclick="selectPlan('single')" style="cursor:pointer;transition:border-color 0.15s">
@@ -998,12 +1143,50 @@ body{font-family:var(--sans);background:#EDEADE;color:#2C2C2C;font-weight:400;di
   </div>
 </div>
 
+<div class="modal-bg" id="modal-export" onclick="closeModal('modal-export')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <div class="modal-hd">
+      <h3>Export your schedule</h3>
+      <button class="modal-cls" onclick="closeModal('modal-export')" aria-label="Close">×</button>
+    </div>
+
+    <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#6B6560;margin-bottom:0.5rem">Format</p>
+    <div class="card-style-btns" style="margin-bottom:1rem">
+      <button class="cs-btn white-active active" id="exp-fmt-pdf" onclick="setExportFormat('pdf',this)">PDF</button>
+      <button class="cs-btn" id="exp-fmt-jpeg" onclick="setExportFormat('jpeg',this)">JPEG</button>
+    </div>
+
+    <button class="modal-btn" id="exp-download-btn" onclick="runExportDownload()" style="margin-bottom:1.25rem">
+      Download PDF
+    </button>
+
+    <div style="border-top:1px solid #E8E4DC;padding-top:1rem">
+      <p style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:#6B6560;margin-bottom:0.5rem">Share to WhatsApp</p>
+      <input id="wa-number" type="tel" placeholder="WhatsApp number, e.g. +91 98765 43210"
+        style="width:100%;padding:0.6rem 0.75rem;border:1.5px solid #DDD9D0;font-family:'Jost',system-ui,sans-serif;font-size:14px;color:#1C1B19;outline:none;background:#FFFFFF;margin-bottom:0.6rem;box-sizing:border-box">
+      <button class="modal-btn" id="exp-wa-btn" onclick="runExportWhatsApp()" style="background:#25D366;border-color:#25D366">
+        Share to WhatsApp
+      </button>
+      <p style="font-size:11px;color:#B5B0A8;margin-top:0.6rem;line-height:1.5">
+        On phones, this opens your device's share sheet so you can send the file straight to WhatsApp. On computers, the file downloads and WhatsApp opens so you can attach it there — browsers can't auto-attach a file to a chat.
+      </p>
+    </div>
+
+    <div id="exp-status" style="display:none;margin-top:0.85rem;padding:0.6rem 0.75rem;background:#F8F7F4;border:1px solid #DDD9D0;font-size:12px;color:#6B6560;align-items:center;gap:0.5rem">
+      <span style="display:inline-block;width:12px;height:12px;border:2px solid #DDD9D0;border-top-color:#8B5E2A;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0"></span>
+      <span id="exp-status-text">Preparing your file…</span>
+    </div>
+  </div>
+</div>
+
 <style>
 @keyframes spin{to{transform:rotate(360deg)}}
 .plan:hover{border-color:#8B5E2A}
 .plan.selected{border-color:#8B5E2A;background:#FEFCF8}
 </style>
 <script src="cards-data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const LANGS = {
   en:'English', hi:'हिंदी', mr:'मराठी', pa:'ਪੰਜਾਬੀ',
@@ -1023,12 +1206,44 @@ const LANGS = {
 
 // STATE
 let lang = 'en';
+let bilingualOn = false; // off by default — single language
+let lang2 = 'hi'; // second language, only used once bilingualOn is true
 let gender = 'boy';
-let gridCols = 4;
+let gridCols = 3;
 let currentCat = 'daily';
 let unlockedCats = new Set(['daily']);
 let dragInfo = null;
 let pageCount = 0;
+
+// BILINGUAL LABEL HELPERS
+function cardPrimaryLabel(c) {
+  return c[lang] || c.en;
+}
+function cardSecondaryLabel(c) {
+  if (!bilingualOn || !lang2) return '';
+  const primary = cardPrimaryLabel(c);
+  const secondary = c[lang2] || c.en;
+  return secondary === primary ? '' : secondary;
+}
+// For label elements rendered with innerHTML — adds the second language as a smaller sub-line
+function cardLabelHTML(c) {
+  const primary = cardPrimaryLabel(c);
+  const secondary = cardSecondaryLabel(c);
+  return secondary ? `${primary}<span class="lbl-secondary">${secondary}</span>` : primary;
+}
+// For plain-text contexts (alt text, popup titles) where HTML tags can't render
+function cardLabelText(c) {
+  const primary = cardPrimaryLabel(c);
+  const secondary = cardSecondaryLabel(c);
+  return secondary ? `${primary} / ${secondary}` : primary;
+}
+// Re-renders every already-placed card (weekly/custom/first-then) from its
+// stored data so label and image changes (language, character) take effect
+function refreshAllPlacedCards() {
+  Object.keys(weeklyCards || {}).forEach(refreshWeeklyCol);
+  Object.keys(customCards || {}).forEach(refreshCustomCol);
+  Object.keys(ftCards || {}).forEach(refreshFtCol);
+}
 
 
 // SLOTS PER PAGE
@@ -1067,7 +1282,8 @@ function renderTiles() {
   const isLocked = !CAT_META[cat].free && !unlockedCats.has(cat);
   const cards = (CARDS_DATA[cat] || []).filter(c => {
     if (!query) return true;
-    return (c[lang] || c.en).toLowerCase().includes(query) || c.en.toLowerCase().includes(query);
+    if ((c[lang] || c.en).toLowerCase().includes(query) || c.en.toLowerCase().includes(query)) return true;
+    return bilingualOn && lang2 && (c[lang2] || c.en).toLowerCase().includes(query);
   });
 
   const badge = document.getElementById('cat-badge');
@@ -1077,28 +1293,29 @@ function renderTiles() {
   if (!isLocked) {
     badge.className = 'badge-free';
     badge.textContent = CAT_META[cat].free ? 'Free' : 'Unlocked';
-    badgeText.textContent = 'Drag cards onto the schedule';
+    badgeText.textContent = 'Drag visuals into schedule';
     unlockBanner.classList.add('hidden');
   } else {
     badge.className = 'badge-paid';
     badge.textContent = 'Paid';
-    badgeText.textContent = 'Unlock to use these cards';
+    badgeText.textContent = 'Unlock to use these visuals';
     unlockBanner.classList.remove('hidden');
   }
 
   const grid = document.getElementById('tile-grid');
   grid.innerHTML = cards.map(c => {
-    const label = c[lang] || c.en;
+    const altText = cardLabelText(c);
+    const labelHTML = cardLabelHTML(c);
     const imgSrc = getCardImage(c.id);
     const imgHTML = imgSrc
-      ? `<img src="${imgSrc}" alt="${label}" loading="lazy" style="width:100%;height:100%;object-fit:contain;display:block">`
+      ? `<img src="${imgSrc}" alt="${altText}" loading="lazy" style="width:100%;height:100%;object-fit:contain;display:block">`
       : `<svg style="width:28px;height:28px;stroke:#CCCCCC;stroke-width:1.5;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${c.icon}"/></svg>`;
     return `<div class="lib-tile${isLocked ? ' locked' : ''}" 
       data-id="${c.id}" data-cat="${cat}"
       onclick="${isLocked ? "openUnlockModal('single')" : `placeNext('${c.id}','${cat}')`}">
       ${isLocked ? '<svg class="tile-lock-icon"><use href="#s-lock"/></svg>' : ''}
       <div class="tile-img">${imgHTML}</div>
-      <div class="tile-lbl">${label}</div>
+      <div class="tile-lbl">${labelHTML}</div>
     </div>`;
   }).join('');
 
@@ -1123,20 +1340,21 @@ function renderTiles() {
 
 // MAKE CARD HTML
 function makeCardHTML(c, cat) {
-  const label = c[lang] || c.en;
+  const altText = cardLabelText(c);
+  const labelHTML = cardLabelHTML(c);
   const imgSrc = getCardImage(c.id);
   const fs = window._cardFontSize || '14px';
   const imgPart = imgSrc
-    ? `<img src="${imgSrc}" alt="${label}" style="width:100%;height:100%;object-fit:contain;display:block">`
+    ? `<img src="${imgSrc}" alt="${altText}" style="width:100%;height:100%;object-fit:contain;display:block">`
     : `<svg style="width:40px;height:40px;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${c.icon}"/></svg>`;
   return `<div class="slot" data-cid="${c.id}" data-cat="${cat}">
     <div class="slot-img-wrap">${imgPart}</div>
-    <div class="slot-lbl-wrap"><div class="slot-lbl" style="font-size:${fs}">${label}</div></div>
+    <div class="slot-lbl-wrap"><div class="slot-lbl" style="font-size:${fs}">${labelHTML}</div></div>
     <div class="slot-time">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span class="slot-time-val">--:--</span>
     </div>
-    <div class="slot-rm" onclick="removeZone(this.closest('.dz'))">×</div>
+    <button type="button" class="slot-rm" onclick="removeZone(this.closest('.dz'))" aria-label="Remove this visual">×</button>
   </div>`;
 }
 
@@ -1224,10 +1442,10 @@ function showWeeklyDayPicker(cardId, cat) {
 
   const popup = document.createElement('div');
   popup.id = 'day-picker-popup';
-  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible",system-ui,sans-serif';
+  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif';
   const cards = CARDS_DATA[cat] || [];
   const c = cards.find(x => x.id === cardId);
-  const label = c ? (c[lang] || c.en) : cardId;
+  const label = c ? cardLabelText(c) : cardId;
   const pageNote = weeklyPages.length > 1 ? ` (Page ${targetPageNum})` : '';
 
   popup.innerHTML = `
@@ -1288,10 +1506,10 @@ function showCustomColPicker(cardId, cat) {
 
   const popup = document.createElement('div');
   popup.id = 'day-picker-popup';
-  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible",system-ui,sans-serif';
+  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif';
   const cards = CARDS_DATA[cat] || [];
   const c = cards.find(x => x.id === cardId);
-  const label = c ? (c[lang] || c.en) : cardId;
+  const label = c ? cardLabelText(c) : cardId;
   const pageNote = customPages.length > 1 ? ` (Page ${targetPageNum})` : '';
 
   const colNames = [];
@@ -1378,7 +1596,7 @@ function makeA4() {
       </div>
       <div style="text-align:right">
         <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official · visualschedulesofficial@gmail.com</span>
-        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-style:normal;letter-spacing:0.01em">⚠ AI-generated labels — verify translations before use.</span>
+        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;font-style:normal;letter-spacing:0.01em">⚠ AI-generated labels — verify translations before use.</span>
       </div>
     </div>`;
 
@@ -1442,7 +1660,7 @@ function onLangChange() {
   const rpLang = document.getElementById('rp-lang');
   if (rpLang) rpLang.textContent = langName;
   document.querySelectorAll('.a4-lang-badge').forEach(el => el.textContent = langName);
-  // Update all placed card labels
+  // Update all placed daily card labels
   document.querySelectorAll('.slot').forEach(slot => {
     const cid = slot.dataset.cid;
     const cat = slot.dataset.cat;
@@ -1450,10 +1668,17 @@ function onLangChange() {
     const card = (CARDS_DATA[cat] || []).find(c => c.id === cid);
     if (!card) return;
     const lblEl = slot.querySelector('.slot-lbl');
-    if (lblEl) lblEl.textContent = card[lang] || card.en;
+    if (lblEl) lblEl.innerHTML = cardLabelHTML(card);
   });
+  // Update placed weekly/custom/first-then card labels too
+  refreshAllPlacedCards();
   renderTiles();
 }
+
+// Note: the "Two Languages" toggle UI has been removed for now. The
+// bilingualOn/lang2 state and cardLabelHTML()/cardLabelText() helpers are
+// left in place (bilingualOn stays false with no UI to change it) so this
+// can be re-enabled later without re-touching every card-render function.
 
 // ROUTINE
 const ROUTINE_TITLES = {
@@ -1775,7 +2000,7 @@ function onGenderChange() {
   const rpG = document.getElementById('rp-gender');
   if (rpG) rpG.textContent = names[gender] || gender;
   // Update CARD_IMAGES lookup to use gender variant if available
-  // Rebuild all placed cards with new images
+  // Rebuild all placed daily cards with new images
   document.querySelectorAll('.slot').forEach(slot => {
     const cid = slot.dataset.cid;
     const cat = slot.dataset.cat;
@@ -1786,9 +2011,11 @@ function onGenderChange() {
     if (!imgWrap) return;
     const imgSrc = getCardImage(cid);
     imgWrap.innerHTML = imgSrc
-      ? `<img src="${imgSrc}" alt="${card[lang]||card.en}" style="width:100%;height:100%;object-fit:contain;display:block">`
+      ? `<img src="${imgSrc}" alt="${cardLabelText(card)}" style="width:100%;height:100%;object-fit:contain;display:block">`
       : `<svg style="width:40px;height:40px;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${card.icon}"/></svg>`;
   });
+  // Rebuild placed weekly/custom/first-then cards too, so their images match the new character
+  refreshAllPlacedCards();
   renderTiles();
 }
 
@@ -1800,7 +2027,7 @@ function getCardImage(cardId) {
 }
 
 // INIT
-window._cardFontSize = '13px';
+window._cardFontSize = '15px';
 
 function scaleCanvas() {
   const canvas = document.getElementById('canvas-wrap');
@@ -1864,6 +2091,77 @@ function init() {
 
 window.addEventListener('resize', scaleCanvas);
 init();
+
+// ── ACCESSIBILITY BAR ──
+let a11yZoom = parseInt(localStorage.getItem('vs_a11y_zoom'), 10) || 100;
+function applyA11yZoom() {
+  document.documentElement.style.zoom = a11yZoom + '%';
+  const label = document.getElementById('a11y-zoom-label');
+  if (label) label.textContent = a11yZoom + '%';
+  localStorage.setItem('vs_a11y_zoom', a11yZoom);
+}
+function setA11yZoom(delta) {
+  a11yZoom = Math.max(80, Math.min(150, a11yZoom + delta));
+  applyA11yZoom();
+}
+function resetA11yZoom() {
+  a11yZoom = 100;
+  applyA11yZoom();
+}
+function focusLangSelect() {
+  const el = document.getElementById('lang-sel');
+  if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.focus();
+}
+applyA11yZoom(); // restore any saved text-size preference on load
+
+// ── RESIZABLE SIDE PANELS ──
+function initResizeHandle(handleId, panelSelector, opts) {
+  const handle = document.getElementById(handleId);
+  const panel = document.querySelector(panelSelector);
+  if (!handle || !panel) return;
+  const min = opts?.min || 220;
+  const max = opts?.max || 480;
+  const side = opts?.side || 'left'; // 'left' = handle sits to the right of the panel, 'right' = handle sits to the left of it
+  let dragging = false, startX = 0, startWidth = 0;
+
+  function onMove(e) {
+    if (!dragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const delta = clientX - startX;
+    let next = side === 'left' ? startWidth + delta : startWidth - delta;
+    next = Math.max(min, Math.min(max, next));
+    panel.style.width = next + 'px';
+  }
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.userSelect = '';
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
+    setTimeout(() => scaleCanvas(), 50);
+  }
+  function onDown(e) {
+    dragging = true;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    startWidth = panel.getBoundingClientRect().width;
+    handle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+    e.preventDefault();
+  }
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, { passive: false });
+}
+initResizeHandle('resize-sidebar', '.sidebar', { min: 220, max: 480, side: 'left' });
+initResizeHandle('resize-rp', '.rp', { min: 220, max: 480, side: 'right' });
 
 // ── WEEKLY SCHEDULE ──
 let scheduleType = 'daily';
@@ -1959,21 +2257,28 @@ function onScheduleTypeChange() {
 }
 
 // Shared by weekly & custom schedules: renders a column's inner HTML.
-// Empty -> dashed drop hint. Exactly one card -> that card fills the column,
-// with a small drag-drop icon below it so more can still be added. 2+ cards
-// -> the normal compact stacked list.
+// Empty -> dashed drop hint. 1+ cards -> every card equally fills the
+// column (flex:1 each), regardless of count, with a small drag-drop icon
+// after the last one so more can still be added up to the max.
 function renderColInner(cards, max, scopedKey, hintPrefix, makeCardFn) {
   if (!cards.length) {
     return `<div class="weekly-drop-hint" id="${hintPrefix}-${scopedKey}"></div>`;
   }
-  if (cards.length === 1) {
-    const cardHTML = makeCardFn(cards[0], scopedKey, 0, true);
-    const miniDrop = cards.length < max
-      ? `<div class="weekly-mini-drop"><svg viewBox="0 0 24 24"><use href="#s-plus"/></svg></div>`
-      : '';
-    return cardHTML + miniDrop;
-  }
-  return cards.map((c, i) => makeCardFn(c, scopedKey, i, false)).join('');
+  const fontSize = fillLabelFontSize(cards.length);
+  const cardsHTML = cards.map((c, i) => makeCardFn(c, scopedKey, i, fontSize)).join('');
+  const miniDrop = cards.length < max
+    ? `<div class="weekly-mini-drop"><svg viewBox="0 0 24 24"><use href="#s-plus"/></svg></div>`
+    : '';
+  return cardsHTML + miniDrop;
+}
+
+// Label font size scales down a bit as more cards share the column
+function fillLabelFontSize(count) {
+  if (count <= 1) return '19px';
+  if (count === 2) return '17px';
+  if (count === 3) return '15px';
+  if (count === 4) return '14px';
+  return '13px'; // 5-6 cards
 }
 
 function buildWeeklyPage() {
@@ -2023,7 +2328,7 @@ function buildWeeklyPage() {
       <div><span class="a4-foot-brand">Visual Schedules by Grow Gently</span></div>
       <div style="text-align:right">
         <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official</span>
-        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
+        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
       </div>
     </div>`;
 
@@ -2075,7 +2380,7 @@ function buildCustomPage() {
       <div><span class="a4-foot-brand">Visual Schedules by Grow Gently</span></div>
       <div style="text-align:right">
         <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official</span>
-        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
+        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
       </div>
     </div>`;
 
@@ -2083,16 +2388,17 @@ function buildCustomPage() {
   setTimeout(() => scaleCanvas(), 50);
 }
 
-function makeCustomCardHTML(c, colKey, idx, solo) {
-  const label = c[lang] || c.en;
+function makeCustomCardHTML(c, colKey, idx, fontSize) {
+  const altText = cardLabelText(c);
+  const labelHTML = cardLabelHTML(c);
   const imgSrc = getCardImage(c.id);
   const imgPart = imgSrc
-    ? `<img src="${imgSrc}" alt="${label}">`
+    ? `<img src="${imgSrc}" alt="${altText}">`
     : `<svg style="width:40%;height:40%;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${c.icon}"/></svg>`;
-  return `<div class="weekly-card${solo ? ' solo' : ''}">
+  return `<div class="weekly-card fill">
     <div class="weekly-card-img">${imgPart}</div>
-    <div class="weekly-card-lbl">${label}</div>
-    <div class="weekly-card-rm" onclick="removeCustomCard('${colKey}',${idx})">×</div>
+    <div class="weekly-card-lbl" style="font-size:${fontSize}">${labelHTML}</div>
+    <button type="button" class="weekly-card-rm" onclick="removeCustomCard('${colKey}',${idx})" aria-label="Remove this visual">×</button>
   </div>`;
 }
 
@@ -2207,7 +2513,7 @@ function buildFirstThenPage() {
       <div><span class="a4-foot-brand">Visual Schedules by Grow Gently</span></div>
       <div style="text-align:right">
         <span class="a4-foot-url" style="display:block">visualschedule.app · @visual_schedule_official</span>
-        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
+        <span style="font-size:10px;color:#888880;display:block;margin-top:3px;font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif">⚠ AI-generated labels — verify translations before use.</span>
       </div>
     </div>`;
 
@@ -2216,15 +2522,16 @@ function buildFirstThenPage() {
 }
 
 function makeFtCardHTML(c, colKey, idx) {
-  const label = c[lang] || c.en;
+  const altText = cardLabelText(c);
+  const labelHTML = cardLabelHTML(c);
   const imgSrc = getCardImage(c.id);
   const imgPart = imgSrc
-    ? `<img src="${imgSrc}" alt="${label}">`
+    ? `<img src="${imgSrc}" alt="${altText}">`
     : `<svg><use href="#${c.icon}"/></svg>`;
   return `<div class="ft-card">
     <div class="ft-card-img">${imgPart}</div>
-    <div class="ft-card-lbl">${label}</div>
-    <div class="ft-card-rm" onclick="removeFtCard('${colKey}',${idx})">×</div>
+    <div class="ft-card-lbl">${labelHTML}</div>
+    <button type="button" class="ft-card-rm" onclick="removeFtCard('${colKey}',${idx})" aria-label="Remove this visual">×</button>
   </div>`;
 }
 
@@ -2318,10 +2625,10 @@ function showFtColPicker(cardId, cat) {
 
   const popup = document.createElement('div');
   popup.id = 'day-picker-popup';
-  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible",system-ui,sans-serif';
+  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#FFFFFF;border:1px solid #DDD9D0;padding:1.25rem;z-index:400;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif';
   const cards = CARDS_DATA[cat] || [];
   const c = cards.find(x => x.id === cardId);
-  const label = c ? (c[lang] || c.en) : cardId;
+  const label = c ? cardLabelText(c) : cardId;
   const pageNote = ftPages.length > 1 ? ` (Page ${targetPageNum})` : '';
 
   const colNames = [];
@@ -2361,16 +2668,17 @@ function addToFtCol(cardId, cat, colKey) {
   refreshFtCol(colKey);
 }
 
-function makeWeeklyCardHTML(c, dayKey, idx, solo) {
-  const label = c[lang] || c.en;
+function makeWeeklyCardHTML(c, dayKey, idx, fontSize) {
+  const altText = cardLabelText(c);
+  const labelHTML = cardLabelHTML(c);
   const imgSrc = getCardImage(c.id);
   const imgPart = imgSrc
-    ? `<img src="${imgSrc}" alt="${label}">`
+    ? `<img src="${imgSrc}" alt="${altText}">`
     : `<svg style="width:40%;height:40%;stroke:#CCCCCC;stroke-width:1.4;fill:none;stroke-linecap:round;display:block;margin:auto"><use href="#${c.icon}"/></svg>`;
-  return `<div class="weekly-card${solo ? ' solo' : ''}">
+  return `<div class="weekly-card fill">
     <div class="weekly-card-img">${imgPart}</div>
-    <div class="weekly-card-lbl">${label}</div>
-    <div class="weekly-card-rm" onclick="removeWeeklyCard('${dayKey}',${idx})">×</div>
+    <div class="weekly-card-lbl" style="font-size:${fontSize}">${labelHTML}</div>
+    <button type="button" class="weekly-card-rm" onclick="removeWeeklyCard('${dayKey}',${idx})" aria-label="Remove this visual">×</button>
   </div>`;
 }
 
@@ -2554,7 +2862,7 @@ ${fontLinkHTML}
 <style>${styleText}</style>
 <style>
   @page{ size: A4 ${orientation}; margin: 0; }
-  body{ margin:0; background:#EAE7E0; font-family:'Atkinson Hyperlegible',system-ui,sans-serif; }
+  body{ margin:0; background:#EAE7E0; font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif; }
   .pv-toolbar{
     position:sticky;top:0;z-index:50;background:#FFFFFF;border-bottom:1px solid #E0DDD8;
     padding:14px 20px;display:flex;gap:10px;align-items:center;justify-content:center;
@@ -2586,6 +2894,277 @@ ${fontLinkHTML}
 </body>
 </html>`);
   win.document.close();
+}
+
+// ── EXPORT (real PDF/JPEG download, no browser print dialog) & WHATSAPP SHARE ──
+let exportFormat = 'pdf';
+
+function setExportFormat(fmt, btn) {
+  exportFormat = fmt;
+  document.querySelectorAll('#modal-export .cs-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const dlBtn = document.getElementById('exp-download-btn');
+  if (dlBtn) dlBtn.textContent = fmt === 'pdf' ? 'Download PDF' : 'Download JPEG';
+}
+
+function showExportStatus(text) {
+  const el = document.getElementById('exp-status');
+  const txt = document.getElementById('exp-status-text');
+  if (txt) txt.textContent = text;
+  if (el) el.style.display = 'flex';
+}
+function hideExportStatus() {
+  const el = document.getElementById('exp-status');
+  if (el) el.style.display = 'none';
+}
+
+function getExportFileBaseName() {
+  const titleVal = (document.getElementById('inp-title')?.value || 'schedule').trim();
+  return titleVal.replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'schedule';
+}
+
+// Hide editing-only affordances (remove buttons, drop hints) so exports look like a finished schedule
+function injectExportHideStyle() {
+  const style = document.createElement('style');
+  style.id = 'export-hide-style';
+  style.textContent = '.slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm{display:none!important}';
+  document.head.appendChild(style);
+  return style;
+}
+
+// html2canvas doesn't respect CSS object-fit on <img> — it stretches the
+// image to fill its box. Work around this by temporarily replacing
+// object-fit with explicit width/height that reproduce the same
+// letterboxed/contain look, which html2canvas renders correctly.
+function lockImageSizesForCapture(pageEl) {
+  const overrides = [];
+  pageEl.querySelectorAll('img').forEach(img => {
+    const parent = img.parentElement;
+    if (!parent) return;
+    const pw = parent.clientWidth;
+    const ph = parent.clientHeight;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    if (!pw || !ph || !iw || !ih) return;
+    const scale = Math.min(pw / iw, ph / ih);
+    const w = Math.round(iw * scale);
+    const h = Math.round(ih * scale);
+    overrides.push({ el: img, prev: img.getAttribute('style') });
+    img.style.width = w + 'px';
+    img.style.height = h + 'px';
+    img.style.maxWidth = 'none';
+    img.style.maxHeight = 'none';
+    img.style.objectFit = '';
+    img.style.display = 'block';
+    img.style.margin = 'auto';
+  });
+  return overrides;
+}
+function restoreImageSizes(overrides) {
+  overrides.forEach(({ el, prev }) => {
+    if (prev) el.setAttribute('style', prev);
+    else el.removeAttribute('style');
+  });
+}
+
+// html2canvas also can't reliably render the text VALUE of <input> elements
+// (column-rename fields render garbled/upside-down in exports). Swap each
+// one for a plain text div with the same class — same CSS, no form-control
+// rendering quirk — for the duration of the capture.
+function swapColumnInputsForCapture(pageEl) {
+  const swaps = [];
+  pageEl.querySelectorAll('input.custom-col-input, input.ft-col-input').forEach(input => {
+    const div = document.createElement('div');
+    div.className = input.className;
+    div.textContent = input.value;
+    input.style.display = 'none';
+    input.insertAdjacentElement('afterend', div);
+    swaps.push({ input, div });
+  });
+  return swaps;
+}
+function restoreColumnInputs(swaps) {
+  swaps.forEach(({ input, div }) => {
+    div.remove();
+    input.style.display = '';
+  });
+}
+
+// Combined prep/restore used right around every html2canvas(pageEl) call
+function prepPageForCapture(pageEl) {
+  return {
+    imgOverrides: lockImageSizesForCapture(pageEl),
+    inputSwaps: swapColumnInputsForCapture(pageEl),
+  };
+}
+function restorePageAfterCapture(state) {
+  restoreImageSizes(state.imgOverrides);
+  restoreColumnInputs(state.inputSwaps);
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// Renders every .a4-page to a canvas image and lays each one onto its own
+// correctly-oriented PDF page — this fully controls page count and
+// orientation itself, instead of relying on the browser's print engine.
+async function buildPdfBlob() {
+  const pages = Array.from(document.querySelectorAll('#canvas-wrap .a4-page'));
+  if (!pages.length) throw new Error('No pages to export');
+  const isLandscape = scheduleType === 'weekly' || scheduleType === 'custom' || scheduleType === 'firstthen';
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  const pageWidthMM = isLandscape ? 297 : 210;
+  const pageHeightMM = isLandscape ? 210 : 297;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+
+  for (let i = 0; i < pages.length; i++) {
+    const pageEl = pages[i];
+    const prevTransform = pageEl.style.transform;
+    const prevMargin = pageEl.style.margin;
+    pageEl.style.transform = 'none';
+    pageEl.style.margin = '0';
+    const captureState = prepPageForCapture(pageEl);
+    const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: '#FFFFFF', useCORS: true });
+    restorePageAfterCapture(captureState);
+    pageEl.style.transform = prevTransform;
+    pageEl.style.margin = prevMargin;
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    if (i > 0) pdf.addPage('a4', orientation);
+    pdf.addImage(imgData, 'JPEG', 0, 0, pageWidthMM, pageHeightMM);
+  }
+  return pdf.output('blob');
+}
+
+async function exportPDF() {
+  const hideStyle = injectExportHideStyle();
+  try {
+    const blob = await buildPdfBlob();
+    downloadBlob(blob, getExportFileBaseName() + '.pdf');
+  } finally {
+    hideStyle.remove();
+  }
+}
+
+// One JPEG per page — downloaded sequentially (a short pause between each
+// avoids the browser treating rapid downloads as pop-up spam)
+async function exportJPEG() {
+  const pages = Array.from(document.querySelectorAll('#canvas-wrap .a4-page'));
+  if (!pages.length) { alert('No pages to export.'); return; }
+  const hideStyle = injectExportHideStyle();
+  try {
+    const baseName = getExportFileBaseName();
+    for (let i = 0; i < pages.length; i++) {
+      const pageEl = pages[i];
+      const prevTransform = pageEl.style.transform;
+      const prevMargin = pageEl.style.margin;
+      pageEl.style.transform = 'none';
+      pageEl.style.margin = '0';
+      const captureState = prepPageForCapture(pageEl);
+      const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: '#FFFFFF', useCORS: true });
+      restorePageAfterCapture(captureState);
+      pageEl.style.transform = prevTransform;
+      pageEl.style.margin = prevMargin;
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+      const fname = pages.length > 1 ? `${baseName}-page-${i + 1}.jpg` : `${baseName}.jpg`;
+      downloadBlob(blob, fname);
+      if (i < pages.length - 1) await new Promise(r => setTimeout(r, 400));
+    }
+  } finally {
+    hideStyle.remove();
+  }
+}
+
+async function runExportDownload() {
+  showExportStatus(exportFormat === 'pdf' ? 'Preparing your PDF…' : 'Preparing your image…');
+  try {
+    if (exportFormat === 'pdf') {
+      await exportPDF();
+    } else {
+      await exportJPEG();
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Something went wrong creating the file. Please try again.');
+  } finally {
+    hideExportStatus();
+  }
+}
+
+// Best-effort WhatsApp share: uses the native share sheet (with the file
+// attached) where supported — mainly phones. Elsewhere, the file downloads
+// and WhatsApp opens to that number so it can be attached manually, since
+// browsers have no way to push a file into a chat without the user's help.
+async function shareToWhatsApp(format) {
+  const rawNumber = (document.getElementById('wa-number')?.value || '').trim();
+  const digits = rawNumber.replace(/[^0-9]/g, '');
+  const shareText = 'Here is the visual schedule!';
+  const baseName = getExportFileBaseName();
+
+  const hideStyle = injectExportHideStyle();
+  let blob, fileName, mimeType;
+  try {
+    if (format === 'pdf') {
+      blob = await buildPdfBlob();
+      fileName = baseName + '.pdf';
+      mimeType = 'application/pdf';
+    } else {
+      const pages = Array.from(document.querySelectorAll('#canvas-wrap .a4-page'));
+      if (!pages.length) throw new Error('No pages to share');
+      const pageEl = pages[0];
+      const prevTransform = pageEl.style.transform;
+      const prevMargin = pageEl.style.margin;
+      pageEl.style.transform = 'none';
+      pageEl.style.margin = '0';
+      const captureState = prepPageForCapture(pageEl);
+      const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: '#FFFFFF', useCORS: true });
+      restorePageAfterCapture(captureState);
+      pageEl.style.transform = prevTransform;
+      pageEl.style.margin = prevMargin;
+      blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+      fileName = baseName + '.jpg';
+      mimeType = 'image/jpeg';
+    }
+  } finally {
+    hideStyle.remove();
+  }
+
+  const file = new File([blob], fileName, { type: mimeType });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], text: shareText, title: 'Visual Schedule' });
+      return;
+    } catch (err) {
+      if (err?.name === 'AbortError') return; // user cancelled the share sheet
+      // otherwise fall through to the manual fallback below
+    }
+  }
+
+  // Fallback for browsers/devices without file-sharing support
+  downloadBlob(blob, fileName);
+  const waText = encodeURIComponent(`${shareText} (attach the file you just downloaded: ${fileName})`);
+  const waUrl = digits ? `https://wa.me/${digits}?text=${waText}` : `https://wa.me/?text=${waText}`;
+  window.open(waUrl, '_blank');
+}
+
+async function runExportWhatsApp() {
+  showExportStatus('Preparing your file for WhatsApp…');
+  try {
+    await shareToWhatsApp(exportFormat);
+  } catch (err) {
+    console.error(err);
+    alert('Something went wrong preparing the file. Please try again.');
+  } finally {
+    hideExportStatus();
+  }
 }
 </script>
 
