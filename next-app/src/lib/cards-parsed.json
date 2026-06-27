@@ -1,0 +1,825 @@
+{
+  "categories": [
+    {
+      "id": "daily",
+      "name": "Daily",
+      "isFree": true,
+      "sortOrder": 0
+    },
+    {
+      "id": "school",
+      "name": "School",
+      "isFree": false,
+      "sortOrder": 1
+    },
+    {
+      "id": "therapy",
+      "name": "Therapy",
+      "isFree": false,
+      "sortOrder": 2
+    },
+    {
+      "id": "meals",
+      "name": "Meals",
+      "isFree": false,
+      "sortOrder": 3
+    },
+    {
+      "id": "social",
+      "name": "Social",
+      "isFree": false,
+      "sortOrder": 4
+    },
+    {
+      "id": "art",
+      "name": "Art",
+      "isFree": false,
+      "sortOrder": 5
+    },
+    {
+      "id": "home",
+      "name": "Home",
+      "isFree": false,
+      "sortOrder": 6
+    }
+  ],
+  "cards": [
+    {
+      "id": "wake",
+      "icon": "s-sun",
+      "categoryId": "daily",
+      "sortOrder": 0,
+      "translations": {
+        "en": "Wake Up",
+        "hi": "उठना",
+        "mr": "उठणे",
+        "pa": "ਜਾਗੋ",
+        "gu": "જાગો",
+        "ta": "எழுந்திரு",
+        "te": "లేవడం",
+        "bn": "উঠুন",
+        "ur": "اٹھو",
+        "kn": "ಏಳು",
+        "ml": "ഉണരുക",
+        "ar": "الاستيقاظ",
+        "es": "Levantarse",
+        "fr": "Se Lever",
+        "de": "Aufstehen",
+        "pt": "Acordar",
+        "ru": "Просыпаться",
+        "zh": "起床",
+        "ja": "起きる",
+        "ko": "일어나기",
+        "ind": "Bangun",
+        "ms": "Bangun",
+        "th": "ตื่นนอน",
+        "tl": "Gumising",
+        "vi": "Thức Dậy"
+      }
+    },
+    {
+      "id": "potty",
+      "icon": "s-droplet",
+      "categoryId": "daily",
+      "sortOrder": 1,
+      "translations": {
+        "en": "Potty Time",
+        "hi": "टॉयलेट",
+        "mr": "टॉयलेट",
+        "pa": "ਟਾਇਲਟ",
+        "gu": "ટોઇલેટ",
+        "ta": "கழிப்பறை",
+        "te": "టాయిలెట్",
+        "bn": "টয়লেট",
+        "ur": "ٹائلٹ",
+        "kn": "ಶೌಚಾಲಯ",
+        "ml": "ടോയ്ലറ്റ്",
+        "ar": "دورة المياه",
+        "es": "El Baño",
+        "fr": "Toilettes",
+        "de": "Toilette",
+        "pt": "Banheiro",
+        "ru": "Туалет",
+        "zh": "上厕所",
+        "ja": "トイレ",
+        "ko": "화장실",
+        "ind": "Toilet",
+        "ms": "Tandas",
+        "th": "ห้องน้ำ",
+        "tl": "CR",
+        "vi": "Nhà Vệ Sinh"
+      }
+    },
+    {
+      "id": "teeth",
+      "icon": "s-tooth",
+      "categoryId": "daily",
+      "sortOrder": 2,
+      "translations": {
+        "en": "Brush Teeth",
+        "hi": "दाँत साफ",
+        "mr": "दात घासा",
+        "pa": "ਦੰਦ ਸਾਫ਼",
+        "gu": "દાંત સાફ",
+        "ta": "பல் தேய்",
+        "te": "పళ్ళు",
+        "bn": "দাঁত মাজো",
+        "ur": "دانت صاف",
+        "kn": "ಹಲ್ಲು ಉಜ್ಜು",
+        "ml": "പല്ലു തേക്കുക",
+        "ar": "تنظيف الأسنان",
+        "es": "Cepillarse",
+        "fr": "Se Brosser",
+        "de": "Zähne Putzen",
+        "pt": "Escovar",
+        "ru": "Чистить Зубы",
+        "zh": "刷牙",
+        "ja": "歯磨き",
+        "ko": "양치질",
+        "ind": "Sikat Gigi",
+        "ms": "Gosok Gigi",
+        "th": "แปรงฟัน",
+        "tl": "Magsipilyo",
+        "vi": "Đánh Răng"
+      }
+    },
+    {
+      "id": "bath",
+      "icon": "s-droplet",
+      "categoryId": "daily",
+      "sortOrder": 3,
+      "translations": {
+        "en": "Bath Time",
+        "hi": "नहाना",
+        "mr": "आंघोळ",
+        "pa": "ਇਸ਼ਨਾਨ",
+        "gu": "સ્નાન",
+        "ta": "குளி",
+        "te": "స్నానం",
+        "bn": "গোসল",
+        "ur": "نہانا",
+        "kn": "ಸ್ನಾನ"
+      }
+    },
+    {
+      "id": "dress",
+      "icon": "s-shirt",
+      "categoryId": "daily",
+      "sortOrder": 4,
+      "translations": {
+        "en": "Get Dressed",
+        "hi": "कपड़े पहनो",
+        "mr": "कपडे घाला",
+        "pa": "ਕੱਪੜੇ ਪਾਓ",
+        "gu": "કપડાં પહેરો",
+        "ta": "ஆடை அணி",
+        "te": "బట్టలు",
+        "bn": "পোশাক পরো",
+        "ur": "کپڑے پہنو",
+        "kn": "ಬಟ್ಟೆ ತೊಡಿ"
+      }
+    },
+    {
+      "id": "bfast",
+      "icon": "s-bowl",
+      "categoryId": "daily",
+      "sortOrder": 5,
+      "translations": {
+        "en": "Breakfast",
+        "hi": "नाश्ता",
+        "mr": "नाश्ता",
+        "pa": "ਨਾਸ਼ਤਾ",
+        "gu": "નાસ્તો",
+        "ta": "காலை உணவு",
+        "te": "అల్పాహారం",
+        "bn": "সকালের নাস্তা",
+        "ur": "ناشتہ",
+        "kn": "ತಿಂಡಿ",
+        "ml": "പ്രഭാതഭക്ഷണം",
+        "ar": "الفطور",
+        "es": "Desayuno",
+        "fr": "Petit-Déjeuner",
+        "de": "Frühstück",
+        "pt": "Café da Manhã",
+        "ru": "Завтрак",
+        "zh": "早餐",
+        "ja": "朝ごはん",
+        "ko": "아침식사",
+        "ind": "Sarapan",
+        "ms": "Sarapan",
+        "th": "อาหารเช้า",
+        "tl": "Almusal",
+        "vi": "Ăn Sáng"
+      }
+    },
+    {
+      "id": "bag",
+      "icon": "s-backpack",
+      "categoryId": "daily",
+      "sortOrder": 6,
+      "translations": {
+        "en": "Pack Bag",
+        "hi": "बैग तैयार",
+        "mr": "बॅग भरा",
+        "pa": "ਬੈਗ ਪੈਕ",
+        "gu": "બેગ પૅક",
+        "ta": "பை எடு",
+        "te": "బ్యాగ్",
+        "bn": "ব্যাগ",
+        "ur": "بیگ پیک",
+        "kn": "ಬ್ಯಾಗ್"
+      }
+    },
+    {
+      "id": "lunch",
+      "icon": "s-fork",
+      "categoryId": "daily",
+      "sortOrder": 7,
+      "translations": {
+        "en": "Lunch",
+        "hi": "दोपहर खाना",
+        "mr": "जेवण",
+        "pa": "ਦੁਪਹਿਰ",
+        "gu": "બપોરનું ભોજન",
+        "ta": "மதிய உணவு",
+        "te": "భోజనం",
+        "bn": "দুপুরের খাবার",
+        "ur": "دوپہر کا کھانا",
+        "kn": "ಮಧ್ಯಾಹ್ನ ಊಟ"
+      }
+    },
+    {
+      "id": "dinner",
+      "icon": "s-meal",
+      "categoryId": "daily",
+      "sortOrder": 8,
+      "translations": {
+        "en": "Dinner",
+        "hi": "रात खाना",
+        "mr": "रात्रीचे जेवण",
+        "pa": "ਰਾਤ ਦਾ ਖਾਣਾ",
+        "gu": "રાત્રિ ભોજન",
+        "ta": "இரவு உணவு",
+        "te": "రాత్రి భోజనం",
+        "bn": "রাতের খাবার",
+        "ur": "رات کا کھانا",
+        "kn": "ರಾತ್ರಿ ಊಟ"
+      }
+    },
+    {
+      "id": "play",
+      "icon": "s-tree",
+      "categoryId": "daily",
+      "sortOrder": 9,
+      "translations": {
+        "en": "Outdoor Play",
+        "hi": "बाहर खेलो",
+        "mr": "बाहेर खेळा",
+        "pa": "ਬਾਹਰ ਖੇਡੋ",
+        "gu": "બહાર રમો",
+        "ta": "வெளி விளையாடு",
+        "te": "బయట ఆటలు",
+        "bn": "বাইরে খেলো",
+        "ur": "باہر کھیلو",
+        "kn": "ಹೊರಗೆ ಆಟ"
+      }
+    },
+    {
+      "id": "quiet",
+      "icon": "s-puzzle",
+      "categoryId": "daily",
+      "sortOrder": 10,
+      "translations": {
+        "en": "Quiet Time",
+        "hi": "शांत समय",
+        "mr": "शांत वेळ",
+        "pa": "ਸ਼ਾਂਤ ਸਮਾਂ",
+        "gu": "શાંત સમય",
+        "ta": "அமைதி நேரம்",
+        "te": "నిశ్శబ్ద సమయం",
+        "bn": "শান্ত সময়",
+        "ur": "خاموش وقت",
+        "kn": "ನಿಶ್ಶಬ್ದ ಸಮಯ"
+      }
+    },
+    {
+      "id": "sleep",
+      "icon": "s-moon",
+      "categoryId": "daily",
+      "sortOrder": 11,
+      "translations": {
+        "en": "Sleep",
+        "hi": "सोना",
+        "mr": "झोपणे",
+        "pa": "ਸੌਣਾ",
+        "gu": "ઊઘ",
+        "ta": "தூக்கம்",
+        "te": "నిద్ర",
+        "bn": "ঘুম",
+        "ur": "سونا",
+        "kn": "ನಿದ್ರೆ",
+        "ml": "ഉറക്കം",
+        "ar": "النوم",
+        "es": "Dormir",
+        "fr": "Dormir",
+        "de": "Schlafen",
+        "pt": "Dormir",
+        "ru": "Спать",
+        "zh": "睡觉",
+        "ja": "ねむる",
+        "ko": "잠자기",
+        "ind": "Tidur",
+        "ms": "Tidur",
+        "th": "นอนหลับ",
+        "tl": "Matulog",
+        "vi": "Ngủ"
+      }
+    },
+    {
+      "id": "story",
+      "icon": "s-book",
+      "categoryId": "daily",
+      "sortOrder": 12,
+      "translations": {
+        "en": "Bedtime Story",
+        "hi": "सोने की कहानी",
+        "mr": "झोपेची गोष्ट",
+        "pa": "ਸੌਣ ਕਹਾਣੀ",
+        "gu": "સૂવાની વાર્તા",
+        "ta": "தூக்க கதை",
+        "te": "నిద్ర కథ",
+        "bn": "ঘুমের গল্প",
+        "ur": "سوتے وقت کہانی",
+        "kn": "ಮಲಗುವ ಕಥೆ"
+      }
+    },
+    {
+      "id": "sbus",
+      "icon": "s-bus",
+      "categoryId": "school",
+      "sortOrder": 0,
+      "translations": {
+        "en": "School Bus",
+        "hi": "स्कूल बस",
+        "mr": "शाळेची बस",
+        "pa": "ਸਕੂਲ ਬੱਸ",
+        "gu": "શાળા બસ",
+        "ta": "பள்ளி பஸ்",
+        "te": "స్కూల్ బస్",
+        "bn": "স্কুল বাস",
+        "ur": "سکول بس",
+        "kn": "ಶಾಲೆ ಬಸ್"
+      }
+    },
+    {
+      "id": "assm",
+      "icon": "s-users",
+      "categoryId": "school",
+      "sortOrder": 1,
+      "translations": {
+        "en": "Assembly",
+        "hi": "प्रार्थना",
+        "mr": "प्रार्थना",
+        "pa": "ਅਸੈਂਬਲੀ",
+        "gu": "પ્રાર્થના",
+        "ta": "சட்டசபை",
+        "te": "అసెంబ్లీ",
+        "bn": "প্রার্থনা",
+        "ur": "اسمبلی",
+        "kn": "ಸಭೆ"
+      }
+    },
+    {
+      "id": "class",
+      "icon": "s-pencil",
+      "categoryId": "school",
+      "sortOrder": 2,
+      "translations": {
+        "en": "Class Work",
+        "hi": "कक्षा कार्य",
+        "mr": "वर्ग काम",
+        "pa": "ਕਲਾਸ ਕੰਮ",
+        "gu": "વર્ગ કાર્ય",
+        "ta": "வகுப்பு",
+        "te": "తరగతి పని",
+        "bn": "ক্লাস",
+        "ur": "کلاس",
+        "kn": "ತರಗತಿ"
+      }
+    },
+    {
+      "id": "pt",
+      "icon": "s-run",
+      "categoryId": "school",
+      "sortOrder": 3,
+      "translations": {
+        "en": "PT and Break",
+        "hi": "खेल और छुट्टी",
+        "mr": "PT आणि सुट्टी",
+        "pa": "PT ਅਤੇ ਬ੍ਰੇਕ",
+        "gu": "PT અને વિરામ",
+        "ta": "PT இடைவேளை",
+        "te": "PT బ్రేక్",
+        "bn": "PT বিরতি",
+        "ur": "PT وقفہ",
+        "kn": "PT ವಿರಾಮ"
+      }
+    },
+    {
+      "id": "lib",
+      "icon": "s-book",
+      "categoryId": "school",
+      "sortOrder": 4,
+      "translations": {
+        "en": "Library",
+        "hi": "पुस्तकालय",
+        "mr": "ग्रंथालय",
+        "pa": "ਲਾਇਬ੍ਰੇਰੀ",
+        "gu": "પુસ્તકાલय",
+        "ta": "நூலகம்",
+        "te": "గ్రంథాలయం",
+        "bn": "লাইব্রেরি",
+        "ur": "لائبریری",
+        "kn": "ಗ್ರಂಥಾಲಯ"
+      }
+    },
+    {
+      "id": "hw",
+      "icon": "s-pencil",
+      "categoryId": "school",
+      "sortOrder": 5,
+      "translations": {
+        "en": "Homework",
+        "hi": "गृहकार्य",
+        "mr": "गृहपाठ",
+        "pa": "ਹੋਮਵਰਕ",
+        "gu": "ગૃહકાર્ય",
+        "ta": "வீட்டுப்பாடம்",
+        "te": "హోంవర్క్",
+        "bn": "হোমওয়ার্ক",
+        "ur": "ہوم ورک",
+        "kn": "ಮನೆ ಕೆಲಸ"
+      }
+    },
+    {
+      "id": "ot",
+      "icon": "s-therapy",
+      "categoryId": "therapy",
+      "sortOrder": 0,
+      "translations": {
+        "en": "OT Session",
+        "hi": "OT सत्र",
+        "mr": "OT सेशन",
+        "pa": "OT ਸੈਸ਼ਨ",
+        "gu": "OT સત્ર",
+        "ta": "OT அமர்வு",
+        "te": "OT సెషన్",
+        "bn": "OT সেশন",
+        "ur": "OT سیشن",
+        "kn": "OT ಅಧಿವೇಶನ"
+      }
+    },
+    {
+      "id": "speech",
+      "icon": "s-heart",
+      "categoryId": "therapy",
+      "sortOrder": 1,
+      "translations": {
+        "en": "Speech Therapy",
+        "hi": "स्पीच थेरेपी",
+        "mr": "भाषण थेरपी",
+        "pa": "ਭਾਸ਼ਣ ਥੈਰੇਪੀ",
+        "gu": "ભાષણ ઉपचार",
+        "ta": "பேச்சு சிகிச்சை",
+        "te": "స్పీచ్ థెరపీ",
+        "bn": "স্পিচ থেরাপি",
+        "ur": "اسپیچ تھیراپی",
+        "kn": "ಮಾತು ಚಿಕಿತ್ಸೆ"
+      }
+    },
+    {
+      "id": "calm",
+      "icon": "s-leaf",
+      "categoryId": "therapy",
+      "sortOrder": 2,
+      "translations": {
+        "en": "Calm Down",
+        "hi": "शांत हो",
+        "mr": "शांत व्हा",
+        "pa": "ਸ਼ਾਂਤ ਹੋਵੋ",
+        "gu": "શاnt",
+        "ta": "அமைதியாகு",
+        "te": "శాంతించు",
+        "bn": "শান্ত হও",
+        "ur": "پرسکون ہو",
+        "kn": "ಶಾಂತವಾಗು"
+      }
+    },
+    {
+      "id": "sbreak",
+      "icon": "s-star",
+      "categoryId": "therapy",
+      "sortOrder": 3,
+      "translations": {
+        "en": "Sensory Break",
+        "hi": "संवेदी विराम",
+        "mr": "संवेदी विराम",
+        "pa": "ਸੰਵੇਦੀ ਬ੍ਰੇਕ",
+        "gu": "સ Sensory",
+        "ta": "உணர்வு இடைவேளை",
+        "te": "ఇంద్రియ విరామం",
+        "bn": "সংবেদনশীল",
+        "ur": "حسی وقفہ",
+        "kn": "ಸಂವೇದನಾ ವಿರಾಮ"
+      }
+    },
+    {
+      "id": "snack",
+      "icon": "s-bowl",
+      "categoryId": "meals",
+      "sortOrder": 0,
+      "translations": {
+        "en": "Snack Time",
+        "hi": "नाश्ते का समय",
+        "mr": "नाश्त्याची वेळ",
+        "pa": "ਸਨੈਕ ਸਮਾਂ",
+        "gu": "નاستাனો સमय",
+        "ta": "தின்பண்டம்",
+        "te": "స్నాక్",
+        "bn": "স্ন্যাক",
+        "ur": "ناشتے کا وقت",
+        "kn": "ತಿನಿಸು"
+      }
+    },
+    {
+      "id": "water",
+      "icon": "s-droplet",
+      "categoryId": "meals",
+      "sortOrder": 1,
+      "translations": {
+        "en": "Drink Water",
+        "hi": "पानी पीना",
+        "mr": "पाणी प्या",
+        "pa": "ਪਾਣੀ ਪੀਓ",
+        "gu": "પाणी",
+        "ta": "தண்ணீர்",
+        "te": "నీళ్ళు",
+        "bn": "জল পান",
+        "ur": "پانی پیو",
+        "kn": "ನೀರು ಕುಡಿ"
+      }
+    },
+    {
+      "id": "cook",
+      "icon": "s-meal",
+      "categoryId": "meals",
+      "sortOrder": 2,
+      "translations": {
+        "en": "Help Cook",
+        "hi": "खाना बनाना",
+        "mr": "स्वयंपाक",
+        "pa": "ਰਸੋਈ",
+        "gu": "રసोઈ",
+        "ta": "சமைக்க உதவு",
+        "te": "వంట",
+        "bn": "রান্না",
+        "ur": "کھانا پکانا",
+        "kn": "ಅಡಿಗೆ"
+      }
+    },
+    {
+      "id": "table",
+      "icon": "s-fork",
+      "categoryId": "meals",
+      "sortOrder": 3,
+      "translations": {
+        "en": "Lay the Table",
+        "hi": "मेज लगाना",
+        "mr": "टेबल लावणे",
+        "pa": "ਮੇਜ਼ ਲਾਓ",
+        "gu": "ટেबल",
+        "ta": "மேசை அமைக்கு",
+        "te": "టేబుల్",
+        "bn": "টেবিল",
+        "ur": "میز لگاؤ",
+        "kn": "ಮೇಜು"
+      }
+    },
+    {
+      "id": "share",
+      "icon": "s-heart",
+      "categoryId": "social",
+      "sortOrder": 0,
+      "translations": {
+        "en": "Share and Take Turns",
+        "hi": "बारी-बारी",
+        "mr": "वाटून घ्या",
+        "pa": "ਵਾਰੀ ਲਓ",
+        "gu": "વारो",
+        "ta": "மாறி மாறி",
+        "te": "వంతుగా",
+        "bn": "পালা করে",
+        "ur": "باری باری",
+        "kn": "ಸರದಿ"
+      }
+    },
+    {
+      "id": "feelings",
+      "icon": "s-art",
+      "categoryId": "social",
+      "sortOrder": 1,
+      "translations": {
+        "en": "Name My Feelings",
+        "hi": "भावनाएँ",
+        "mr": "भावना",
+        "pa": "ਭਾਵਨਾਵਾਂ",
+        "gu": "ভাবना",
+        "ta": "உணர்வுகள்",
+        "te": "నా భావాలు",
+        "bn": "অনুভূতি",
+        "ur": "جذبات",
+        "kn": "ಭಾವನೆ"
+      }
+    },
+    {
+      "id": "greet",
+      "icon": "s-users",
+      "categoryId": "social",
+      "sortOrder": 2,
+      "translations": {
+        "en": "Say Hello",
+        "hi": "नमस्ते",
+        "mr": "नमस्कार",
+        "pa": "ਸਤ ਸ੍ਰੀ",
+        "gu": "નমস்தे",
+        "ta": "வணக்கம்",
+        "te": "హలో",
+        "bn": "হ্যালো",
+        "ur": "سلام",
+        "kn": "ನಮಸ್ಕಾರ"
+      }
+    },
+    {
+      "id": "wait",
+      "icon": "s-puzzle",
+      "categoryId": "social",
+      "sortOrder": 3,
+      "translations": {
+        "en": "Wait My Turn",
+        "hi": "बारी का इंतज़ार",
+        "mr": "वाट पाहा",
+        "pa": "ਉਡੀਕ ਕਰੋ",
+        "gu": "राह जुओ",
+        "ta": "காத்திரு",
+        "te": "వేచి",
+        "bn": "অপেক্ষা",
+        "ur": "انتظار",
+        "kn": "ನನ್ನ ಸರದಿ"
+      }
+    },
+    {
+      "id": "draw",
+      "icon": "s-pencil",
+      "categoryId": "art",
+      "sortOrder": 0,
+      "translations": {
+        "en": "Drawing",
+        "hi": "चित्रकारी",
+        "mr": "चित्र काढा",
+        "pa": "ਡਰਾਇੰਗ",
+        "gu": "ચित्र",
+        "ta": "வரைதல்",
+        "te": "బొమ్మ",
+        "bn": "আঁকি",
+        "ur": "ڈرائنگ",
+        "kn": "ಚಿತ್ರ"
+      }
+    },
+    {
+      "id": "music",
+      "icon": "s-star",
+      "categoryId": "art",
+      "sortOrder": 1,
+      "translations": {
+        "en": "Music Time",
+        "hi": "संगीत समय",
+        "mr": "संगीत वेळ",
+        "pa": "ਸੰਗੀਤ ਸਮਾਂ",
+        "gu": "સংगীत",
+        "ta": "இசை நேரம்",
+        "te": "సంగీతం",
+        "bn": "সঙ্গীত",
+        "ur": "موسیقی",
+        "kn": "ಸಂಗೀತ"
+      }
+    },
+    {
+      "id": "dance",
+      "icon": "s-run",
+      "categoryId": "art",
+      "sortOrder": 2,
+      "translations": {
+        "en": "Dance and Move",
+        "hi": "नृत्य",
+        "mr": "नृत्य",
+        "pa": "ਡਾਂਸ",
+        "gu": "નृत্য",
+        "ta": "நடனம்",
+        "te": "నాట్యం",
+        "bn": "নাচ",
+        "ur": "رقص",
+        "kn": "ನೃತ್ಯ"
+      }
+    },
+    {
+      "id": "craft",
+      "icon": "s-art",
+      "categoryId": "art",
+      "sortOrder": 3,
+      "translations": {
+        "en": "Craft Time",
+        "hi": "हस्तकला",
+        "mr": "हस्तकला",
+        "pa": "ਕਰਾਫਟ",
+        "gu": "क्राफ्ट",
+        "ta": "கைவினை",
+        "te": "క్రాఫ్ట్",
+        "bn": "ক্রাফট",
+        "ur": "دستکاری",
+        "kn": "ಕ್ರಾಫ್ಟ್"
+      }
+    },
+    {
+      "id": "tidy",
+      "icon": "s-home",
+      "categoryId": "home",
+      "sortOrder": 0,
+      "translations": {
+        "en": "Tidy Up",
+        "hi": "सफाई",
+        "mr": "आवराआवर",
+        "pa": "ਸਾਫ਼ ਕਰੋ",
+        "gu": "સफাई",
+        "ta": "ஒழுங்குபடுத்து",
+        "te": "శుభ్రం",
+        "bn": "গোছানো",
+        "ur": "صاف کرو",
+        "kn": "ಸ್ವಚ್ಛ ಮಾಡಿ"
+      }
+    },
+    {
+      "id": "garden",
+      "icon": "s-leaf",
+      "categoryId": "home",
+      "sortOrder": 1,
+      "translations": {
+        "en": "Gardening",
+        "hi": "बागवानी",
+        "mr": "बागकाम",
+        "pa": "ਬਾਗਬਾਨੀ",
+        "gu": "باग",
+        "ta": "தோட்டம்",
+        "te": "తోట",
+        "bn": "বাগান",
+        "ur": "باغبانی",
+        "kn": "ತೋಟ"
+      }
+    },
+    {
+      "id": "pet",
+      "icon": "s-heart",
+      "categoryId": "home",
+      "sortOrder": 2,
+      "translations": {
+        "en": "Feed Pet",
+        "hi": "पालतू को खिलाना",
+        "mr": "पाळीव",
+        "pa": "ਪਾਲਤੂ",
+        "gu": "প্রাণी",
+        "ta": "செல்லப்பிராணி",
+        "te": "పెంపుడు",
+        "bn": "পোষা প্রাণী",
+        "ur": "پالتو",
+        "kn": "ಸಾಕುಪ್ರಾಣಿ"
+      }
+    },
+    {
+      "id": "laundry",
+      "icon": "s-shirt",
+      "categoryId": "home",
+      "sortOrder": 3,
+      "translations": {
+        "en": "Put Away Clothes",
+        "hi": "कपड़े रखो",
+        "mr": "कपडे ठेवा",
+        "pa": "ਕੱਪੜੇ ਰੱਖੋ",
+        "gu": "ক্পড়া",
+        "ta": "துணி வையு",
+        "te": "బట్టలు",
+        "bn": "কাপড় রাখো",
+        "ur": "کپڑے رکھو",
+        "kn": "ಬಟ್ಟೆ ಇಡಿ"
+      }
+    }
+  ]
+}

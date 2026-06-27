@@ -1,0 +1,30 @@
+name = "visual-schedules"
+main = ".open-next/worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[vars]
+R2_PUBLIC_URL = "https://assets.visualschedule.app"
+APP_URL = "https://visualschedule.app"
+EMAIL_FROM = "welcome@noreply.visualschedule.app"
+
+# Custom domains — add CNAME records pointing to visual-schedules.dataorc.workers.dev
+# Then run: npx wrangler domains add visualschedule.app
+#           npx wrangler domains add visualschedules.in
+
+[[d1_databases]]
+binding = "DB"
+database_name = "visual-schedules-db"
+database_id = "da0981b9-0fe4-40cb-b47e-9795e2871867"
+migrations_dir = "drizzle/migrations"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "visual-schedules-assets"
+
+[[send_email]]
+name = "EMAIL"

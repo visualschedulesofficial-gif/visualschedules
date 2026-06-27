@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from "next/server";
+
+// Access Cloudflare bindings via process.env at runtime on Workers
+function getEnv(): { R2?: any; DB?: any } {
+  return (process as any).env || {};
+}
+
+// POST /api/admin/cards/:id/images — upload an image variant to R2
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: cardId } = await params;
+
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const variant = formData.get("variant") as string | null;
+
+    if (!file || !variant) {
+      return NextResponse.json({ error: "file and variant are required" }, { status: 400 });
+    }
+
+    if (!["neutral", "boy", "girl", "brown"].includes(variant)) {
+      return NextResponse.json({ error: "variant must be neutral, boy, girl, or brown" }, { status: 400 });
+    }
+
+    const buffer = await file.arrayBuffer();
+    const contentType = file.type || "image/webp";
+    const ext = contentType.includes("png") ? "png" : contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : "webp";
+    const r2Key = `cards/${cardId}/${variant}.${ext}`;
+
+    const env = getEnv();
+    const r2PublicUrl = process.env.R2_PUBLIC_URL || "https://assets.visualschedule.app";
+
+    // Upload to R2
+    if (env.R2) {
+      await env.R2.put(r2Key, buffer, {
+        httpMetadata: { contentType },
+      });
+    } else {
+      console.log(`[Upload] R2 binding not available, would upload to: ${r2Key}`);
+    }
+
+    const publicUrl = `${r2PublicUrl}/${r2Key}`;
+
+    // Store in D1
+    if (env.DB) {
+      await env.DB.prepare(
+        `INSERT OR REPLACE INTO card_images (card_id, variant, r2_key, url) VALUES (?, ?, ?, ?)`
+      ).bind(cardId, variant, r2Key, publicUrl).run();
+    }
+
+    return NextResponse.json({
+      cardId,
+      variant,
+      r2Key,
+      url: publicUrl,
+      size: file.size,
+    }, { status: 201 });
+  } catch (err: any) {
+    console.error("[Upload Error]", err?.message || err);
+    return NextResponse.json({ error: "Upload failed: " + (err?.message || "unknown") }, { status: 500 });
+  }
+}
+
+// GET /api/admin/cards/:id/images — list image variants for a card
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: cardId } = await params;
+  const env = getEnv();
+
+  if (env.DB) {
+    const result = await env.DB.prepare(
+      `SELECT variant, r2_key, url FROM card_images WHERE card_id = ?`
+    ).bind(cardId).all();
+
+    return NextResponse.json({
+      cardId,
+      images: result.results || [],
+    });
+  }
+
+  return NextResponse.json({ cardId, images: [] });
+}
