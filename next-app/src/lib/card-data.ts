@@ -22,6 +22,14 @@ export function getCardLabel(card: ParsedCard, lang: string): string {
   return card.translations[lang] || card.translations["en"] || card.id;
 }
 
+// Cards that have images uploaded to R2
+const CARDS_WITH_IMAGES = new Set(["wake", "potty", "teeth", "bfast"]);
+
+export function getCardImageUrl(cardId: string, variant: string): string | null {
+  if (!CARDS_WITH_IMAGES.has(cardId)) return null;
+  return `/api/images/cards/${cardId}/${variant}.jpg`;
+}
+
 export function getCardsByCategory(categoryId: string): ParsedCard[] {
   return ALL_CARDS.filter((c) => c.categoryId === categoryId);
 }

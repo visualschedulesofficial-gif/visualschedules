@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
-import { ALL_CARDS, getCardLabel } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, getCardImageUrl } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
 
@@ -11,6 +11,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   const removeCard = useScheduleState((s) => s.removeCard);
   const cardStyle = useScheduleState((s) => s.cardStyle);
   const language = useScheduleState((s) => s.language);
+  const gender = useScheduleState((s) => s.gender);
   const page = pages[pageIdx] as DailyPageData;
   const cardRef = page?.slots?.[slotIdx] ?? null;
 
@@ -19,6 +20,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   });
 
   const card = cardRef ? ALL_CARDS.find((c) => c.id === cardRef.cardId) : null;
+  const imageUrl = card ? getCardImageUrl(card.id, gender) : null;
   const isDragging = !!active;
   const isBlack = cardStyle === "black";
 
@@ -38,9 +40,13 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
         <>
           <div className="absolute inset-0 flex flex-col">
             <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden ${isBlack ? "bg-[#2A2825]" : "bg-white"}`}>
-              <svg className={`w-10 h-10 stroke-[1.4] fill-none ${isBlack ? "stroke-[#666]" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
+              {imageUrl ? (
+                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+              ) : (
+                <svg className={`w-10 h-10 stroke-[1.4] fill-none ${isBlack ? "stroke-[#666]" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              )}
             </div>
             <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1.5px] ${isBlack ? "border-[#333] bg-ink" : "border-[#F0F0F0] bg-white"}`}>
               <span className={`text-[17px] text-center leading-tight font-sans ${isBlack ? "text-white" : "text-[#2C2C2C]"}`}>

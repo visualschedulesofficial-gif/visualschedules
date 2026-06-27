@@ -2,16 +2,17 @@
 
 import { useState, useMemo } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { CATEGORIES, ALL_CARDS, getCardLabel, type ParsedCard } from "@/lib/card-data";
+import { CATEGORIES, ALL_CARDS, getCardLabel, getCardImageUrl, type ParsedCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { LANGUAGES, type ScheduleType, type Language, type Gender } from "@/lib/constants";
 
-function DraggableCard({ card, lang, onCardClick }: { card: ParsedCard; lang: string; onCardClick?: (id: string) => void }) {
+function DraggableCard({ card, lang, gender, onCardClick }: { card: ParsedCard; lang: string; gender: string; onCardClick?: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
   });
 
   const label = getCardLabel(card, lang);
+  const imageUrl = getCardImageUrl(card.id, gender);
 
   return (
     <div
@@ -27,13 +28,17 @@ function DraggableCard({ card, lang, onCardClick }: { card: ParsedCard; lang: st
       `}
     >
       <div className="w-full h-[60px] bg-surface flex items-center justify-center overflow-hidden">
-        <svg
-          className="w-5 h-5 stroke-[#CCC] stroke-[1.5] fill-none"
-          viewBox="0 0 24 24"
-          strokeLinecap="round"
-        >
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
+        {imageUrl ? (
+          <img src={imageUrl} alt={label} className="w-full h-full object-contain" loading="lazy" />
+        ) : (
+          <svg
+            className="w-5 h-5 stroke-[#CCC] stroke-[1.5] fill-none"
+            viewBox="0 0 24 24"
+            strokeLinecap="round"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        )}
       </div>
       <div className="px-1 py-1 bg-surface border-t border-[#EEE] text-[11px] text-[#2C2C2C] text-center leading-tight font-sans line-clamp-2 min-h-[28px] flex items-center justify-center">
         {label}
@@ -176,7 +181,7 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {catCards.map((card) => (
-                    <DraggableCard key={card.id} card={card} lang={language} onCardClick={onCardClick} />
+                    <DraggableCard key={card.id} card={card} lang={language} gender={gender} onCardClick={onCardClick} />
                   ))}
                 </div>
               </div>
@@ -185,7 +190,7 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
         ) : (
           <div className="grid grid-cols-2 gap-1.5">
             {filtered.map((card) => (
-              <DraggableCard key={card.id} card={card} lang={language} onCardClick={onCardClick} />
+              <DraggableCard key={card.id} card={card} lang={language} gender={gender} onCardClick={onCardClick} />
             ))}
           </div>
         )}
