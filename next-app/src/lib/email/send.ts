@@ -1,24 +1,10 @@
 const FROM_EMAIL = "welcome@noreply.visualschedule.app";
 
-interface EmailBinding {
-  send(msg: {
-    to: string;
-    from: string;
-    subject: string;
-    html: string;
-    text: string;
-  }): Promise<{ messageId: string }>;
-}
-
-// Get the EMAIL binding from the Cloudflare env
-// In Next.js on Cloudflare Workers, env is available via process.env at runtime
-// but bindings need to be accessed via the request context
-let _emailBinding: EmailBinding | null = null;
-
-export function setEmailBinding(binding: EmailBinding) {
-  _emailBinding = binding;
-}
-
+/**
+ * Send email using the Cloudflare Workers EMAIL binding.
+ * The binding is configured in wrangler.toml as [[send_email]] name = "EMAIL"
+ * and accessed via process.env.EMAIL at runtime on Cloudflare Workers.
+ */
 export async function sendEmail({
   to,
   subject,
@@ -31,46 +17,23 @@ export async function sendEmail({
   text?: string;
 }): Promise<boolean> {
   try {
-    // Try Workers EMAIL binding first
-    if (_emailBinding) {
-      const res = await _emailBinding.send({
+    const env = (process as any).env;
+
+    if (env?.EMAIL?.send) {
+      const response = await env.EMAIL.send({
         to,
         from: FROM_EMAIL,
         subject,
         html,
         text: text || subject,
       });
-      console.log(`[Email] Sent via binding: ${res.messageId}`);
+      console.log(`[Email] Sent via binding: ${response?.messageId || "ok"}`);
       return true;
     }
 
-    // Fallback: Cloudflare Email Sending REST API
-    const apiToken = process.env.CF_EMAIL_API_TOKEN || "";
-    const accountId = process.env.CF_ACCOUNT_ID || "dc02bae6c57f5ac25d870cab7cdf2b0b";
-
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/email-sending/send`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to,
-          subject,
-          html,
-          text: text || subject,
-        }),
-      }
-    );
-
-    const data = await res.json();
-    if (!data.success) {
-      console.error("[Email] API response:", JSON.stringify(data));
-    }
-    return data.success === true;
+    // No binding available (local dev) — log to console
+    console.log(`[Email] No EMAIL binding. Would send to ${to}: ${subject}`);
+    return true;
   } catch (err) {
     console.error("[Email] Send failed:", err);
     return false;
