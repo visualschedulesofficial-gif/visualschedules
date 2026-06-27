@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Access Cloudflare bindings via process.env at runtime on Workers
 function getEnv(): { R2?: any; DB?: any } {
-  return (process as any).env || {};
+  const symbol = Symbol.for("__cloudflare-context__");
+  const ctx = (globalThis as any)[symbol];
+  return ctx?.env || {};
 }
 
 // POST /api/admin/cards/:id/images — upload an image variant to R2

@@ -8,9 +8,16 @@ export async function GET(
   const { path } = await params;
   const key = path.join("/");
 
-  const env = (process as any).env;
+  try {
+    // Access Cloudflare bindings via the global context symbol
+    const symbol = Symbol.for("__cloudflare-context__");
+    const ctx = (globalThis as any)[symbol];
+    const env = ctx?.env;
 
-  if (env?.R2) {
+    if (!env?.R2) {
+      return NextResponse.json({ error: "R2 not available" }, { status: 503 });
+    }
+
     const object = await env.R2.get(key);
     if (!object) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -21,7 +28,7 @@ export async function GET(
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
     return new NextResponse(object.body, { headers });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Failed" }, { status: 500 });
   }
-
-  return NextResponse.json({ error: "R2 not available" }, { status: 503 });
 }
