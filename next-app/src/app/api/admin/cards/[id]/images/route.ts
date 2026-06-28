@@ -42,8 +42,8 @@ export async function POST(
       console.log(`[Upload] R2 binding not available, would upload to: ${r2Key}`);
     }
 
-    // Use relative URL served through our own API (no custom domain needed)
-    const publicUrl = `/api/images/${r2Key}`;
+    const R2_PUBLIC = "https://pub-fb24742caa5749ab9e9bc7a305ebb67f.r2.dev";
+    const publicUrl = `${R2_PUBLIC}/${r2Key}`;
 
     // Store in D1
     if (env.DB) {
@@ -78,10 +78,10 @@ export async function GET(
       `SELECT variant, r2_key, url FROM card_images WHERE card_id = ?`
     ).bind(cardId).all();
 
-    // Convert any old absolute URLs to relative
+    const R2_PUBLIC = "https://pub-fb24742caa5749ab9e9bc7a305ebb67f.r2.dev";
     const images = (result.results || []).map((img: any) => ({
       ...img,
-      url: `/api/images/${img.r2_key}`,
+      url: `${R2_PUBLIC}/${img.r2_key}`,
     }));
 
     return NextResponse.json({ cardId, images });

@@ -16,11 +16,12 @@ export async function GET(request: NextRequest) {
     ).all();
 
     // Build a map: { cardId: { variant: url } }
+    const R2_PUBLIC = "https://pub-fb24742caa5749ab9e9bc7a305ebb67f.r2.dev";
     const images: Record<string, Record<string, string>> = {};
     for (const row of (result.results || [])) {
       const r = row as { card_id: string; variant: string; r2_key: string };
       if (!images[r.card_id]) images[r.card_id] = {};
-      images[r.card_id][r.variant] = `/api/images/${r.r2_key}`;
+      images[r.card_id][r.variant] = `${R2_PUBLIC}/${r.r2_key}`;
     }
 
     return NextResponse.json({ images }, {
