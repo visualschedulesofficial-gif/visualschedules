@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     ).all();
 
     // Build a map: { cardId: { variant: url } }
-    const R2_PUBLIC = "https://pub-fb24742caa5749ab9e9bc7a305ebb67f.r2.dev";
+    const R2_PUBLIC = "https://cdn.visualschedule.app";
     const images: Record<string, Record<string, string>> = {};
     for (const row of (result.results || [])) {
       const r = row as { card_id: string; variant: string; r2_key: string };
