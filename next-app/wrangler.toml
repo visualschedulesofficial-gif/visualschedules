@@ -8,7 +8,6 @@ directory = ".open-next/assets"
 binding = "ASSETS"
 
 [vars]
-R2_PUBLIC_URL = "https://assets.visualschedule.app"
 APP_URL = "https://visualschedule.app"
 EMAIL_FROM = "welcome@noreply.visualschedule.app"
 

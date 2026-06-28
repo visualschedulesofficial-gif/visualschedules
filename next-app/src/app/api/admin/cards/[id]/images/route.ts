@@ -32,7 +32,6 @@ export async function POST(
     const r2Key = `cards/${cardId}/${variant}.${ext}`;
 
     const env = getEnv();
-    const r2PublicUrl = process.env.R2_PUBLIC_URL || "https://assets.visualschedule.app";
 
     // Upload to R2
     if (env.R2) {
@@ -43,7 +42,8 @@ export async function POST(
       console.log(`[Upload] R2 binding not available, would upload to: ${r2Key}`);
     }
 
-    const publicUrl = `${r2PublicUrl}/${r2Key}`;
+    // Use relative URL served through our own API (no custom domain needed)
+    const publicUrl = `/api/images/${r2Key}`;
 
     // Store in D1
     if (env.DB) {
@@ -78,10 +78,13 @@ export async function GET(
       `SELECT variant, r2_key, url FROM card_images WHERE card_id = ?`
     ).bind(cardId).all();
 
-    return NextResponse.json({
-      cardId,
-      images: result.results || [],
-    });
+    // Convert any old absolute URLs to relative
+    const images = (result.results || []).map((img: any) => ({
+      ...img,
+      url: `/api/images/${img.r2_key}`,
+    }));
+
+    return NextResponse.json({ cardId, images });
   }
 
   return NextResponse.json({ cardId, images: [] });

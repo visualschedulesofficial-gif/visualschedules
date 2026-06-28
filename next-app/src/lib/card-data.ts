@@ -22,12 +22,20 @@ export function getCardLabel(card: ParsedCard, lang: string): string {
   return card.translations[lang] || card.translations["en"] || card.id;
 }
 
-// Cards that have images uploaded to R2
-const CARDS_WITH_IMAGES = new Set(["wake", "potty", "teeth", "bfast"]);
+// Cards that have images uploaded to R2 (with their available variants)
+const CARD_IMAGE_MAP: Record<string, string[]> = {
+  wake: ["neutral", "boy", "girl", "brown"],
+  potty: ["neutral", "boy", "girl"],
+  teeth: ["neutral"],
+  bfast: ["neutral"],
+};
 
 export function getCardImageUrl(cardId: string, variant: string): string | null {
-  if (!CARDS_WITH_IMAGES.has(cardId)) return null;
-  return `/api/images/cards/${cardId}/${variant}.jpg`;
+  const variants = CARD_IMAGE_MAP[cardId];
+  if (!variants) return null;
+  // Use the requested variant if available, fall back to neutral
+  const useVariant = variants.includes(variant) ? variant : "neutral";
+  return `/api/images/cards/${cardId}/${useVariant}.jpg`;
 }
 
 export function getCardsByCategory(categoryId: string): ParsedCard[] {
