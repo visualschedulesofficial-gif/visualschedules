@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ALL_CARDS, CATEGORIES, getCardLabel, type ParsedCard } from "@/lib/card-data";
 
-function ImageSlot({ cardId, variant, label, colorClass }: { cardId: string; variant: string; label: string; colorClass: string }) {
-  const [preview, setPreview] = useState<string | null>(null);
+function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: { cardId: string; variant: string; label: string; colorClass: string; existingUrl: string | null }) {
+  const [preview, setPreview] = useState<string | null>(existingUrl);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setPreview(existingUrl);
+  }, [existingUrl]);
 
   async function handleUpload(file: File) {
     setUploading(true);
@@ -18,6 +22,9 @@ function ImageSlot({ cardId, variant, label, colorClass }: { cardId: string; var
       if (res.ok) {
         const data = await res.json();
         setPreview(data.url);
+      } else {
+        const err = await res.json();
+        alert(`Upload failed: ${err.error || "Unknown error"}`);
       }
     } finally {
       setUploading(false);
@@ -29,12 +36,13 @@ function ImageSlot({ cardId, variant, label, colorClass }: { cardId: string; var
       <span className={`text-[10px] tracking-wider uppercase font-medium ${colorClass}`}>{label}</span>
       <div
         onClick={() => inputRef.current?.click()}
-        className={`w-full aspect-square border-[1.5px] border-dashed flex items-center justify-center cursor-pointer transition-colors overflow-hidden relative bg-bg
-          ${variant === "boy" ? "border-[#B8DCF0] hover:border-[#1A6699]" : variant === "girl" ? "border-[#F0C8DC] hover:border-[#994466]" : variant === "brown" ? "border-[#E0C8A8] hover:border-[#8A5A2C]" : "border-border hover:border-accent"}
+        className={`w-full aspect-square border-[1.5px] flex items-center justify-center cursor-pointer transition-colors overflow-hidden relative bg-bg
+          ${preview ? "border-solid border-[#C8C4BC]" : "border-dashed"}
+          ${!preview && (variant === "boy" ? "border-[#B8DCF0] hover:border-[#1A6699]" : variant === "girl" ? "border-[#F0C8DC] hover:border-[#994466]" : variant === "brown" ? "border-[#E0C8A8] hover:border-[#8A5A2C]" : "border-border hover:border-accent")}
         `}
       >
         {preview ? (
-          <img src={preview} className="absolute inset-0 w-full h-full object-contain" />
+          <img src={preview} className="absolute inset-0 w-full h-full object-contain" alt={`${cardId} ${variant}`} />
         ) : uploading ? (
           <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
         ) : (
@@ -53,18 +61,42 @@ function ImageSlot({ cardId, variant, label, colorClass }: { cardId: string; var
 
 function CardItem({ card }: { card: ParsedCard }) {
   const [expanded, setExpanded] = useState(false);
+  const [images, setImages] = useState<Record<string, string>>({});
+  const [loadedImages, setLoadedImages] = useState(false);
+
+  useEffect(() => {
+    if (expanded && !loadedImages) {
+      fetch(`/api/admin/cards/${card.id}/images`)
+        .then((r) => r.json())
+        .then((data) => {
+          const map: Record<string, string> = {};
+          (data.images || []).forEach((img: { variant: string; url: string }) => {
+            map[img.variant] = img.url;
+          });
+          setImages(map);
+          setLoadedImages(true);
+        })
+        .catch(() => setLoadedImages(true));
+    }
+  }, [expanded, loadedImages, card.id]);
+
+  const imageCount = Object.keys(images).length;
 
   return (
     <div className="bg-card border border-border overflow-hidden transition-[box-shadow,border-color] hover:shadow-md hover:border-[#C8C4BC]">
       <div className="w-full aspect-square bg-bg flex items-center justify-center overflow-hidden relative">
-        <svg className="w-9 h-9 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
+        {images["neutral"] ? (
+          <img src={images["neutral"]} className="w-full h-full object-contain" alt={getCardLabel(card, "en")} />
+        ) : (
+          <svg className="w-9 h-9 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        )}
         <div className="absolute bottom-1 right-1 flex gap-0.5">
-          <span className="w-2 h-2 rounded-full bg-[#AAA] border border-white/80" />
-          <span className="w-2 h-2 rounded-full bg-[#4A8AC4] border border-white/80" />
-          <span className="w-2 h-2 rounded-full bg-[#C47AAA] border border-white/80" />
-          <span className="w-2 h-2 rounded-full bg-[#A8703C] border border-white/80" />
+          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["neutral"] ? "bg-accent" : "bg-[#AAA]"}`} />
+          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["boy"] ? "bg-[#4A8AC4]" : "bg-[#AAA]/40"}`} />
+          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["girl"] ? "bg-[#C47AAA]" : "bg-[#AAA]/40"}`} />
+          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["brown"] ? "bg-[#A8703C]" : "bg-[#AAA]/40"}`} />
         </div>
       </div>
       <div className="px-3 py-2">
@@ -80,10 +112,10 @@ function CardItem({ card }: { card: ParsedCard }) {
       </div>
       {expanded && (
         <div className="border-t border-border p-3 grid grid-cols-4 gap-2">
-          <ImageSlot cardId={card.id} variant="neutral" label="Neutral" colorClass="text-ink-3" />
-          <ImageSlot cardId={card.id} variant="boy" label="Boy" colorClass="text-[#1A6699]" />
-          <ImageSlot cardId={card.id} variant="girl" label="Girl" colorClass="text-[#994466]" />
-          <ImageSlot cardId={card.id} variant="brown" label="Brown" colorClass="text-[#8A5A2C]" />
+          <ImageSlot cardId={card.id} variant="neutral" label="Neutral" colorClass="text-ink-3" existingUrl={images["neutral"] || null} />
+          <ImageSlot cardId={card.id} variant="boy" label="Boy" colorClass="text-[#1A6699]" existingUrl={images["boy"] || null} />
+          <ImageSlot cardId={card.id} variant="girl" label="Girl" colorClass="text-[#994466]" existingUrl={images["girl"] || null} />
+          <ImageSlot cardId={card.id} variant="brown" label="Brown" colorClass="text-[#8A5A2C]" existingUrl={images["brown"] || null} />
         </div>
       )}
     </div>
