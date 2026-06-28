@@ -59,7 +59,7 @@ function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: { cardId
   );
 }
 
-function CardItem({ card }: { card: ParsedCard }) {
+function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card: ParsedCard) => void; onDelete: (cardId: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [images, setImages] = useState<Record<string, string>>({});
   const [loadedImages, setLoadedImages] = useState(false);
@@ -137,8 +137,8 @@ function CardItem({ card }: { card: ParsedCard }) {
         <button onClick={() => setExpanded(!expanded)} className="flex-1 py-1.5 text-[11px] text-ink-3 border-r border-border hover:bg-bg hover:text-ink transition-colors">
           {expanded ? "Close" : "Images"}
         </button>
-        <button className="flex-1 py-1.5 text-[11px] text-ink-3 hover:bg-bg hover:text-ink transition-colors">Edit</button>
-        <button className="flex-1 py-1.5 text-[11px] text-ink-3 hover:bg-[#FAF0F0] hover:text-[#B83232] transition-colors">Delete</button>
+        <button onClick={() => onEdit(card)} className="flex-1 py-1.5 text-[11px] text-ink-3 hover:bg-bg hover:text-ink transition-colors">Edit</button>
+        <button onClick={() => { if (confirm(`Delete "${getCardLabel(card, "en")}"? This cannot be undone.`)) onDelete(card.id); }} className="flex-1 py-1.5 text-[11px] text-ink-3 hover:bg-[#FAF0F0] hover:text-[#B83232] transition-colors">Delete</button>
       </div>
       {expanded && (
         <div className="border-t border-border p-3 grid grid-cols-4 gap-2">
@@ -159,6 +159,9 @@ export default function AdminCardsPage() {
   const [newCard, setNewCard] = useState({ id: "", name: "", categoryId: "daily", icon: "s-star" });
   const [addingCard, setAddingCard] = useState(false);
 
+  const [editCard, setEditCard] = useState<ParsedCard | null>(null);
+  const [editName, setEditName] = useState("");
+
   async function handleAddCard() {
     if (!newCard.id.trim() || !newCard.name.trim()) return;
     setAddingCard(true);
@@ -178,6 +181,45 @@ export default function AdminCardsPage() {
       }
     } finally {
       setAddingCard(false);
+    }
+  }
+
+  function handleEdit(card: ParsedCard) {
+    setEditCard(card);
+    setEditName(getCardLabel(card, "en"));
+  }
+
+  async function handleSaveEdit() {
+    if (!editCard || !editName.trim()) return;
+    try {
+      const res = await fetch(`/api/admin/cards/${editCard.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName }),
+      });
+      if (res.ok) {
+        setEditCard(null);
+        window.location.reload();
+      } else {
+        alert("Failed to save");
+      }
+    } catch {
+      alert("Failed to save");
+    }
+  }
+
+  async function handleDelete(cardId: string) {
+    try {
+      const res = await fetch(`/api/admin/cards/${cardId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        alert("Failed to delete card");
+      }
+    } catch {
+      alert("Delete failed");
     }
   }
 
@@ -219,7 +261,7 @@ export default function AdminCardsPage() {
         {/* Card grid */}
         <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
           {filtered.map((card) => (
-            <CardItem key={card.id} card={card} />
+            <CardItem key={card.id} card={card} onEdit={handleEdit} onDelete={handleDelete} />
           ))}
         </div>
       </div>
@@ -257,6 +299,30 @@ export default function AdminCardsPage() {
               <button onClick={handleAddCard} disabled={addingCard || !newCard.id || !newCard.name} className="text-[11px] tracking-wider uppercase px-4 py-2 bg-accent text-white border border-accent font-sans font-medium hover:bg-accent-hover disabled:opacity-50">
                 {addingCard ? "Adding..." : "Add Card"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Card Modal */}
+      {editCard && (
+        <div className="fixed inset-0 bg-[rgba(28,27,25,0.55)] z-[600] flex items-center justify-center" onClick={() => setEditCard(null)}>
+          <div className="bg-card w-[90%] max-w-[400px] border border-border" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-border flex justify-between items-center">
+              <h3 className="text-[15px] text-ink">Edit Card: {editCard.id}</h3>
+              <button onClick={() => setEditCard(null)} className="text-xl text-ink-3 hover:text-ink">&times;</button>
+            </div>
+            <div className="p-5">
+              <label className="text-[11px] tracking-widest uppercase text-ink-3 block mb-1 font-medium">Name (English)</label>
+              <input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[13px] text-ink outline-none focus:border-accent"
+              />
+            </div>
+            <div className="px-5 py-4 border-t border-border flex justify-end gap-2">
+              <button onClick={() => setEditCard(null)} className="text-[11px] tracking-wider uppercase px-4 py-2 border border-border text-ink-3 font-sans font-medium hover:border-ink hover:text-ink">Cancel</button>
+              <button onClick={handleSaveEdit} className="text-[11px] tracking-wider uppercase px-4 py-2 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333]">Save</button>
             </div>
           </div>
         </div>
