@@ -18,7 +18,19 @@ export interface ParsedCategory {
 export const CATEGORIES: ParsedCategory[] = cardsJson.categories as ParsedCategory[];
 export const ALL_CARDS: ParsedCard[] = cardsJson.cards as unknown as ParsedCard[];
 
+// Label overrides from D1 (set at runtime by ScheduleBuilder)
+let _labelOverrides: Record<string, Record<string, string>> = {};
+
+export function setLabelOverrides(overrides: Record<string, Record<string, string>>) {
+  _labelOverrides = overrides;
+}
+
 export function getCardLabel(card: ParsedCard, lang: string): string {
+  // D1 overrides take priority over static JSON
+  const override = _labelOverrides[card.id];
+  if (override) {
+    return override[lang] || override["en"] || card.translations[lang] || card.translations["en"] || card.id;
+  }
   return card.translations[lang] || card.translations["en"] || card.id;
 }
 

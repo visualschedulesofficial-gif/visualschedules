@@ -19,7 +19,7 @@ import { RightPanel } from "@/components/schedule/RightPanel";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { ALL_CARDS, getCardLabel, setCardImages, type CardImageMap } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, setCardImages, setLabelOverrides, type CardImageMap } from "@/lib/card-data";
 
 function PointerOverlay({ label }: { label: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -70,14 +70,17 @@ export default function ScheduleBuilder() {
 
   useAutoSave();
 
-  // Load card images from D1 on mount
+  // Load card images + label overrides from D1 on mount
   useEffect(() => {
     fetch("/api/cards/images")
       .then((r) => r.json())
       .then((data) => {
         if (data.images) {
-          setCardImages(data.images);  // Global module-level store
-          setLocalCardImages(data.images);  // Local state for re-render
+          setCardImages(data.images);
+          setLocalCardImages(data.images);
+        }
+        if (data.labels) {
+          setLabelOverrides(data.labels);
         }
       })
       .catch(() => {});
