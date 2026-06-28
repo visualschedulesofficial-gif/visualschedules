@@ -63,6 +63,7 @@ function CardItem({ card }: { card: ParsedCard }) {
   const [expanded, setExpanded] = useState(false);
   const [images, setImages] = useState<Record<string, string>>({});
   const [loadedImages, setLoadedImages] = useState(false);
+  const [activeVariant, setActiveVariant] = useState("neutral");
 
   useEffect(() => {
     if (expanded && !loadedImages) {
@@ -80,23 +81,52 @@ function CardItem({ card }: { card: ParsedCard }) {
     }
   }, [expanded, loadedImages, card.id]);
 
-  const imageCount = Object.keys(images).length;
+  // Also load images on mount for the thumbnail
+  useEffect(() => {
+    fetch(`/api/admin/cards/${card.id}/images`)
+      .then((r) => r.json())
+      .then((data) => {
+        const map: Record<string, string> = {};
+        (data.images || []).forEach((img: { variant: string; url: string }) => {
+          map[img.variant] = img.url;
+        });
+        if (Object.keys(map).length > 0) {
+          setImages(map);
+          setLoadedImages(true);
+        }
+      })
+      .catch(() => {});
+  }, [card.id]);
+
+  const displayUrl = images[activeVariant] || images["neutral"] || null;
 
   return (
     <div className="bg-card border border-border overflow-hidden transition-[box-shadow,border-color] hover:shadow-md hover:border-[#C8C4BC]">
       <div className="w-full aspect-square bg-bg flex items-center justify-center overflow-hidden relative">
-        {images["neutral"] ? (
-          <img src={images["neutral"]} className="w-full h-full object-contain" alt={getCardLabel(card, "en")} />
+        {displayUrl ? (
+          <img src={displayUrl} className="w-full h-full object-contain" alt={getCardLabel(card, "en")} />
         ) : (
           <svg className="w-9 h-9 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
         )}
-        <div className="absolute bottom-1 right-1 flex gap-0.5">
-          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["neutral"] ? "bg-accent" : "bg-[#AAA]"}`} />
-          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["boy"] ? "bg-[#4A8AC4]" : "bg-[#AAA]/40"}`} />
-          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["girl"] ? "bg-[#C47AAA]" : "bg-[#AAA]/40"}`} />
-          <span className={`w-2 h-2 rounded-full border border-white/80 ${images["brown"] ? "bg-[#A8703C]" : "bg-[#AAA]/40"}`} />
+        <div className="absolute bottom-1.5 right-1.5 flex gap-1">
+          {([
+            { key: "neutral", color: "bg-accent", activeRing: "ring-accent" },
+            { key: "boy", color: "bg-[#4A8AC4]", activeRing: "ring-[#4A8AC4]" },
+            { key: "girl", color: "bg-[#C47AAA]", activeRing: "ring-[#C47AAA]" },
+            { key: "brown", color: "bg-[#A8703C]", activeRing: "ring-[#A8703C]" },
+          ] as const).map((v) => (
+            <button
+              key={v.key}
+              onClick={(e) => { e.stopPropagation(); if (images[v.key]) setActiveVariant(v.key); }}
+              className={`w-3 h-3 rounded-full border border-white/90 transition-all cursor-pointer
+                ${images[v.key] ? v.color : "bg-[#DDD]"}
+                ${activeVariant === v.key && images[v.key] ? `ring-2 ${v.activeRing} ring-offset-1` : ""}
+              `}
+              title={`${v.key}${images[v.key] ? "" : " (no image)"}`}
+            />
+          ))}
         </div>
       </div>
       <div className="px-3 py-2">
