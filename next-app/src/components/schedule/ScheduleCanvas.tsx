@@ -164,7 +164,10 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
       </div>
       <div className="flex-1" />
       <div className="shrink-0 py-1.5 pb-4 border-t border-bg-muted flex justify-between items-end">
-        <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
+          <span className="text-[10px] text-[#C0C0C0]">in collab with <a href="https://dataorc.in" className="text-[#AAA] underline">DataOrc</a></span>
+        </div>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
     </div>
@@ -363,7 +366,10 @@ function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName
 
 function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const title = useScheduleState((s) => s.title);
-  const ftColNames = ["First", "Then"];
+  const customColNames = useScheduleState((s) => s.customColNames);
+  // Support 2 or 3 columns: First, Then, (optional) Now
+  const ftColCount = customColNames.length <= 3 ? Math.max(2, Math.min(3, customColNames.length)) : 2;
+  const ftColNames = ftColCount === 3 ? ["First", "Then", "Now"] : ["First", "Then"];
 
   return (
     <div
@@ -389,6 +395,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
 
 interface ScheduleCanvasProps {
   justDroppedSlot: string | null;
+  cardImages?: Record<string, Record<string, string>>;
 }
 
 export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {

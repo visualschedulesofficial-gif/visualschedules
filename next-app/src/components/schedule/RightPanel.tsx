@@ -93,6 +93,33 @@ export function RightPanel() {
         </section>
       )}
 
+      {/* First-Then columns (2 or 3) */}
+      {scheduleType === "firstthen" && (
+        <section className="p-4 border-b border-border">
+          <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
+            Columns
+          </label>
+          <div className="flex gap-[3px]">
+            {[2, 3].map((n) => (
+              <button
+                key={n}
+                onClick={() => {
+                  const newNames = n === 3 ? ["First", "Then", "Now"] : ["First", "Then"];
+                  useScheduleState.getState().setCustomColNames(newNames);
+                }}
+                className={`flex-1 py-[7px] text-[12px] border font-sans text-center transition-all ${
+                  useScheduleState.getState().customColNames.length === n
+                    ? "bg-ink text-white border-ink"
+                    : "border-border text-ink-3 hover:bg-ink hover:text-white hover:border-ink"
+                }`}
+              >
+                {n === 2 ? "First · Then" : "First · Then · Now"}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Title */}
       <section className="p-4 border-b border-border">
         <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">

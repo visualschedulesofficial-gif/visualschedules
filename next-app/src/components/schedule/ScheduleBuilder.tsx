@@ -19,7 +19,7 @@ import { RightPanel } from "@/components/schedule/RightPanel";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { ALL_CARDS, getCardLabel } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, setCardImages, type CardImageMap } from "@/lib/card-data";
 
 function PointerOverlay({ label }: { label: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,10 +64,26 @@ function PointerOverlay({ label }: { label: string }) {
 export default function ScheduleBuilder() {
   const [activeCard, setActiveCard] = useState<{ id: string; label: string } | null>(null);
   const [justDroppedSlot, setJustDroppedSlot] = useState<string | null>(null);
+  const [cardImages, setCardImages] = useState<CardImageMap>({});
   const placeCard = useScheduleState((s) => s.placeCard);
   const language = useScheduleState((s) => s.language);
 
   useAutoSave();
+
+  // Load card images from D1 on mount
+  useEffect(() => {
+    fetch("/api/cards/images")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.images) {
+          setCardImages(data.images);  // Global module-level store
+          setLocalCardImages(data.images);  // Local state for re-render
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const [localCardImages, setLocalCardImages] = useState<CardImageMap>({});
 
   const handleClickPlace = useCallback((cardId: string) => {
     const card = ALL_CARDS.find((c) => c.id === cardId);
@@ -148,7 +164,7 @@ export default function ScheduleBuilder() {
         sidebar={<CardLibrarySidebar onCardClick={handleClickPlace} />}
         rightPanel={<RightPanel />}
       >
-        <ScheduleCanvas justDroppedSlot={justDroppedSlot} />
+        <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
       </AppShell>
 
       {/* Invisible overlay for dnd-kit collision detection */}

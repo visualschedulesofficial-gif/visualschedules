@@ -155,6 +155,31 @@ function CardItem({ card }: { card: ParsedCard }) {
 export default function AdminCardsPage() {
   const [selectedCat, setSelectedCat] = useState("all");
   const [search, setSearch] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newCard, setNewCard] = useState({ id: "", name: "", categoryId: "daily", icon: "s-star" });
+  const [addingCard, setAddingCard] = useState(false);
+
+  async function handleAddCard() {
+    if (!newCard.id.trim() || !newCard.name.trim()) return;
+    setAddingCard(true);
+    try {
+      const res = await fetch("/api/admin/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCard),
+      });
+      if (res.ok) {
+        setShowAddModal(false);
+        setNewCard({ id: "", name: "", categoryId: "daily", icon: "s-star" });
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to add card");
+      }
+    } finally {
+      setAddingCard(false);
+    }
+  }
 
   const filtered = ALL_CARDS.filter((card) => {
     const matchCat = selectedCat === "all" || card.categoryId === selectedCat;
@@ -166,7 +191,7 @@ export default function AdminCardsPage() {
     <>
       <div className="h-[52px] bg-card border-b border-border flex items-center justify-between px-6 shrink-0">
         <span className="text-sm text-ink">Schedule Cards</span>
-        <button className="text-[11px] tracking-wider uppercase px-3 py-1.5 bg-accent text-white border border-accent font-sans font-medium hover:bg-accent-hover flex items-center gap-1.5">
+        <button onClick={() => setShowAddModal(true)} className="text-[11px] tracking-wider uppercase px-3 py-1.5 bg-accent text-white border border-accent font-sans font-medium hover:bg-accent-hover flex items-center gap-1.5">
           <svg className="w-[11px] h-[11px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           Add Card
         </button>
@@ -198,6 +223,44 @@ export default function AdminCardsPage() {
           ))}
         </div>
       </div>
+
+      {/* Add Card Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-[rgba(28,27,25,0.55)] z-[600] flex items-center justify-center" onClick={() => setShowAddModal(false)}>
+          <div className="bg-card w-[90%] max-w-[440px] border border-border" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-border flex justify-between items-center">
+              <h3 className="text-[15px] text-ink">Add Schedule Card</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-xl text-ink-3 hover:text-ink">&times;</button>
+            </div>
+            <div className="p-5 grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="text-[11px] tracking-widest uppercase text-ink-3 block mb-1 font-medium">Card ID</label>
+                <input value={newCard.id} onChange={(e) => setNewCard({ ...newCard, id: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "") })} placeholder="e.g. shower" className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[13px] text-ink outline-none focus:border-accent" />
+              </div>
+              <div className="col-span-2">
+                <label className="text-[11px] tracking-widest uppercase text-ink-3 block mb-1 font-medium">Name (English)</label>
+                <input value={newCard.name} onChange={(e) => setNewCard({ ...newCard, name: e.target.value })} placeholder="e.g. Take a Shower" className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[13px] text-ink outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="text-[11px] tracking-widest uppercase text-ink-3 block mb-1 font-medium">Category</label>
+                <select value={newCard.categoryId} onChange={(e) => setNewCard({ ...newCard, categoryId: e.target.value })} className="w-full py-2 px-2 border border-border bg-white font-sans text-[13px] text-ink outline-none focus:border-accent">
+                  {CATEGORIES.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] tracking-widest uppercase text-ink-3 block mb-1 font-medium">Icon</label>
+                <input value={newCard.icon} onChange={(e) => setNewCard({ ...newCard, icon: e.target.value })} className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[13px] text-ink outline-none focus:border-accent" />
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-border flex justify-end gap-2">
+              <button onClick={() => setShowAddModal(false)} className="text-[11px] tracking-wider uppercase px-4 py-2 border border-border text-ink-3 font-sans font-medium hover:border-ink hover:text-ink">Cancel</button>
+              <button onClick={handleAddCard} disabled={addingCard || !newCard.id || !newCard.name} className="text-[11px] tracking-wider uppercase px-4 py-2 bg-accent text-white border border-accent font-sans font-medium hover:bg-accent-hover disabled:opacity-50">
+                {addingCard ? "Adding..." : "Add Card"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -75,16 +75,16 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Schedule Type */}
-      <div className="p-2.5 pb-0 shrink-0 border-b border-border">
-        <label className="text-[10px] tracking-widest uppercase text-[#8A8480] mb-1.5 block font-medium">
+      <div className="p-3 pb-0 shrink-0 border-b border-border">
+        <label className="text-[12px] tracking-widest uppercase text-[#8A8480] mb-2 block font-medium">
           Schedule Type
         </label>
-        <div className="flex gap-[2px] mb-2.5">
+        <div className="flex gap-[2px] mb-3">
           {(["daily", "weekly", "custom", "firstthen"] as ScheduleType[]).map((type) => (
             <button
               key={type}
               onClick={() => setScheduleType(type)}
-              className={`flex-1 py-[5px] text-[10px] border font-sans text-center transition-all font-medium
+              className={`flex-1 py-[6px] text-[12px] border font-sans text-center transition-all font-medium
                 ${scheduleType === type
                   ? "bg-ink text-white border-ink"
                   : "border-border text-ink-3 hover:bg-ink hover:text-white hover:border-ink"
@@ -96,11 +96,11 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
         </div>
 
         {/* Language + Character row */}
-        <div className="flex gap-1.5 mb-2.5">
+        <div className="flex gap-1.5 mb-3">
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value as Language)}
-            className="flex-1 py-[5px] px-2 border border-border bg-surface font-sans text-[11px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
+            className="flex-1 py-[6px] px-2 border border-border bg-surface font-sans text-[13px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
           >
             {Object.entries(LANGUAGES).map(([code, name]) => (
               <option key={code} value={code}>{name}</option>
@@ -109,7 +109,7 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
           <select
             value={gender}
             onChange={(e) => setGender(e.target.value as Gender)}
-            className="flex-1 py-[5px] px-2 border border-border bg-surface font-sans text-[11px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
+            className="flex-1 py-[6px] px-2 border border-border bg-surface font-sans text-[13px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
           >
             <option value="neutral">Glasses</option>
             <option value="boy">Boy</option>
@@ -198,10 +198,13 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
 
       {/* Unlock banner */}
       <div className="px-2.5 py-2 bg-badge-paid-bg border-t border-[#F0D8B8] shrink-0">
-        <p className="text-[11px] text-accent leading-relaxed mb-1.5">
+        <p className="text-[12px] text-accent leading-relaxed mb-1.5">
           Unlock all categories with a license key
         </p>
-        <button className="w-full text-[11px] tracking-wider uppercase py-[0.4rem] bg-accent text-white border-none cursor-pointer font-sans font-medium hover:bg-accent-hover">
+        <button
+          onClick={() => window.location.href = "/login"}
+          className="w-full text-[12px] tracking-wider uppercase py-[0.45rem] bg-accent text-white border-none cursor-pointer font-sans font-medium hover:bg-accent-hover"
+        >
           Unlock All Packs
         </button>
       </div>

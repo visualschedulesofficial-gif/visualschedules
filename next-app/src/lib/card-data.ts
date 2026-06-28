@@ -22,27 +22,36 @@ export function getCardLabel(card: ParsedCard, lang: string): string {
   return card.translations[lang] || card.translations["en"] || card.id;
 }
 
-// Cards that have images uploaded to R2 (with their available variants)
-const CARD_IMAGE_MAP: Record<string, string[]> = {
-  wake: ["neutral", "boy", "girl", "brown"],
-  potty: ["neutral", "boy", "girl"],
-  teeth: ["neutral"],
-  bfast: ["neutral"],
-};
+// Dynamic image map — populated from /api/cards/images at runtime
+export type CardImageMap = Record<string, Record<string, string>>;
+
+let _cardImages: CardImageMap = {};
+
+export function setCardImages(images: CardImageMap) {
+  _cardImages = images;
+}
 
 export function getCardImageUrl(cardId: string, variant: string): string | null {
-  const variants = CARD_IMAGE_MAP[cardId];
+  const variants = _cardImages[cardId];
   if (!variants) return null;
-  // Use the requested variant if available, fall back to neutral
-  const useVariant = variants.includes(variant) ? variant : "neutral";
-  return `/api/images/cards/${cardId}/${useVariant}.jpg`;
+  return variants[variant] || variants["neutral"] || null;
+}
+
+export function getCardImageUrlFromMap(
+  imageMap: CardImageMap,
+  cardId: string,
+  variant: string
+): string | null {
+  const variants = imageMap[cardId];
+  if (!variants) return null;
+  return variants[variant] || variants["neutral"] || null;
 }
 
 export function getCardsByCategory(categoryId: string): ParsedCard[] {
   return ALL_CARDS.filter((c) => c.categoryId === categoryId);
 }
 
-// Backward compat — SAMPLE_CARDS used by builder
+// Backward compat
 export const SAMPLE_CARDS = ALL_CARDS.map((c) => ({
   id: c.id,
   label: c.translations["en"] || c.id,
