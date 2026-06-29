@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, type ParsedCard } from "@/lib/card-data";
-import { LANGUAGES, GENDER_LABELS, SCHEDULE_TYPE_LABELS, type Language, type Gender, type ScheduleType, type GridCols } from "@/lib/constants";
+import { LANGUAGES, GENDER_LABELS, SCHEDULE_TYPE_LABELS, type Language, type Gender, type ScheduleType } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
@@ -26,14 +26,6 @@ const CATEGORY_NAMES: Record<string, string> = {
   all: "All (No Character)",
 };
 
-// Grid size options based on schedule type
-const GRID_OPTIONS: Record<ScheduleType, GridCols[]> = {
-  daily: [2, 3],
-  weekly: [2, 3],
-  custom: [2, 3, 4],
-  firstthen: [2],
-};
-
 export function CardLibrarySidebar() {
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
@@ -41,8 +33,6 @@ export function CardLibrarySidebar() {
   const setLanguage = useScheduleState((s) => s.setLanguage);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const setScheduleType = useScheduleState((s) => s.setScheduleType);
-  const gridCols = useScheduleState((s) => s.gridCols);
-  const setGridCols = useScheduleState((s) => s.setGridCols);
   const placeCard = useScheduleState((s) => s.placeCard);
   const pages = useScheduleState((s) => s.pages);
 
@@ -107,9 +97,6 @@ export function CardLibrarySidebar() {
     { value: "firstthen", label: SCHEDULE_TYPE_LABELS.firstthen },
   ];
 
-  // Get available grid sizes for current schedule type
-  const availableGridSizes = GRID_OPTIONS[scheduleType];
-
   const handleAddCard = (cardId: string, catId: string) => {
     if (pages.length === 0) return;
     const currentPageIdx = 0;
@@ -163,7 +150,7 @@ export function CardLibrarySidebar() {
       {/* TOP CONTROLS SECTION */}
       <div className="shrink-0 border-b border-[#E0E0E0] bg-white">
         <div className="p-4 space-y-3">
-          {/* Row 1: Language & Schedule Type Side by Side */}
+          {/* Row 1: Language & Character SIDE BY SIDE */}
           <div className="grid grid-cols-2 gap-3">
             {/* Language */}
             <div>
@@ -181,15 +168,20 @@ export function CardLibrarySidebar() {
               </select>
             </div>
 
-            {/* Schedule Type */}
+            {/* Character */}
             <div>
-              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-2">Schedule</label>
+              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-2">Character</label>
               <select
-                value={scheduleType}
-                onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
+                value={gender}
+                onChange={(e) => {
+                  const newGender = e.target.value as Gender;
+                  console.log("Gender changed to:", newGender);
+                  setGender(newGender);
+                  setForceUpdate((prev) => prev + 1);
+                }}
                 className="w-full px-3 py-2.5 text-[12px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
               >
-                {scheduleTypeOptions.map((opt) => (
+                {genderOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -198,15 +190,15 @@ export function CardLibrarySidebar() {
             </div>
           </div>
 
-          {/* Row 2: Character Selector */}
+          {/* Row 2: Schedule Type & Search */}
           <div>
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-2">Character</label>
+            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-2">Schedule Type</label>
             <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value as Gender)}
+              value={scheduleType}
+              onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
               className="w-full px-3 py-2.5 text-[12px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
             >
-              {genderOptions.map((opt) => (
+              {scheduleTypeOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -214,27 +206,7 @@ export function CardLibrarySidebar() {
             </select>
           </div>
 
-          {/* Row 3: Grid Size (only available sizes for current schedule type) */}
-          <div>
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-2">Grid Size</label>
-            <div className="flex gap-2">
-              {availableGridSizes.map((cols) => (
-                <button
-                  key={cols}
-                  onClick={() => setGridCols(cols)}
-                  className={`flex-1 py-2.5 text-[11px] font-bold border-2 rounded transition-all ${
-                    gridCols === cols
-                      ? "bg-[#1C1B19] text-white border-[#1C1B19]"
-                      : "border-[#333] text-[#1C1B19] hover:bg-[#f9f9f9]"
-                  }`}
-                >
-                  {cols}x{cols === 2 ? 3 : cols === 3 ? 4 : 6}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 4: Search with Icons */}
+          {/* Row 3: Search with Icons */}
           <div className="relative">
             <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-2">Search Cards</label>
             <div className="relative flex items-center">
@@ -340,6 +312,11 @@ export function CardLibrarySidebar() {
                     const isCharacter = isCharacterCard(card);
                     const imageGender = isCharacter ? gender : "neutral";
                     const imageUrl = getCardImageUrl(card.id, imageGender);
+
+                    // DEBUG: Log what's happening
+                    if (isCharacter && gender !== "neutral") {
+                      console.log(`Card: ${card.id}, Requested: ${imageGender}, URL: ${imageUrl ? "found" : "NOT FOUND - will use neutral"}`);
+                    }
 
                     return (
                       <button
