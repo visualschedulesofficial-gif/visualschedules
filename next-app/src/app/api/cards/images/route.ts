@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ images, labels }, {
-      headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" },
+      headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
     });
   } catch {
     return NextResponse.json({ images: {}, labels: {} });
