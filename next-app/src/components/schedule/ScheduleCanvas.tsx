@@ -68,7 +68,6 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
               </span>
             </div>
           </div>
-          {/* Green token for mobile */}
           {isMobile && (
             <div className="absolute top-2 left-2 w-3 h-3 bg-green-500 rounded-full border border-green-700 z-[2]" />
           )}
@@ -123,7 +122,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
   return (
     <div className="flex flex-col border-r border-r-weekly-border last:border-r-0 min-w-0 overflow-hidden">
       <div className="bg-weekly-head-bg border-b border-b-weekly-border px-2 py-3 text-center shrink-0">
-        <div className="font-serif text-[18px] italic text-weekly-head-text tracking-wide">{dayName}</div>
+        <div style={{ fontFamily: 'Playfair Display' }} className="text-[14px] italic text-weekly-head-text tracking-wide font-medium">{dayName}</div>
       </div>
       <div
         ref={setNodeRef}
@@ -151,7 +150,6 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
               <div className="px-2 py-2 border-t border-[#F0F0F0] bg-white text-[14px] text-ink text-center leading-tight font-sans shrink-0">
                 {getCardLabel(card, language)}
               </div>
-              {/* Green token for mobile */}
               {isMobile && (
                 <div className="absolute top-1.5 left-1.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-green-700 z-[2]" />
               )}
@@ -186,79 +184,4 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
   const gridCols = useScheduleState((s) => s.gridCols);
   const title = useScheduleState((s) => s.title);
   const language = useScheduleState((s) => s.language);
-  const spec = GRID_SPECS[gridCols];
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "36px 48px 0" }}
-    >
-      <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 border-b border-[#EEE] mb-2.5">
-        <div className="col-start-2">
-          <h2 className="font-serif text-[22px] italic text-ink leading-none text-center">{title}</h2>
-        </div>
-        <div className="col-start-3 justify-self-end">
-          <span className="text-[14px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
-        </div>
-      </div>
-      <div className="shrink-0 overflow-hidden">
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${spec.cols}, ${spec.cellW}px)`, gridTemplateRows: `repeat(${spec.rows}, ${spec.cellH}px)` }}>
-          {Array.from({ length: spec.slots }).map((_, i) => (
-            <DailyDropSlot key={i} slotIdx={i} pageIdx={pageIdx} justDropped={justDroppedSlot === `${pageIdx}-${i}`} />
-          ))}
-        </div>
-      </div>
-      <div className="flex-1" />
-      <div className="shrink-0 py-1.5 pb-4 border-t border-bg-muted flex justify-between items-end">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
-          <span className="text-[13px] text-[#C0C0C0]">in collab with <a href="https://dataorc.in" className="text-[#AAA] underline">DataOrc</a></span>
-        </div>
-        <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
-      </div>
-    </div>
-  );
-}
-
-function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
-  const title = useScheduleState((s) => s.title);
-  const language = useScheduleState((s) => s.language);
-  const weekMode = useScheduleState((s) => s.weekMode);
-
-  const days = weekMode === "weekdays" ? DAYS.slice(1, 6) : [...DAYS];
-  const dayKeys = weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS];
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
-    >
-      <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-weekly-head-text leading-none">{title}</h2>
-      </div>
-      <div className="flex-1 min-h-0 grid border border-weekly-border rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
-        {dayKeys.map((key, idx) => (
-          <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-        ))}
-      </div>
-      <div className="shrink-0 pt-2 flex justify-between items-end">
-        <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
-        <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
-      </div>
-    </div>
-  );
-}
-
-function CustomColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName: string; pageIdx: number }) {
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
-  const placeCard = useScheduleState((s) => s.placeCard);
-  const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const customColNames = useScheduleState((s) => s.customColNames);
-  const setCustomColNames = useScheduleState((s) => s.setCustomColNames);
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.[String(colIdx)] || [];
-  const
+  const spec =
