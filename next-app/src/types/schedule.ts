@@ -1,10 +1,4 @@
-import type {
-  ScheduleType,
-  Gender,
-  CardStyle,
-  GridCols,
-  Language,
-} from "@/lib/constants";
+export type Gender = "neutral" | "boy" | "girl" | "brown" | "all";
 
 export interface CardRef {
   cardId: string;
@@ -21,22 +15,28 @@ export interface ColumnPageData {
 
 export type PageData = DailyPageData | ColumnPageData;
 
-export interface ScheduleData {
-  pages: PageData[];
-}
-
-export interface Schedule {
-  id: string;
-  userId: string;
+export interface ScheduleState {
+  scheduleType: "daily" | "weekly" | "custom" | "firstthen";
+  gridCols: 2 | 3 | 4;
   title: string;
-  scheduleType: ScheduleType;
-  language: Language;
+  language: string;
   gender: Gender;
-  gridCols: GridCols;
-  customColNames: string[] | null;
-  weekMode: "week" | "weekdays";
-  cardStyle: CardStyle;
-  data: ScheduleData;
-  createdAt: string;
-  updatedAt: string;
+  cardStyle: "white" | "black";
+  weekMode: "fullweek" | "weekdays";
+  pages: PageData[];
+  customColNames: string[];
+  
+  setScheduleType: (type: "daily" | "weekly" | "custom" | "firstthen") => void;
+  setGridCols: (cols: 2 | 3 | 4) => void;
+  setTitle: (title: string) => void;
+  setLanguage: (lang: string) => void;
+  setGender: (gender: Gender) => void;
+  setCardStyle: (style: "white" | "black") => void;
+  setWeekMode: (mode: "fullweek" | "weekdays") => void;
+  addPage: () => void;
+  removePage: (idx: number) => void;
+  addCard: (cardId: string, catId: string) => void;
+  removeCard: (pageIdx: number, key: string, cardIdx?: number) => void;
+  placeCard: (pageIdx: number, key: string, card: CardRef) => void;
+  setCustomColNames: (names: string[]) => void;
 }
