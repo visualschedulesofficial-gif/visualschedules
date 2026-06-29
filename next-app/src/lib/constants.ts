@@ -62,6 +62,6 @@ export const LANGUAGES = {
 
 export type Language = keyof typeof LANGUAGES;
 export type ScheduleType = "daily" | "weekly" | "custom" | "firstthen";
-export type Gender = "neutral" | "boy" | "girl" | "brown";
+export type Gender = "neutral" | "boy" | "girl" | "brown" | "all";
 export type CardStyle = "white" | "black";
 export type GridCols = 2 | 3 | 4;
