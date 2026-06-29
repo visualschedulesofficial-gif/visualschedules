@@ -166,7 +166,7 @@ export default function ScheduleBuilder() {
       onDragEnd={handleDragEnd}
     >
       <AppShell
-        sidebar={<CardLibrarySidebar onCardClick={handleClickPlace} />}
+        <CardLibrarySidebar />
         rightPanel={<RightPanel />}
       >
         <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
