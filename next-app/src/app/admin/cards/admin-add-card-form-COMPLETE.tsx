@@ -13,7 +13,7 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
   const [nameHi, setNameHi] = useState("");
   const [category, setCategory] = useState("characters");
   const [icon, setIcon] = useState("star");
-  const [isCharacter, setIsCharacter] = useState(true); // ⬅️ Character vs Neutral toggle
+  const [isCharacter, setIsCharacter] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -38,7 +38,7 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
           id: cardId.toLowerCase().replace(/\s+/g, "-"),
           icon,
           categoryId: category,
-          isCharacter, // ⬅️ Send character type
+          isCharacter,
           translations: {
             en: nameEn,
             hi: nameHi || nameEn,
@@ -90,7 +90,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* CARD ID */}
             <div>
               <label className="block text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-1">
                 Card ID
@@ -104,7 +103,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               />
             </div>
 
-            {/* NAME ENGLISH */}
             <div>
               <label className="block text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-1">
                 Name (English)
@@ -118,7 +116,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               />
             </div>
 
-            {/* NAME HINDI */}
             <div>
               <label className="block text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-1">
                 Name (Hindi)
@@ -132,7 +129,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               />
             </div>
 
-            {/* CATEGORY */}
             <div>
               <label className="block text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-1">
                 Category
@@ -152,7 +148,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               </select>
             </div>
 
-            {/* ICON */}
             <div>
               <label className="block text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-1">
                 Icon
@@ -166,7 +161,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               />
             </div>
 
-            {/* ⬅️ CHARACTER TYPE SELECTION */}
             <div>
               <label className="block text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-2">
                 Card Type
@@ -195,7 +189,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               </div>
             </div>
 
-            {/* IMAGE INFO */}
             <div className="p-3 bg-[#F5F5F5] rounded border border-[#E0E0E0]">
               <p className="text-[12px] text-[#666]">
                 {isCharacter
@@ -204,7 +197,6 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               </p>
             </div>
 
-            {/* BUTTONS */}
             <div className="flex gap-2 pt-4">
               <button
                 type="button"
