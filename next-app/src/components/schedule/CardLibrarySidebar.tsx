@@ -15,14 +15,26 @@ export function CardLibrarySidebar() {
   const pages = useScheduleState((s) => s.pages);
 
   const categories = useMemo(() => {
-    const catMap = new Map<string, string>();
-    ALL_CARDS.forEach((card) => {
-      if (!catMap.has(card.categoryId)) {
-        catMap.set(card.categoryId, card.category);
-      }
-    });
-    return Array.from(catMap.entries());
-  }, []);
+    const categoryNames: Record<string, string> = {
+  characters: "Characters",
+  food: "Food",
+  routines: "Routines",
+  activities: "Activities",
+  rewards: "Rewards",
+  snacks: "Snacks",
+  meals: "Meals",
+};
+
+const categories = useMemo(() => {
+  const uniqueCategories = new Set<string>();
+  ALL_CARDS.forEach((card) => {
+    uniqueCategories.add(card.categoryId);
+  });
+  return Array.from(uniqueCategories).map((catId) => [
+    catId,
+    categoryNames[catId] || catId,
+  ]);
+}, []);
 
   const filteredCards = useMemo(() => {
     return ALL_CARDS.filter((card) => {
