@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ALL_CARDS, CATEGORIES, getCardLabel, isCharacterCard, type ParsedCard } from "@/lib/card-data";
-import { AddCardForm } from "@/app/admin/components/AddCardForm";
+import { AddCardForm } from "./AddCardForm";
 
 function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: { cardId: string; variant: string; label: string; colorClass: string; existingUrl: string | null }) {
   const [preview, setPreview] = useState<string | null>(existingUrl);
