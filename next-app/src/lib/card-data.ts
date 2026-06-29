@@ -5,6 +5,7 @@ export interface ParsedCard {
   icon: string;
   categoryId: string;
   sortOrder: number;
+  isCharacter?: boolean; // NEW: true for character cards, false/undefined for neutral
   translations: Record<string, string>;
 }
 
@@ -17,6 +18,19 @@ export interface ParsedCategory {
 
 export const CATEGORIES: ParsedCategory[] = cardsJson.categories as ParsedCategory[];
 export const ALL_CARDS: ParsedCard[] = cardsJson.cards as unknown as ParsedCard[];
+
+// Helper function to check if card is character type
+export function isCharacterCard(card: ParsedCard): boolean {
+  return card.isCharacter === true;
+}
+
+// Helper function to get appropriate gender for card
+export function getCardGender(card: ParsedCard, selectedGender: string): string {
+  if (isCharacterCard(card)) {
+    return selectedGender; // Use selected gender for character cards
+  }
+  return "neutral"; // Always use "neutral" for neutral cards
+}
 
 // Label overrides from D1 (set at runtime by ScheduleBuilder)
 let _labelOverrides: Record<string, Record<string, string>> = {};
