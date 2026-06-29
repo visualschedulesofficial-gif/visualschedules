@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
-import { ALL_CARDS, getCardLabel, getCardImageUrl } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
 
@@ -20,7 +20,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   });
 
   const card = cardRef ? ALL_CARDS.find((c) => c.id === cardRef.cardId) : null;
-  const imageUrl = card ? getCardImageUrl(card.id, gender) : null;
+  const imageUrl = card ? getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral") : null;
   const isDragging = !!active;
   const isBlack = cardStyle === "black";
 
@@ -91,7 +91,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
   return (
     <div className="flex flex-col border-r border-r-weekly-border last:border-r-0 min-w-0 overflow-hidden">
       <div className="bg-weekly-head-bg border-b border-b-weekly-border px-1.5 py-2.5 text-center shrink-0">
-        <div className="text-sm text-weekly-head-text font-serif italic tracking-wide">{dayName}</div>
+        <div className="text-sm text-weekly-head-text font-sans tracking-wide">{dayName}</div>
       </div>
       <div
         ref={setNodeRef}
@@ -102,7 +102,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
         {cards.map((cardRef, idx) => {
           const card = ALL_CARDS.find((c) => c.id === cardRef.cardId);
           if (!card) return null;
-          const imageUrl = getCardImageUrl(card.id, gender);
+          const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
             <div key={idx} className="bg-white border border-[#E0E5D5] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
@@ -247,7 +247,7 @@ function CustomColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName: s
         {cards.map((cardRef, idx) => {
           const card = ALL_CARDS.find((c) => c.id === cardRef.cardId);
           if (!card) return null;
-          const imageUrl = getCardImageUrl(card.id, gender);
+          const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
             <div key={idx} className="bg-white border border-[#E0E5D5] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
@@ -330,7 +330,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName
   return (
     <div className="flex flex-col border-2 border-weekly-border rounded-[10px] overflow-hidden bg-weekly-body-bg min-w-0">
       <div className="bg-weekly-head-bg border-b-2 border-b-weekly-border px-2 py-3.5 text-center shrink-0">
-        <span className="text-[30px] font-semibold text-weekly-head-text font-serif italic tracking-tight">{colName}</span>
+        <span className="text-[30px] font-semibold text-weekly-head-text font-sans tracking-tight">{colName}</span>
       </div>
       <div
         ref={setNodeRef}
@@ -340,7 +340,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName
           (() => {
             const card = ALL_CARDS.find((c) => c.id === cards[0].cardId);
             if (!card) return null;
-            const imageUrl = getCardImageUrl(card.id, gender);
+            const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
             return (
               <div className="w-full h-full max-w-[460px] bg-white border-2 border-[#E0E5D5] rounded-[10px] flex flex-col overflow-hidden relative group">
                 <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white">
