@@ -5,7 +5,7 @@ import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, type ParsedCard } from "@/lib/card-data";
 import { LANGUAGES, type Language, type Gender } from "@/lib/constants";
 
-const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals"];
+const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
 
 const CATEGORY_NAMES: Record<string, string> = {
@@ -16,11 +16,13 @@ const CATEGORY_NAMES: Record<string, string> = {
   rewards: "Rewards",
   snacks: "Snacks",
   meals: "Meals",
+  place: "Place",
   social: "Social",
   art: "Art",
   home: "Home",
   school: "School",
   therapy: "Therapy",
+  all: "All (No Character)",
 };
 
 export function CardLibrarySidebar() {
@@ -35,7 +37,6 @@ export function CardLibrarySidebar() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["characters"]));
   const [cardImages, setCardImages] = useState<Record<string, Record<string, string>>>({});
 
   // Fetch cards from API
@@ -81,20 +82,12 @@ export function CardLibrarySidebar() {
   const isCharacterCategory = (catId: string) => !NON_CHARACTER_CATEGORIES.includes(catId);
   const isPaidCategory = (catId: string) => PAID_CATEGORIES.includes(catId);
 
-  const toggleCategory = (catId: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(catId)) {
-      newExpanded.delete(catId);
-    } else {
-      newExpanded.add(catId);
-    }
-    setExpandedCategories(newExpanded);
-  };
-
-  const handleCategoryFilterChange = (catId: string | null) => {
+  const handleCategoryChange = (catId: string | null) => {
     setSelectedCategory(catId);
-    const isCharacter = catId ? isCharacterCategory(catId) : true;
-    if (catId && !isCharacter && (gender as string) !== "all") {
+    setSearch(""); // Clear search when category is selected
+    
+    // If selecting non-character category, set gender to "all"
+    if (catId && !isCharacterCategory(catId) && (gender as string) !== "all") {
       setGender("all" as Gender);
     }
   };
@@ -131,6 +124,13 @@ export function CardLibrarySidebar() {
     });
   }, [cards, search, selectedCategory, language]);
 
+  // Get unique categories from filtered cards
+  const displayCategories = useMemo(() => {
+    const cats = new Set<string>();
+    filteredCards.forEach((card) => cats.add(card.categoryId));
+    return Array.from(cats).sort();
+  }, [filteredCards]);
+
   if (loading) {
     return (
       <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0] items-center justify-center">
@@ -143,7 +143,7 @@ export function CardLibrarySidebar() {
     <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0]">
       {/* Language Dropdown */}
       <div className="p-3 border-b border-[#E0E0E0] shrink-0">
-        <label className="block text-[11px] font-semibold text-[#666] uppercase tracking-wide mb-1">Language</label>
+        <label className="block text-[10px] font-semibold text-[#999] uppercase tracking-wide mb-1">Language</label>
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value as Language)}
@@ -159,7 +159,7 @@ export function CardLibrarySidebar() {
 
       {/* Character Selector */}
       <div className="p-3 border-b border-[#E0E0E0] shrink-0">
-        <label className="block text-[11px] font-semibold text-[#666] uppercase tracking-wide mb-1">Character</label>
+        <label className="block text-[10px] font-semibold text-[#999] uppercase tracking-wide mb-1">Character</label>
         <select
           value={gender}
           onChange={(e) => setGender(e.target.value as Gender)}
@@ -173,24 +173,23 @@ export function CardLibrarySidebar() {
         </select>
       </div>
 
-      {/* Search Box */}
-      <div className="p-3 border-b border-[#E0E0E0] shrink-0">
+      {/* Merged Search & Category Dropdown */}
+      <div className="p-3 border-b border-[#E0E0E0] shrink-0 space-y-2">
         <input
           type="text"
-          placeholder="Search cards..."
+          placeholder="Search or select category..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            if (e.target.value) setSelectedCategory(null); // Clear category filter when searching
+          }}
           className="w-full px-3 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
         />
-      </div>
-
-      {/* Category Filter Dropdown */}
-      <div className="p-3 border-b border-[#E0E0E0] shrink-0">
-        <label className="block text-[11px] font-semibold text-[#666] uppercase tracking-wide mb-1">Category</label>
+        
         <select
           value={selectedCategory || ""}
-          onChange={(e) => handleCategoryFilterChange(e.target.value || null)}
-          className="w-full px-2 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] hover:border-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+          onChange={(e) => handleCategoryChange(e.target.value || null)}
+          className="w-full px-3 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] hover:border-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
         >
           <option value="">All Categories</option>
           {categories.map((catId) => (
@@ -201,72 +200,64 @@ export function CardLibrarySidebar() {
         </select>
       </div>
 
-      {/* Cards Grid */}
+      {/* Cards Grid - 2 Columns (All Expanded) */}
       <div className="flex-1 overflow-y-auto">
-        {categories.map((catId) => {
+        {displayCategories.map((catId) => {
           const cardsInCategory = filteredCards.filter((card) => card.categoryId === catId);
           if (cardsInCategory.length === 0) return null;
 
           const isPaid = isPaidCategory(catId);
           const displayName = CATEGORY_NAMES[catId] || catId;
-          const isExpanded = expandedCategories.has(catId);
 
           return (
             <div key={catId} className="border-b border-[#F0F0F0]">
-              {/* Category Header - Collapsible */}
-              <button
-                onClick={() => toggleCategory(catId)}
-                className="w-full text-left px-3 py-2.5 bg-[#F8F8F8] hover:bg-[#F0F0F0] text-[12px] font-semibold text-[#666] tracking-wide transition-colors flex items-center justify-between"
-              >
+              {/* Category Header */}
+              <div className="px-3 py-2 bg-[#F8F8F8] flex items-center justify-between border-b border-[#E0E0E0]">
                 <div className="flex items-center gap-2">
-                  <span className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}>▶</span>
-                  <span>{displayName}</span>
+                  <span className="text-[12px] font-semibold text-[#666]">{displayName}</span>
                   <span className="text-[10px] text-[#999]">({cardsInCategory.length})</span>
                 </div>
-                {isPaid && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 bg-[#FFF5EA] text-[#8B5E2A] rounded">
-                    PAID
-                  </span>
-                )}
-              </button>
+                <div className="flex gap-1">
+                  {!isPaid && <span className="text-[9px] font-bold px-2 py-0.5 bg-[#EAF5EA] text-[#2D6A2D] rounded">FREE</span>}
+                  {isPaid && <span className="text-[9px] font-bold px-2 py-0.5 bg-[#FFF5EA] text-[#8B5E2A] rounded">PAID</span>}
+                </div>
+              </div>
 
               {/* Cards Grid - 2 Columns */}
-              {isExpanded && (
-                <div className="p-2 grid grid-cols-2 gap-2">
-                  {cardsInCategory.map((card) => {
-                    const imageUrl = cardImages[card.id]?.[isCharacterCard(card) ? gender : "neutral"];
-                    return (
-                      <button
-                        key={card.id}
-                        onClick={() => handleAddCard(card.id, catId)}
-                        className="flex flex-col items-center gap-1 p-2 rounded hover:bg-[#E8F0E3] transition-colors group cursor-pointer"
-                        title={isCharacterCard(card) ? "Character card - gender variants" : "Neutral card - single image"}
-                      >
-                        {/* Card Image */}
-                        <div className="w-full aspect-square bg-[#F5F5F5] rounded border border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E]">
-                          {imageUrl ? (
-                            <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain p-1" />
-                          ) : (
-                            <svg className="w-8 h-8 stroke-[#CCC] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                              <rect x="3" y="3" width="18" height="18" rx="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <path d="M21 15l-5-5L5 21" />
-                            </svg>
-                          )}
-                        </div>
+              <div className="p-2 grid grid-cols-2 gap-2">
+                {cardsInCategory.map((card) => {
+                  // Use current gender for character cards, neutral for others
+                  const cardGender = isCharacterCard(card) ? gender : "neutral";
+                  const imageUrl = cardImages[card.id]?.[cardGender];
+                  
+                  return (
+                    <button
+                      key={card.id}
+                      onClick={() => handleAddCard(card.id, catId)}
+                      className="flex flex-col items-center gap-1 p-2 rounded hover:bg-[#E8F0E3] transition-colors group cursor-pointer"
+                      title={isCharacterCard(card) ? `Character card - ${cardGender} variant` : "Neutral card - single image"}
+                    >
+                      {/* Card Image */}
+                      <div className="w-full aspect-square bg-[#F5F5F5] rounded border border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E]">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain p-1" />
+                        ) : (
+                          <svg className="w-8 h-8 stroke-[#CCC] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <path d="M21 15l-5-5L5 21" />
+                          </svg>
+                        )}
+                      </div>
 
-                        {/* Card Label */}
-                        <span className="text-[11px] font-medium text-[#2C2C2C] text-center line-clamp-2">
-                          {getCardLabel(card, language)}
-                        </span>
-
-                        {/* Free/Paid Badge */}
-                        {!isPaid && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#EAF5EA] text-[#2D6A2D] rounded">FREE</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                      {/* Card Label */}
+                      <span className="text-[11px] font-medium text-[#2C2C2C] text-center line-clamp-2">
+                        {getCardLabel(card, language)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
