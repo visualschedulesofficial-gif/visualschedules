@@ -19,7 +19,7 @@ import { RightPanel } from "@/components/schedule/RightPanel";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { ALL_CARDS, getCardLabel, setCardImages, setLabelOverrides, type CardImageMap } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, setCardImages as setCardImagesGlobal, setLabelOverrides, type CardImageMap } from "@/lib/card-data";
 
 function PointerOverlay({ label }: { label: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,7 +64,7 @@ function PointerOverlay({ label }: { label: string }) {
 export default function ScheduleBuilder() {
   const [activeCard, setActiveCard] = useState<{ id: string; label: string } | null>(null);
   const [justDroppedSlot, setJustDroppedSlot] = useState<string | null>(null);
-  const [cardImages, setCardImages] = useState<CardImageMap>({});
+  const [cardImages, setLocalCardImages] = useState<CardImageMap>({});
   const placeCard = useScheduleState((s) => s.placeCard);
   const language = useScheduleState((s) => s.language);
 
@@ -76,17 +76,19 @@ export default function ScheduleBuilder() {
       .then((r) => r.json())
       .then((data) => {
         if (data.images) {
-          setCardImages(data.images);
+          // Set the global card images (for ScheduleCanvas)
+          setCardImagesGlobal(data.images);
+          // Also set local state (for prop passing)
           setLocalCardImages(data.images);
         }
         if (data.labels) {
           setLabelOverrides(data.labels);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("Failed to load card images:", err);
+      });
   }, []);
-
-  const [localCardImages, setLocalCardImages] = useState<CardImageMap>({});
 
   const handleClickPlace = useCallback((cardId: string) => {
     const card = ALL_CARDS.find((c) => c.id === cardId);
