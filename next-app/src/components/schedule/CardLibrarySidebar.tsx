@@ -24,7 +24,6 @@ export function CardLibrarySidebar() {
   const placeCard = useScheduleState((s) => s.placeCard);
   const pages = useScheduleState((s) => s.pages);
 
-  // ⬅️ FIX: Fetch cards from database API, not just static JSON
   const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
   const [loading, setLoading] = useState(true);
 
@@ -66,12 +65,12 @@ export function CardLibrarySidebar() {
     }
   };
 
-  const genderOptions = [
-    { value: "neutral" as Gender, label: "Child with Glasses" },
-    { value: "boy" as Gender, label: "Boy" },
-    { value: "girl" as Gender, label: "Girl" },
-    { value: "brown" as Gender, label: "Child with Curly Hair" },
-    { value: "all" as Gender, label: "All Variants" },
+  const genderOptions: Array<{ value: Gender; label: string }> = [
+    { value: "neutral", label: "Child with Glasses" },
+    { value: "boy", label: "Boy" },
+    { value: "girl", label: "Girl" },
+    { value: "brown", label: "Child with Curly Hair" },
+    { value: "all", label: "All Variants" },
   ];
 
   const handleAddCard = (cardId: string, catId: string) => {
