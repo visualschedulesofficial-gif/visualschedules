@@ -11,8 +11,8 @@ export function CardLibrarySidebar() {
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
   const language = useScheduleState((s) => s.language);
-  const placeCard = useScheduleState((s) => s.placeCard); // ⬅️ CHANGED: was addCard
-  const pages = useScheduleState((s) => s.pages); // ⬅️ NEW: added pages
+  const placeCard = useScheduleState((s) => s.placeCard);
+  const pages = useScheduleState((s) => s.pages);
 
   const categories = useMemo(() => {
     const catMap = new Map<string, string>();
@@ -50,20 +50,17 @@ export function CardLibrarySidebar() {
     { value: "all" as Gender, label: "All" },
   ];
 
-  // ⬅️ NEW: Added this function
   const handleAddCard = (cardId: string, catId: string) => {
     if (pages.length === 0) return;
-    const currentPageIdx = 0; // Add to first page
+    const currentPageIdx = 0;
     const currentPage = pages[currentPageIdx];
     
-    // For daily layout, use slot index
     if ("slots" in currentPage) {
       const firstEmptySlot = currentPage.slots.findIndex((slot) => slot === null);
       if (firstEmptySlot !== -1) {
         placeCard(currentPageIdx, String(firstEmptySlot), { cardId, catId });
       }
     } else if ("columns" in currentPage) {
-      // For column layouts, use first column
       placeCard(currentPageIdx, "0", { cardId, catId });
     }
   };
@@ -102,7 +99,7 @@ export function CardLibrarySidebar() {
                 .map((card) => (
                   <button
                     key={card.id}
-                    onClick={() => handleAddCard(card.id, catId)} {/* ⬅️ CHANGED: calls handleAddCard */}
+                    onClick={() => handleAddCard(card.id, catId)}
                     className="w-full text-left px-3 py-2 text-[14px] text-[#2C2C2C] rounded hover:bg-[#E8F0E3] transition-colors font-sans"
                   >
                     {getCardLabel(card, language)}
