@@ -13,17 +13,21 @@ function DraggableCard({ card, lang, gender, onCardClick }: { card: ParsedCard; 
 
   const label = getCardLabel(card, lang);
   const imageUrl = getCardImageUrl(card.id, gender);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
+      {...(isMobile ? {} : listeners)}
+      {...(isMobile ? {} : attributes)}
+      onClick={() => {
+        if (isMobile) onCardClick?.(card.id);
+      }}
       onDoubleClick={() => onCardClick?.(card.id)}
       className={`bg-surface border border-border select-none relative flex flex-col overflow-hidden touch-none
         ${isDragging
           ? "opacity-30 border-accent/50 shadow-none"
-          : "cursor-grab hover:shadow-[0_3px_10px_rgba(0,0,0,0.1)] hover:-translate-y-px active:cursor-grabbing transition-[transform,box-shadow] duration-150"
+          : `${isMobile ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"} hover:shadow-[0_3px_10px_rgba(0,0,0,0.1)] hover:-translate-y-px transition-[transform,box-shadow] duration-150`
         }
       `}
     >
@@ -40,7 +44,7 @@ function DraggableCard({ card, lang, gender, onCardClick }: { card: ParsedCard; 
           </svg>
         )}
       </div>
-      <div className="px-1 py-1 bg-surface border-t border-[#EEE] text-[11px] text-[#2C2C2C] text-center leading-tight font-sans line-clamp-2 min-h-[28px] flex items-center justify-center">
+      <div className="px-1.5 py-1.5 bg-surface border-t border-[#EEE] text-[14px] text-[#2C2C2C] text-center leading-tight font-sans line-clamp-2 min-h-[32px] flex items-center justify-center">
         {label}
       </div>
     </div>
@@ -75,16 +79,16 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Schedule Type */}
-      <div className="p-3 pb-0 shrink-0 border-b border-border">
-        <label className="text-[12px] tracking-widest uppercase text-[#8A8480] mb-2 block font-medium">
+      <div className="p-4 pb-0 shrink-0 border-b border-border">
+        <label className="text-[14px] tracking-widest uppercase text-[#8A8480] mb-3 block font-medium">
           Schedule Type
         </label>
-        <div className="flex gap-[2px] mb-3">
+        <div className="flex gap-[2px] mb-4">
           {(["daily", "weekly", "custom", "firstthen"] as ScheduleType[]).map((type) => (
             <button
               key={type}
               onClick={() => setScheduleType(type)}
-              className={`flex-1 py-[6px] text-[12px] border font-sans text-center transition-all font-medium
+              className={`flex-1 py-2 text-[14px] border font-sans text-center transition-all font-medium
                 ${scheduleType === type
                   ? "bg-ink text-white border-ink"
                   : "border-border text-ink-3 hover:bg-ink hover:text-white hover:border-ink"
@@ -96,11 +100,11 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
         </div>
 
         {/* Language + Character row */}
-        <div className="flex gap-1.5 mb-3">
+        <div className="flex gap-2 mb-4">
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value as Language)}
-            className="flex-1 py-[6px] px-2 border border-border bg-surface font-sans text-[13px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
+            className="flex-1 py-2 px-3 border border-border bg-surface font-sans text-[14px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
           >
             {Object.entries(LANGUAGES).map(([code, name]) => (
               <option key={code} value={code}>{name}</option>
@@ -109,21 +113,21 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
           <select
             value={gender}
             onChange={(e) => setGender(e.target.value as Gender)}
-            className="flex-1 py-[6px] px-2 border border-border bg-surface font-sans text-[13px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
+            className="flex-1 py-2 px-3 border border-border bg-surface font-sans text-[14px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
           >
-            <option value="neutral">Glasses</option>
+            <option value="neutral">Child with Glasses</option>
             <option value="boy">Boy</option>
             <option value="girl">Girl</option>
-            <option value="brown">Curly Hair</option>
+            <option value="brown">Child with Curly Hair</option>
           </select>
         </div>
       </div>
 
       {/* Search + Category */}
-      <div className="p-2.5 pb-0 shrink-0">
+      <div className="p-3 pb-0 shrink-0">
         <div className="relative">
           <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 stroke-ink-3 stroke-2 fill-none pointer-events-none"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 stroke-ink-3 stroke-2 fill-none pointer-events-none"
             viewBox="0 0 24 24"
           >
             <circle cx="11" cy="11" r="8" />
@@ -134,13 +138,13 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
             placeholder="Search cards..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full py-[0.42rem] pl-8 pr-2.5 border border-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent mb-1.5"
+            className="w-full py-2 pl-9 pr-3 border border-border bg-surface-hover font-sans text-[14px] text-ink outline-none focus:border-accent mb-2"
           />
         </div>
         <select
           value={selectedCat}
           onChange={(e) => setSelectedCat(e.target.value)}
-          className="w-full py-[0.42rem] px-2.5 border border-border bg-surface font-sans text-[13px] text-ink-2 outline-none cursor-pointer font-medium"
+          className="w-full py-2 px-3 border border-border bg-surface font-sans text-[14px] text-ink-2 outline-none cursor-pointer font-medium"
         >
           <option value="all">All Categories ({ALL_CARDS.length})</option>
           {CATEGORIES.map((cat) => {
@@ -155,31 +159,31 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
       </div>
 
       {/* Category badge */}
-      <div className="px-2.5 py-1.5 flex items-center gap-1.5 border-b border-border shrink-0 text-xs text-ink-3">
+      <div className="px-3 py-2 flex items-center gap-2 border-b border-border shrink-0 text-xs text-ink-3">
         {(activeCat?.isFree ?? true) ? (
-          <span className="bg-badge-free-bg text-badge-free-text px-[5px] py-[1px] text-[9px] font-medium tracking-wider">FREE</span>
+          <span className="bg-badge-free-bg text-badge-free-text px-2 py-1 text-[11px] font-medium tracking-wider">FREE</span>
         ) : (
-          <span className="bg-badge-paid-bg text-badge-paid-text px-[5px] py-[1px] text-[9px] font-medium tracking-wider">PRO</span>
+          <span className="bg-badge-paid-bg text-badge-paid-text px-2 py-1 text-[11px] font-medium tracking-wider">PRO</span>
         )}
-        <span className="text-[11px]">{filtered.length} cards</span>
+        <span className="text-[14px]">{filtered.length} cards</span>
       </div>
 
       {/* Card grid */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2.5">
         {selectedCat === "all" ? (
           CATEGORIES.map((cat) => {
             const catCards = filtered.filter((c) => c.categoryId === cat.id);
             if (catCards.length === 0) return null;
             return (
-              <div key={cat.id} className="mb-3 last:mb-0">
-                <div className="flex items-center gap-1.5 mb-1 px-0.5 sticky top-0 bg-surface py-1 z-[1]">
-                  <span className={`px-[5px] py-[1px] text-[9px] font-medium tracking-wider ${cat.isFree ? "bg-badge-free-bg text-badge-free-text" : "bg-badge-paid-bg text-badge-paid-text"}`}>
+              <div key={cat.id} className="mb-4 last:mb-0">
+                <div className="flex items-center gap-2 mb-2 px-1 sticky top-0 bg-surface py-1 z-[1]">
+                  <span className={`px-2 py-0.5 text-[11px] font-medium tracking-wider ${cat.isFree ? "bg-badge-free-bg text-badge-free-text" : "bg-badge-paid-bg text-badge-paid-text"}`}>
                     {cat.isFree ? "FREE" : "PRO"}
                   </span>
-                  <span className="text-[11px] text-ink-3 font-medium">{cat.name}</span>
-                  <span className="text-[10px] text-ink-3/60">({catCards.length})</span>
+                  <span className="text-[14px] text-ink-3 font-medium">{cat.name}</span>
+                  <span className="text-[13px] text-ink-3/60">({catCards.length})</span>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
                   {catCards.map((card) => (
                     <DraggableCard key={card.id} card={card} lang={language} gender={gender} onCardClick={onCardClick} />
                   ))}
@@ -188,7 +192,7 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
             );
           })
         ) : (
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {filtered.map((card) => (
               <DraggableCard key={card.id} card={card} lang={language} gender={gender} onCardClick={onCardClick} />
             ))}
@@ -197,13 +201,13 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
       </div>
 
       {/* Unlock banner */}
-      <div className="px-2.5 py-2 bg-badge-paid-bg border-t border-[#F0D8B8] shrink-0">
-        <p className="text-[12px] text-accent leading-relaxed mb-1.5">
+      <div className="px-3 py-3 bg-badge-paid-bg border-t border-[#F0D8B8] shrink-0">
+        <p className="text-[14px] text-accent leading-relaxed mb-2">
           Unlock all categories with a license key
         </p>
         <button
           onClick={() => window.location.href = "/login"}
-          className="w-full text-[12px] tracking-wider uppercase py-[0.45rem] bg-accent text-white border-none cursor-pointer font-sans font-medium hover:bg-accent-hover"
+          className="w-full text-[14px] tracking-wider uppercase py-2 bg-accent text-white border-none cursor-pointer font-sans font-medium hover:bg-accent-hover"
         >
           Unlock All Packs
         </button>
