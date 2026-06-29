@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
-import { ALL_CARDS, getCardLabel } from "@/lib/card-data";
-import type { Gender } from "@/types/schedule";
+import { ALL_CARDS, getCardLabel, isCharacterCard } from "@/lib/card-data";
+import type { Gender } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals"];
 
@@ -35,8 +35,6 @@ export function CardLibrarySidebar() {
     ]);
   }, []);
 
-  // ⬅️ CHANGED: Show ALL cards, don't filter by gender variant
-  // Images are loaded dynamically at runtime from /api/cards/images
   const filteredCards = useMemo(() => {
     return ALL_CARDS;
   }, []);
@@ -55,7 +53,7 @@ export function CardLibrarySidebar() {
     { value: "boy" as Gender, label: "Boy" },
     { value: "girl" as Gender, label: "Girl" },
     { value: "brown" as Gender, label: "Child with Curly Hair" },
-    { value: "all" as Gender, label: "All" },
+    { value: "all" as Gender, label: "All Variants" },
   ];
 
   const handleAddCard = (cardId: string, catId: string) => {
@@ -80,8 +78,7 @@ export function CardLibrarySidebar() {
         <select
           value={gender}
           onChange={(e) => setGender(e.target.value as Gender)}
-          disabled={categories.some((cat) => !isCharacterCategory(cat[0]))}
-          className="w-full px-2 py-2 text-[14px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] hover:border-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] disabled:opacity-50 disabled:cursor-not-allowed font-sans"
+          className="w-full px-2 py-2 text-[14px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] hover:border-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
         >
           {genderOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -109,6 +106,7 @@ export function CardLibrarySidebar() {
                     key={card.id}
                     onClick={() => handleAddCard(card.id, catId)}
                     className="w-full text-left px-3 py-2 text-[14px] text-[#2C2C2C] rounded hover:bg-[#E8F0E3] transition-colors font-sans"
+                    title={isCharacterCard(card) ? "Character card - gender variants" : "Neutral card - single image"}
                   >
                     {getCardLabel(card, language)}
                   </button>
