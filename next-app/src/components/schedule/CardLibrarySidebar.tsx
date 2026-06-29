@@ -22,6 +22,7 @@ const CATEGORY_NAMES: Record<string, string> = {
   home: "Home",
   school: "School",
   therapy: "Therapy",
+  daily: "Daily",
   all: "All (No Character)",
 };
 
@@ -38,6 +39,7 @@ export function CardLibrarySidebar() {
   const [searchOrCategory, setSearchOrCategory] = useState("");
   const [cardImages, setCardImages] = useState<Record<string, Record<string, string>>>({});
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   // Fetch cards from API
   useEffect(() => {
@@ -58,7 +60,7 @@ export function CardLibrarySidebar() {
     })();
   }, []);
 
-  // Fetch card images
+  // Fetch card images - FORCE UPDATE when gender changes
   useEffect(() => {
     (async () => {
       try {
@@ -66,24 +68,31 @@ export function CardLibrarySidebar() {
         if (res.ok) {
           const data = await res.json();
           setCardImages(data.images || {});
+          // Force component re-render
+          setForceUpdate((prev) => prev + 1);
         }
       } catch {}
     })();
-  }, [cards]);
+  }, [cards, gender]); // RERUN when gender changes
 
   const categories = useMemo(() => {
     const uniqueCategories = new Set<string>();
     cards.forEach((card) => {
       uniqueCategories.add(card.categoryId);
     });
-    return Array.from(uniqueCategories).sort();
+    // Sort with "daily" always first
+    return Array.from(uniqueCategories).sort((a, b) => {
+      if (a === "daily") return -1;
+      if (b === "daily") return 1;
+      return a.localeCompare(b);
+    });
   }, [cards]);
 
   const isCharacterCategory = (catId: string) => !NON_CHARACTER_CATEGORIES.includes(catId);
   const isPaidCategory = (catId: string) => PAID_CATEGORIES.includes(catId);
 
   const genderOptions: Array<{ value: Gender; label: string }> = [
-    { value: "neutral", label: "Child with Glasses" },
+    { value: "neutral", label: "Neutral" },
     { value: "boy", label: "Boy" },
     { value: "girl", label: "Girl" },
     { value: "brown", label: "Child with Curly Hair" },
@@ -120,13 +129,18 @@ export function CardLibrarySidebar() {
       const matchesCategory = !selectedCategory || card.categoryId === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [cards, searchText, selectedCategory, language]);
+  }, [cards, searchText, selectedCategory, language, forceUpdate]); // Include forceUpdate
 
-  // Get unique categories from filtered cards
+  // Get unique categories from filtered cards - with daily first
   const displayCategories = useMemo(() => {
     const cats = new Set<string>();
     filteredCards.forEach((card) => cats.add(card.categoryId));
-    return Array.from(cats).sort();
+    const sorted = Array.from(cats).sort((a, b) => {
+      if (a === "daily") return -1;
+      if (b === "daily") return 1;
+      return a.localeCompare(b);
+    });
+    return sorted;
   }, [filteredCards]);
 
   if (loading) {
@@ -159,10 +173,13 @@ export function CardLibrarySidebar() {
       <div className="p-3 border-b border-[#E0E0E0] shrink-0">
         <label className="block text-[10px] font-semibold text-[#999] uppercase tracking-wide mb-1">Character</label>
         <select
+          key={`gender-${gender}`}
           value={gender}
           onChange={(e) => {
-            setGender(e.target.value as Gender);
-            // Force re-render of card images
+            const newGender = e.target.value as Gender;
+            setGender(newGender);
+            // Force update
+            setForceUpdate((prev) => prev + 1);
           }}
           className="w-full px-2 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] hover:border-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
         >
@@ -174,20 +191,39 @@ export function CardLibrarySidebar() {
         </select>
       </div>
 
-      {/* MERGED Search + Category Dropdown */}
+      {/* MERGED Search + Category Dropdown WITH ICONS */}
       <div className="p-3 border-b border-[#E0E0E0] shrink-0 relative">
         <label className="block text-[10px] font-semibold text-[#999] uppercase tracking-wide mb-1">Search or Select</label>
-        <input
-          type="text"
-          placeholder="Type to search or select category..."
-          value={searchOrCategory}
-          onChange={(e) => {
-            setSearchOrCategory(e.target.value);
-            setIsDropdownOpen(true);
-          }}
-          onFocus={() => setIsDropdownOpen(true)}
-          className="w-full px-3 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
-        />
+        <div className="relative flex items-center">
+          {/* Search Icon */}
+          <svg className="absolute left-3 w-4 h-4 stroke-[#999] fill-none pointer-events-none" viewBox="0 0 24 24" strokeLinecap="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+
+          {/* Input Field */}
+          <input
+            type="text"
+            placeholder="Type to search or select..."
+            value={searchOrCategory}
+            onChange={(e) => {
+              setSearchOrCategory(e.target.value);
+              setIsDropdownOpen(true);
+            }}
+            onFocus={() => setIsDropdownOpen(true)}
+            className="w-full pl-9 pr-9 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+          />
+
+          {/* Dropdown Icon */}
+          <svg
+            className="absolute right-3 w-4 h-4 stroke-[#999] fill-none pointer-events-none transition-transform"
+            style={{ transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+            viewBox="0 0 24 24"
+            strokeLinecap="round"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
 
         {/* Dropdown Menu */}
         {isDropdownOpen && (
@@ -225,7 +261,7 @@ export function CardLibrarySidebar() {
       </div>
 
       {/* Cards Grid - 2 Columns (All Expanded) */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" key={forceUpdate}>
         {displayCategories.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-[12px] text-[#999]">
             No cards found
@@ -239,7 +275,7 @@ export function CardLibrarySidebar() {
             const displayName = CATEGORY_NAMES[catId] || catId;
 
             return (
-              <div key={catId} className="border-b border-[#F0F0F0]">
+              <div key={`${catId}-${forceUpdate}`} className="border-b border-[#F0F0F0]">
                 {/* Category Header */}
                 <div className="px-3 py-2 bg-[#F8F8F8] flex items-center justify-between border-b border-[#E0E0E0]">
                   <div className="flex items-center gap-2">
@@ -262,7 +298,7 @@ export function CardLibrarySidebar() {
 
                     return (
                       <button
-                        key={card.id}
+                        key={`${card.id}-${imageGender}-${forceUpdate}`}
                         onClick={() => handleAddCard(card.id, catId)}
                         className="flex flex-col items-center gap-1 p-2 rounded hover:bg-[#E8F0E3] transition-colors group cursor-pointer"
                         title={isCharacter ? `Character card - ${imageGender} variant` : "Neutral card - single image"}
@@ -270,7 +306,7 @@ export function CardLibrarySidebar() {
                         {/* Card Image */}
                         <div className="w-full aspect-square bg-[#F5F5F5] rounded border border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E]">
                           {imageUrl ? (
-                            <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain p-1" />
+                            <img src={`${imageUrl}?t=${forceUpdate}`} alt={getCardLabel(card, language)} className="w-full h-full object-contain p-1" />
                           ) : (
                             <svg className="w-8 h-8 stroke-[#CCC] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                               <rect x="3" y="3" width="18" height="18" rx="2" />
