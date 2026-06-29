@@ -35,18 +35,15 @@ export function CardLibrarySidebar() {
     ]);
   }, []);
 
+  // ⬅️ KEY CHANGE: Show ALL cards (no gender variant filtering)
+  // Images loaded at runtime from /api/cards/images
   const filteredCards = useMemo(() => {
-    return ALL_CARDS.filter((card) => {
-     if ((gender as string) === "all") {
-        return true;
-      }
-      return card.images?.[gender] || card.images?.neutral;
-    });
-  }, [gender]);
+    return ALL_CARDS;
+  }, []);
 
   const isCharacterCategory = (catId: string) => !NON_CHARACTER_CATEGORIES.includes(catId);
 
- if (!isCharacter && (gender as string) !== "all") {
+  const handleCategorySelect = (catId: string) => {
     const isCharacter = isCharacterCategory(catId);
     if (!isCharacter && (gender as string) !== "all") {
       setGender("all" as Gender);
