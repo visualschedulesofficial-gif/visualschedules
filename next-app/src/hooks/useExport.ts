@@ -1,125 +1,127 @@
-"use client";
+'use client';
 
-import { useCallback, useState } from "react";
-import { useScheduleState } from "./useScheduleState";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { useCallback } from 'react';
 
 export function useExport() {
-  const [exporting, setExporting] = useState(false);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const title = useScheduleState((s) => s.title);
-
   const exportPDF = useCallback(async () => {
-    setExporting(true);
     try {
-      const html2canvas = (await import("html2canvas-pro")).default;
-      const { jsPDF } = await import("jspdf");
-
-      const pages = document.querySelectorAll("[data-a4-page]");
-      if (pages.length === 0) {
-        alert("No pages to export");
-        setExporting(false);
+      const pages = document.querySelectorAll('[data-a4-page]');
+      console.log('Found pages:', pages.length);
+      
+      if (!pages.length) {
+        alert('No pages found to export');
         return;
       }
 
-      const isLandscape = scheduleType !== "daily";
       const pdf = new jsPDF({
-        orientation: isLandscape ? "landscape" : "portrait",
-        unit: "px",
-        format: "a4",
-        hotfixes: ["px_scaling"],
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
       });
 
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-
       for (let i = 0; i < pages.length; i++) {
-        if (i > 0) pdf.addPage();
+        const pageElement = pages[i] as HTMLElement;
+        console.log(`Processing page ${i + 1}...`);
 
-        const el = pages[i] as HTMLElement;
+        // Clone the element to avoid display issues
+        const clone = pageElement.cloneNode(true) as HTMLElement;
+        clone.style.position = 'absolute';
+        clone.style.left = '-9999px';
+        clone.style.top = '-9999px';
+        clone.style.display = 'block';
+        document.body.appendChild(clone);
+
+        // Small delay to ensure rendering
+        await new Promise(r => setTimeout(r, 500));
 
         try {
-          // Wait a bit for rendering
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          const canvas = await html2canvas(el, {
+          const canvas = await html2canvas(clone, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
-            backgroundColor: "#FFFFFF",
-            logging: false,
-            width: el.offsetWidth,
-            height: el.offsetHeight,
+            backgroundColor: '#FFFFFF',
+            logging: true,
+            windowHeight: clone.scrollHeight,
+            windowWidth: clone.scrollWidth,
           });
 
-          const imgData = canvas.toDataURL("image/jpeg", 0.95);
-          pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
+          if (i > 0) pdf.addPage();
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+          console.log(`Page ${i + 1} added to PDF`);
         } catch (err) {
-          console.error(`Page ${i + 1} error:`, err);
-          alert(`Failed to export page ${i + 1}`);
-          throw err;
+          console.error(`Error on page ${i + 1}:`, err);
+        } finally {
+          document.body.removeChild(clone);
         }
       }
 
-      const filename = `${title.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "schedule"}.pdf`;
-      pdf.save(filename);
+      pdf.save('schedule.pdf');
+      console.log('PDF saved successfully');
     } catch (error) {
-      console.error("Export error:", error);
-      alert("Export failed. Try again.");
-    } finally {
-      setExporting(false);
+      console.error('Export error:', error);
+      alert('Export failed: ' + (error as Error).message);
     }
-  }, [scheduleType, title]);
+  }, []);
 
   const exportJPEG = useCallback(async () => {
-    setExporting(true);
     try {
-      const html2canvas = (await import("html2canvas-pro")).default;
-
-      const pages = document.querySelectorAll("[data-a4-page]");
-      if (pages.length === 0) {
-        alert("No pages to export");
-        setExporting(false);
+      const pages = document.querySelectorAll('[data-a4-page]');
+      console.log('Found pages:', pages.length);
+      
+      if (!pages.length) {
+        alert('No pages found to export');
         return;
       }
 
       for (let i = 0; i < pages.length; i++) {
-        const el = pages[i] as HTMLElement;
+        const pageElement = pages[i] as HTMLElement;
+        console.log(`Processing page ${i + 1}...`);
+
+        // Clone the element to avoid display issues
+        const clone = pageElement.cloneNode(true) as HTMLElement;
+        clone.style.position = 'absolute';
+        clone.style.left = '-9999px';
+        clone.style.top = '-9999px';
+        clone.style.display = 'block';
+        document.body.appendChild(clone);
+
+        // Small delay to ensure rendering
+        await new Promise(r => setTimeout(r, 500));
 
         try {
-          // Wait a bit for rendering
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          const canvas = await html2canvas(el, {
+          const canvas = await html2canvas(clone, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
-            backgroundColor: "#FFFFFF",
-            logging: false,
-            width: el.offsetWidth,
-            height: el.offsetHeight,
+            backgroundColor: '#FFFFFF',
+            logging: true,
+            windowHeight: clone.scrollHeight,
+            windowWidth: clone.scrollWidth,
           });
 
-          const link = document.createElement("a");
-          const filename = `${title.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "schedule"}_page${i + 1}.png`;
-          link.download = filename;
-          link.href = canvas.toDataURL("image/png");
+          const link = document.createElement('a');
+          link.href = canvas.toDataURL('image/jpeg', 0.95);
+          link.download = `schedule-page-${i + 1}.jpg`;
+          document.body.appendChild(link);
           link.click();
-
-          // Small delay between downloads
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          document.body.removeChild(link);
+          console.log(`Page ${i + 1} exported`);
         } catch (err) {
-          console.error(`Page ${i + 1} error:`, err);
-          alert(`Failed to export page ${i + 1}`);
-          throw err;
+          console.error(`Error on page ${i + 1}:`, err);
+        } finally {
+          document.body.removeChild(clone);
         }
       }
-    } catch (error) {
-      console.error("Export error:", error);
-      alert("Export failed. Try again.");
-    } finally {
-      setExporting(false);
-    }
-  }, [title]);
 
-  return { exportPDF, exportJPEG, exporting };
+      console.log('JPEG export completed');
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Export failed: ' + (error as Error).message);
+    }
+  }, []);
+
+  return { exportPDF, exportJPEG };
 }
