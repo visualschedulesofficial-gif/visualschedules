@@ -3,10 +3,26 @@
 import { useState, useMemo, useEffect } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, type ParsedCard } from "@/lib/card-data";
-import { LANGUAGES, GENDER_LABELS, SCHEDULE_TYPE_LABELS, type Language, type Gender, type ScheduleType } from "@/lib/constants";
+import { LANGUAGES, type Language, type Gender, type ScheduleType } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
+
+// Local labels (defined here to avoid import issues)
+const GENDER_LABELS = {
+  neutral: "Child with Glasses",
+  boy: "Boy",
+  girl: "Girl",
+  brown: "Child with Curly Hair",
+  all: "All Variants",
+};
+
+const SCHEDULE_TYPE_LABELS = {
+  daily: "Daily Schedule",
+  weekly: "Weekly Schedule",
+  custom: "Custom Schedule",
+  firstthen: "First/Then Board",
+};
 
 const CATEGORY_NAMES: Record<string, string> = {
   characters: "Characters",
