@@ -81,7 +81,6 @@ function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card:
     }
   }, [expanded, loadedImages, card.id]);
 
-  // Also load images on mount for the thumbnail
   useEffect(() => {
     fetch(`/api/admin/cards/${card.id}/images`)
       .then((r) => r.json())
@@ -97,6 +96,16 @@ function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card:
 
   const displayUrl = images[activeVariant] || images["neutral"] || null;
 
+  // ⬅️ FIX: Extract variant list to variable to avoid JSX parsing issues
+  const variantList = isCharacterCard(card)
+    ? [
+        { key: "neutral", color: "bg-accent", activeRing: "ring-accent" },
+        { key: "boy", color: "bg-[#4A8AC4]", activeRing: "ring-[#4A8AC4]" },
+        { key: "girl", color: "bg-[#C47AAA]", activeRing: "ring-[#C47AAA]" },
+        { key: "brown", color: "bg-[#A8703C]", activeRing: "ring-[#A8703C]" },
+      ]
+    : [{ key: "neutral", color: "bg-accent", activeRing: "ring-accent" }];
+
   return (
     <div className="bg-card border border-border overflow-hidden transition-[box-shadow,border-color] hover:shadow-md hover:border-[#C8C4BC]">
       <div className="w-full aspect-square bg-bg flex items-center justify-center overflow-hidden relative">
@@ -108,17 +117,13 @@ function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card:
           </svg>
         )}
         <div className="absolute bottom-1.5 right-1.5 flex gap-1">
-          {(isCharacterCard(card) ? [
-            { key: "neutral", color: "bg-accent", activeRing: "ring-accent" },
-            { key: "boy", color: "bg-[#4A8AC4]", activeRing: "ring-[#4A8AC4]" },
-            { key: "girl", color: "bg-[#C47AAA]", activeRing: "ring-[#C47AAA]" },
-            { key: "brown", color: "bg-[#A8703C]", activeRing: "ring-[#A8703C]" },
-          ] : [
-            { key: "neutral", color: "bg-accent", activeRing: "ring-accent" },
-          ]) as const).map((v) => (
+          {variantList.map((v) => (
             <button
               key={v.key}
-              onClick={(e) => { e.stopPropagation(); if (images[v.key]) setActiveVariant(v.key); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (images[v.key]) setActiveVariant(v.key);
+              }}
               className={`w-3 h-3 rounded-full border border-white/90 transition-all cursor-pointer
                 ${images[v.key] ? v.color : "bg-[#DDD]"}
                 ${activeVariant === v.key && images[v.key] ? `ring-2 ${v.activeRing} ring-offset-1` : ""}
@@ -133,11 +138,21 @@ function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card:
         <p className="text-[11px] tracking-wider text-ink-3 uppercase">{card.categoryId}</p>
       </div>
       <div className="flex border-t border-border">
-        <button onClick={() => setExpanded(!expanded)} className="flex-1 py-1.5 text-[11px] text-ink-3 border-r border-border hover:bg-bg hover:text-ink transition-colors">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex-1 py-1.5 text-[11px] text-ink-3 border-r border-border hover:bg-bg hover:text-ink transition-colors"
+        >
           {expanded ? "Close" : "Images"}
         </button>
         <button onClick={() => onEdit(card)} className="flex-1 py-1.5 text-[11px] text-ink-3 hover:bg-bg hover:text-ink transition-colors">Edit</button>
-        <button onClick={() => { if (confirm(`Delete "${getCardLabel(card, "en")}"? This cannot be undone.`)) onDelete(card.id); }} className="flex-1 py-1.5 text-[11px] text-ink-3 hover:bg-[#FAF0F0] hover:text-[#B83232] transition-colors">Delete</button>
+        <button
+          onClick={() => {
+            if (confirm(`Delete "${getCardLabel(card, "en")}"? This cannot be undone.`)) onDelete(card.id);
+          }}
+          className="flex-1 py-1.5 text-[11px] text-ink-3 hover:bg-[#FAF0F0] hover:text-[#B83232] transition-colors"
+        >
+          Delete
+        </button>
       </div>
       {expanded && (
         <div className="border-t border-border p-3">
