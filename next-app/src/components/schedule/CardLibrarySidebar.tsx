@@ -37,7 +37,7 @@ export function CardLibrarySidebar() {
 
   const filteredCards = useMemo(() => {
     return ALL_CARDS.filter((card) => {
-      if (gender === "all") {
+     if ((gender as string) === "all") {
         return true;
       }
       return card.images?.[gender] || card.images?.neutral;
@@ -46,7 +46,7 @@ export function CardLibrarySidebar() {
 
   const isCharacterCategory = (catId: string) => !NON_CHARACTER_CATEGORIES.includes(catId);
 
-  const handleCategorySelect = (catId: string) => {
+ if (!isCharacter && (gender as string) !== "all") {
     const isCharacter = isCharacterCategory(catId);
     if (!isCharacter && (gender as string) !== "all") {
       setGender("all" as Gender);
