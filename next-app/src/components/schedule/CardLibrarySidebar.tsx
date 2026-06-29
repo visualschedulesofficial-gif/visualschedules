@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
-import { ALL_CARDS, getCardLabel, isCharacterCard } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, isCharacterCard, type ParsedCard } from "@/lib/card-data";
 import type { Gender } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals"];
@@ -24,20 +24,38 @@ export function CardLibrarySidebar() {
   const placeCard = useScheduleState((s) => s.placeCard);
   const pages = useScheduleState((s) => s.pages);
 
+  // ⬅️ FIX: Fetch cards from database API, not just static JSON
+  const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/cards");
+        if (res.ok) {
+          const data = await res.json();
+          setCards(data.cards || ALL_CARDS);
+        } else {
+          setCards(ALL_CARDS);
+        }
+      } catch {
+        setCards(ALL_CARDS);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   const categories = useMemo(() => {
     const uniqueCategories = new Set<string>();
-    ALL_CARDS.forEach((card) => {
+    cards.forEach((card) => {
       uniqueCategories.add(card.categoryId);
     });
     return Array.from(uniqueCategories).map((catId) => [
       catId,
       CATEGORY_NAMES[catId] || catId,
     ]);
-  }, []);
-
-  const filteredCards = useMemo(() => {
-    return ALL_CARDS;
-  }, []);
+  }, [cards]);
 
   const isCharacterCategory = (catId: string) => !NON_CHARACTER_CATEGORIES.includes(catId);
 
@@ -71,6 +89,14 @@ export function CardLibrarySidebar() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full bg-white border-l border-[#E0E0E0] items-center justify-center">
+        <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-white border-l border-[#E0E0E0]">
       <div className="p-4 border-b border-[#E0E0E0] shrink-0">
@@ -98,7 +124,7 @@ export function CardLibrarySidebar() {
               {catName}
             </button>
             <div className="px-2 py-2 space-y-1">
-              {filteredCards
+              {cards
                 .filter((card) => card.categoryId === catId)
                 .slice(0, 6)
                 .map((card) => (
