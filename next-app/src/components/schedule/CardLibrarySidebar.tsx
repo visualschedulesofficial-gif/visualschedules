@@ -35,9 +35,9 @@ export function CardLibrarySidebar() {
 
   const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchOrCategory, setSearchOrCategory] = useState("");
   const [cardImages, setCardImages] = useState<Record<string, Record<string, string>>>({});
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Fetch cards from API
   useEffect(() => {
@@ -82,16 +82,6 @@ export function CardLibrarySidebar() {
   const isCharacterCategory = (catId: string) => !NON_CHARACTER_CATEGORIES.includes(catId);
   const isPaidCategory = (catId: string) => PAID_CATEGORIES.includes(catId);
 
-  const handleCategoryChange = (catId: string | null) => {
-    setSelectedCategory(catId);
-    setSearch(""); // Clear search when category is selected
-    
-    // If selecting non-character category, set gender to "all"
-    if (catId && !isCharacterCategory(catId) && (gender as string) !== "all") {
-      setGender("all" as Gender);
-    }
-  };
-
   const genderOptions: Array<{ value: Gender; label: string }> = [
     { value: "neutral", label: "Child with Glasses" },
     { value: "boy", label: "Boy" },
@@ -115,14 +105,22 @@ export function CardLibrarySidebar() {
     }
   };
 
+  // Determine if searchOrCategory is a category or search text
+  const isCategory = (val: string): boolean => {
+    return categories.includes(val);
+  };
+
+  const selectedCategory = isCategory(searchOrCategory) ? searchOrCategory : null;
+  const searchText = !isCategory(searchOrCategory) ? searchOrCategory : "";
+
   // Filter cards based on search and selected category
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {
-      const matchesSearch = getCardLabel(card, language).toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchText === "" || getCardLabel(card, language).toLowerCase().includes(searchText.toLowerCase());
       const matchesCategory = !selectedCategory || card.categoryId === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [cards, search, selectedCategory, language]);
+  }, [cards, searchText, selectedCategory, language]);
 
   // Get unique categories from filtered cards
   const displayCategories = useMemo(() => {
@@ -162,7 +160,10 @@ export function CardLibrarySidebar() {
         <label className="block text-[10px] font-semibold text-[#999] uppercase tracking-wide mb-1">Character</label>
         <select
           value={gender}
-          onChange={(e) => setGender(e.target.value as Gender)}
+          onChange={(e) => {
+            setGender(e.target.value as Gender);
+            // Force re-render of card images
+          }}
           className="w-full px-2 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] hover:border-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
         >
           {genderOptions.map((opt) => (
@@ -173,94 +174,124 @@ export function CardLibrarySidebar() {
         </select>
       </div>
 
-      {/* Merged Search & Category Dropdown */}
-      <div className="p-3 border-b border-[#E0E0E0] shrink-0 space-y-2">
+      {/* MERGED Search + Category Dropdown */}
+      <div className="p-3 border-b border-[#E0E0E0] shrink-0 relative">
+        <label className="block text-[10px] font-semibold text-[#999] uppercase tracking-wide mb-1">Search or Select</label>
         <input
           type="text"
-          placeholder="Search or select category..."
-          value={search}
+          placeholder="Type to search or select category..."
+          value={searchOrCategory}
           onChange={(e) => {
-            setSearch(e.target.value);
-            if (e.target.value) setSelectedCategory(null); // Clear category filter when searching
+            setSearchOrCategory(e.target.value);
+            setIsDropdownOpen(true);
           }}
+          onFocus={() => setIsDropdownOpen(true)}
           className="w-full px-3 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
         />
-        
-        <select
-          value={selectedCategory || ""}
-          onChange={(e) => handleCategoryChange(e.target.value || null)}
-          className="w-full px-3 py-2 text-[12px] border border-[#D0D0D0] rounded bg-white text-[#2C2C2C] hover:border-[#999] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
-        >
-          <option value="">All Categories</option>
-          {categories.map((catId) => (
-            <option key={catId} value={catId}>
-              {CATEGORY_NAMES[catId] || catId}
-            </option>
-          ))}
-        </select>
+
+        {/* Dropdown Menu */}
+        {isDropdownOpen && (
+          <div className="absolute top-full left-3 right-3 mt-1 bg-white border border-[#D0D0D0] rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+            <div
+              className="px-3 py-2 hover:bg-[#F0F0F0] cursor-pointer text-[12px] text-[#2C2C2C] border-b border-[#E0E0E0]"
+              onClick={() => {
+                setSearchOrCategory("");
+                setIsDropdownOpen(false);
+              }}
+            >
+              ✕ Clear Filter
+            </div>
+            {categories.map((catId) => (
+              <div
+                key={catId}
+                className={`px-3 py-2 hover:bg-[#F0F0F0] cursor-pointer text-[12px] transition-colors ${
+                  selectedCategory === catId ? "bg-[#E8F0E3] text-[#7A8F5E] font-semibold" : "text-[#2C2C2C]"
+                }`}
+                onClick={() => {
+                  setSearchOrCategory(catId);
+                  setIsDropdownOpen(false);
+                }}
+              >
+                {CATEGORY_NAMES[catId] || catId}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Close dropdown when clicking outside */}
+        {isDropdownOpen && (
+          <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+        )}
       </div>
 
       {/* Cards Grid - 2 Columns (All Expanded) */}
       <div className="flex-1 overflow-y-auto">
-        {displayCategories.map((catId) => {
-          const cardsInCategory = filteredCards.filter((card) => card.categoryId === catId);
-          if (cardsInCategory.length === 0) return null;
+        {displayCategories.length === 0 ? (
+          <div className="flex items-center justify-center h-32 text-[12px] text-[#999]">
+            No cards found
+          </div>
+        ) : (
+          displayCategories.map((catId) => {
+            const cardsInCategory = filteredCards.filter((card) => card.categoryId === catId);
+            if (cardsInCategory.length === 0) return null;
 
-          const isPaid = isPaidCategory(catId);
-          const displayName = CATEGORY_NAMES[catId] || catId;
+            const isPaid = isPaidCategory(catId);
+            const displayName = CATEGORY_NAMES[catId] || catId;
 
-          return (
-            <div key={catId} className="border-b border-[#F0F0F0]">
-              {/* Category Header */}
-              <div className="px-3 py-2 bg-[#F8F8F8] flex items-center justify-between border-b border-[#E0E0E0]">
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-semibold text-[#666]">{displayName}</span>
-                  <span className="text-[10px] text-[#999]">({cardsInCategory.length})</span>
+            return (
+              <div key={catId} className="border-b border-[#F0F0F0]">
+                {/* Category Header */}
+                <div className="px-3 py-2 bg-[#F8F8F8] flex items-center justify-between border-b border-[#E0E0E0]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-semibold text-[#666]">{displayName}</span>
+                    <span className="text-[10px] text-[#999]">({cardsInCategory.length})</span>
+                  </div>
+                  <div className="flex gap-1">
+                    {!isPaid && <span className="text-[9px] font-bold px-2 py-0.5 bg-[#EAF5EA] text-[#2D6A2D] rounded">FREE</span>}
+                    {isPaid && <span className="text-[9px] font-bold px-2 py-0.5 bg-[#FFF5EA] text-[#8B5E2A] rounded">PAID</span>}
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  {!isPaid && <span className="text-[9px] font-bold px-2 py-0.5 bg-[#EAF5EA] text-[#2D6A2D] rounded">FREE</span>}
-                  {isPaid && <span className="text-[9px] font-bold px-2 py-0.5 bg-[#FFF5EA] text-[#8B5E2A] rounded">PAID</span>}
+
+                {/* Cards Grid - 2 Columns */}
+                <div className="p-2 grid grid-cols-2 gap-2">
+                  {cardsInCategory.map((card) => {
+                    // FIX: Use correct gender for image lookup
+                    const isCharacter = isCharacterCard(card);
+                    const imageGender = isCharacter ? gender : "neutral";
+                    const imageUrl = cardImages[card.id]?.[imageGender];
+
+                    return (
+                      <button
+                        key={card.id}
+                        onClick={() => handleAddCard(card.id, catId)}
+                        className="flex flex-col items-center gap-1 p-2 rounded hover:bg-[#E8F0E3] transition-colors group cursor-pointer"
+                        title={isCharacter ? `Character card - ${imageGender} variant` : "Neutral card - single image"}
+                      >
+                        {/* Card Image */}
+                        <div className="w-full aspect-square bg-[#F5F5F5] rounded border border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E]">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain p-1" />
+                          ) : (
+                            <svg className="w-8 h-8 stroke-[#CCC] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <path d="M21 15l-5-5L5 21" />
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Card Label */}
+                        <span className="text-[11px] font-medium text-[#2C2C2C] text-center line-clamp-2">
+                          {getCardLabel(card, language)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-
-              {/* Cards Grid - 2 Columns */}
-              <div className="p-2 grid grid-cols-2 gap-2">
-                {cardsInCategory.map((card) => {
-                  // Use current gender for character cards, neutral for others
-                  const cardGender = isCharacterCard(card) ? gender : "neutral";
-                  const imageUrl = cardImages[card.id]?.[cardGender];
-                  
-                  return (
-                    <button
-                      key={card.id}
-                      onClick={() => handleAddCard(card.id, catId)}
-                      className="flex flex-col items-center gap-1 p-2 rounded hover:bg-[#E8F0E3] transition-colors group cursor-pointer"
-                      title={isCharacterCard(card) ? `Character card - ${cardGender} variant` : "Neutral card - single image"}
-                    >
-                      {/* Card Image */}
-                      <div className="w-full aspect-square bg-[#F5F5F5] rounded border border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E]">
-                        {imageUrl ? (
-                          <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain p-1" />
-                        ) : (
-                          <svg className="w-8 h-8 stroke-[#CCC] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <path d="M21 15l-5-5L5 21" />
-                          </svg>
-                        )}
-                      </div>
-
-                      {/* Card Label */}
-                      <span className="text-[11px] font-medium text-[#2C2C2C] text-center line-clamp-2">
-                        {getCardLabel(card, language)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* Gumroad Unlock Link */}
