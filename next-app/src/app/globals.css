@@ -30,7 +30,7 @@
   --badge-paid-text: #8B5E2A;
 
   --font-serif: var(--font-playfair), 'Playfair Display', serif;
-  --font-sans: var(--font-atkinson), 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-sans: var(--font-atkinson), 'Atkinson Hyperlegible', system-ui, sans-serif;
 
   color-scheme: light;
 }
