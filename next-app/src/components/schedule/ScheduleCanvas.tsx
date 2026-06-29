@@ -80,6 +80,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
+  const gender = useScheduleState((s) => s.gender);
   const page = pages[pageIdx] as ColumnPageData;
   const cards = page?.columns?.[dayKey] || [];
 
@@ -101,12 +102,17 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
         {cards.map((cardRef, idx) => {
           const card = ALL_CARDS.find((c) => c.id === cardRef.cardId);
           if (!card) return null;
+          const imageUrl = getCardImageUrl(card.id, gender);
           return (
             <div key={idx} className="bg-white border border-[#E0E5D5] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
-                <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
+                {imageUrl ? (
+                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                ) : (
+                  <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                )}
               </div>
               <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[11px] text-ink text-center leading-tight font-sans shrink-0">
                 {getCardLabel(card, language)}
@@ -208,6 +214,7 @@ function CustomColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName: s
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
+  const gender = useScheduleState((s) => s.gender);
   const customColNames = useScheduleState((s) => s.customColNames);
   const setCustomColNames = useScheduleState((s) => s.setCustomColNames);
   const page = pages[pageIdx] as ColumnPageData;
@@ -240,12 +247,17 @@ function CustomColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName: s
         {cards.map((cardRef, idx) => {
           const card = ALL_CARDS.find((c) => c.id === cardRef.cardId);
           if (!card) return null;
+          const imageUrl = getCardImageUrl(card.id, gender);
           return (
             <div key={idx} className="bg-white border border-[#E0E5D5] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
-                <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
+                {imageUrl ? (
+                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                ) : (
+                  <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                )}
               </div>
               <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[11px] text-ink text-center leading-tight font-sans shrink-0">
                 {getCardLabel(card, language)}
@@ -306,6 +318,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
+  const gender = useScheduleState((s) => s.gender);
   const page = pages[pageIdx] as ColumnPageData;
   const cards = page?.columns?.[String(colIdx)] || [];
 
@@ -327,12 +340,17 @@ function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName
           (() => {
             const card = ALL_CARDS.find((c) => c.id === cards[0].cardId);
             if (!card) return null;
+            const imageUrl = getCardImageUrl(card.id, gender);
             return (
               <div className="w-full h-full max-w-[460px] bg-white border-2 border-[#E0E5D5] rounded-[10px] flex flex-col overflow-hidden relative group">
                 <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white">
-                  <svg className="w-[90px] h-[90px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                  ) : (
+                    <svg className="w-[90px] h-[90px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  )}
                 </div>
                 <div className="shrink-0 px-2.5 py-4 border-t-2 border-[#F0F0F0] bg-white text-center">
                   <span className="text-[32px] font-semibold text-ink-2 font-sans leading-tight">
