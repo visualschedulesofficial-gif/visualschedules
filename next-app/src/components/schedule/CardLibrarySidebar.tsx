@@ -35,8 +35,8 @@ export function CardLibrarySidebar() {
     ]);
   }, []);
 
-  // ⬅️ KEY CHANGE: Show ALL cards (no gender variant filtering)
-  // Images loaded at runtime from /api/cards/images
+  // ⬅️ CHANGED: Show ALL cards, don't filter by gender variant
+  // Images are loaded dynamically at runtime from /api/cards/images
   const filteredCards = useMemo(() => {
     return ALL_CARDS;
   }, []);
