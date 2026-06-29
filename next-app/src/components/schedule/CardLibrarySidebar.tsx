@@ -6,6 +6,9 @@ import { CATEGORIES, ALL_CARDS, getCardLabel, getCardImageUrl, type ParsedCard }
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { LANGUAGES, type ScheduleType, type Language, type Gender } from "@/lib/constants";
 
+// Categories that DON'T need gender/character variants
+const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals"];
+
 function DraggableCard({ card, lang, gender, onCardClick }: { card: ParsedCard; lang: string; gender: string; onCardClick?: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
@@ -62,6 +65,18 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
   const setLanguage = useScheduleState((s) => s.setLanguage);
   const setGender = useScheduleState((s) => s.setGender);
 
+  // Check if current category needs character variants
+  const isCharacterCategory = selectedCat === "all" || !NON_CHARACTER_CATEGORIES.includes(selectedCat.toLowerCase());
+
+  // When non-character category is selected, force "all" gender
+  // When character category is selected, use current gender (default: neutral)
+  const effectiveGender = isCharacterCategory ? gender : "all";
+
+  // Auto-set state if switching to non-character category
+  if (!isCharacterCategory && gender !== "all") {
+    setGender("all" as Gender);
+  }
+
   const filtered = useMemo(() => {
     return ALL_CARDS.filter((card) => {
       const label = getCardLabel(card, language);
@@ -110,15 +125,27 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
               <option key={code} value={code}>{name}</option>
             ))}
           </select>
+          
+          {/* Gender dropdown - ALWAYS show, but disable for non-character categories */}
           <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value as Gender)}
-            className="flex-1 py-2 px-3 border border-border bg-surface font-sans text-[14px] text-ink-2 outline-none cursor-pointer font-medium focus:border-accent"
+            value={effectiveGender}
+            onChange={(e) => {
+              if (isCharacterCategory) {
+                setGender(e.target.value as Gender);
+              }
+            }}
+            disabled={!isCharacterCategory}
+            className={`flex-1 py-2 px-3 border font-sans text-[14px] outline-none cursor-pointer font-medium
+              ${isCharacterCategory
+                ? "border-border bg-surface text-ink-2 focus:border-accent"
+                : "border-border bg-surface/50 text-ink-3 cursor-not-allowed opacity-75"
+              }`}
           >
             <option value="neutral">Child with Glasses</option>
             <option value="boy">Boy</option>
             <option value="girl">Girl</option>
             <option value="brown">Child with Curly Hair</option>
+            <option value="all">All</option>
           </select>
         </div>
       </div>
@@ -143,7 +170,15 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
         </div>
         <select
           value={selectedCat}
-          onChange={(e) => setSelectedCat(e.target.value)}
+          onChange={(e) => {
+            setSelectedCat(e.target.value);
+            // When changing category, reset gender if needed
+            const newCat = e.target.value;
+            const isNewCharCat = newCat === "all" || !NON_CHARACTER_CATEGORIES.includes(newCat.toLowerCase());
+            if (!isNewCharCat && gender !== "all") {
+              setGender("all" as Gender);
+            }
+          }}
           className="w-full py-2 px-3 border border-border bg-surface font-sans text-[14px] text-ink-2 outline-none cursor-pointer font-medium"
         >
           <option value="all">All Categories ({ALL_CARDS.length})</option>
@@ -185,7 +220,7 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {catCards.map((card) => (
-                    <DraggableCard key={card.id} card={card} lang={language} gender={gender} onCardClick={onCardClick} />
+                    <DraggableCard key={card.id} card={card} lang={language} gender={effectiveGender} onCardClick={onCardClick} />
                   ))}
                 </div>
               </div>
@@ -194,7 +229,7 @@ export function CardLibrarySidebar({ onCardClick }: { onCardClick?: (id: string)
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {filtered.map((card) => (
-              <DraggableCard key={card.id} card={card} lang={language} gender={gender} onCardClick={onCardClick} />
+              <DraggableCard key={card.id} card={card} lang={language} gender={effectiveGender} onCardClick={onCardClick} />
             ))}
           </div>
         )}
