@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ALL_CARDS, CATEGORIES, getCardLabel, isCharacterCard, type ParsedCard } from "@/lib/card-data";
+import { AddCardForm } from "@/app/admin/components/AddCardForm";
 
 function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: { cardId: string; variant: string; label: string; colorClass: string; existingUrl: string | null }) {
   const [preview, setPreview] = useState<string | null>(existingUrl);
@@ -96,7 +97,6 @@ function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card:
 
   const displayUrl = images[activeVariant] || images["neutral"] || null;
 
-  // ⬅️ FIX: Extract variant list to variable to avoid JSX parsing issues
   const variantList = isCharacterCard(card)
     ? [
         { key: "neutral", color: "bg-accent", activeRing: "ring-accent" },
@@ -136,6 +136,7 @@ function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card:
       <div className="px-3 py-2">
         <p className="text-[13px] text-ink">{getCardLabel(card, "en")}</p>
         <p className="text-[11px] tracking-wider text-ink-3 uppercase">{card.categoryId}</p>
+        <p className="text-[10px] text-ink-3 mt-1">{isCharacterCard(card) ? "Character" : "Neutral"}</p>
       </div>
       <div className="flex border-t border-border">
         <button
@@ -178,6 +179,7 @@ export default function AdminCardsPage() {
   const [cards, setCards] = useState<ParsedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -197,12 +199,33 @@ export default function AdminCardsPage() {
     })();
   }, []);
 
+  const handleCardAdded = () => {
+    // Refresh cards list
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/cards");
+        if (res.ok) {
+          const data = await res.json();
+          setCards(data.cards || ALL_CARDS);
+        }
+      } catch {}
+    })();
+  };
+
   const filtered = cards.filter((c) => getCardLabel(c, "en").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex flex-col h-screen bg-bg">
       <div className="shrink-0 p-4 border-b border-border bg-white">
-        <h1 className="text-[24px] font-semibold text-ink mb-3">Cards</h1>
+        <div className="flex justify-between items-center mb-3">
+          <h1 className="text-[24px] font-semibold text-ink">Cards</h1>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="px-4 py-2 bg-[#7A8F5E] text-white rounded text-[14px] font-medium hover:bg-[#6A7F4E] transition-colors"
+          >
+            + Add Card
+          </button>
+        </div>
         <input
           type="text"
           placeholder="Search cards..."
@@ -211,6 +234,7 @@ export default function AdminCardsPage() {
           className="w-full px-3 py-2 text-[14px] border border-border rounded bg-white text-ink outline-none focus:border-accent"
         />
       </div>
+
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
@@ -224,6 +248,13 @@ export default function AdminCardsPage() {
           </div>
         )}
       </div>
+
+      {showAddForm && (
+        <AddCardForm 
+          onClose={() => setShowAddForm(false)}
+          onCardAdded={handleCardAdded}
+        />
+      )}
     </div>
   );
 }
