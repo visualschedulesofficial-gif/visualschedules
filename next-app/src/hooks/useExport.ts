@@ -3,6 +3,32 @@
 import { useCallback, useState } from "react";
 import { useScheduleState } from "./useScheduleState";
 
+// Wait for all images to load in an element
+async function waitForImages(element: HTMLElement, timeout = 5000): Promise<void> {
+  const images = element.querySelectorAll("img");
+  if (images.length === 0) return;
+
+  const imagePromises = Array.from(images).map((img) => {
+    return new Promise<void>((resolve) => {
+      // If already loaded, resolve immediately
+      if (img.complete && img.naturalHeight > 0) {
+        resolve();
+      } else {
+        // Wait for load or error
+        const onLoad = () => resolve();
+        const onError = () => resolve(); // Even if error, continue
+        img.addEventListener("load", onLoad, { once: true });
+        img.addEventListener("error", onError, { once: true });
+
+        // Timeout fallback
+        setTimeout(() => resolve(), timeout);
+      }
+    });
+  });
+
+  await Promise.all(imagePromises);
+}
+
 export function useExport() {
   const [exporting, setExporting] = useState(false);
   const scheduleType = useScheduleState((s) => s.scheduleType);
@@ -32,6 +58,12 @@ export function useExport() {
         if (i > 0) pdf.addPage();
 
         const el = pages[i] as HTMLElement;
+
+        // Wait for images to load before capturing
+        await waitForImages(el);
+        // Small delay to ensure rendering
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         // Remove any scale transform before capture
         const parent = el.parentElement;
         const originalTransform = parent?.style.transform || "";
@@ -44,10 +76,19 @@ export function useExport() {
         const canvas = await html2canvas(el, {
           scale: 2,
           useCORS: true,
+          allowTaint: true,
           backgroundColor: "#FFFFFF",
           logging: false,
           width: el.offsetWidth,
           height: el.offsetHeight,
+          onclone: (clonedDocument) => {
+            // Ensure images are visible in cloned document
+            const clonedImages = clonedDocument.querySelectorAll("img");
+            clonedImages.forEach((img: any) => {
+              img.style.display = "block";
+              img.style.visibility = "visible";
+            });
+          },
         });
 
         // Restore
@@ -61,6 +102,9 @@ export function useExport() {
       }
 
       pdf.save(`${title.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "schedule"}.pdf`);
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      alert("Export failed. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -76,6 +120,12 @@ export function useExport() {
 
       for (let i = 0; i < pages.length; i++) {
         const el = pages[i] as HTMLElement;
+
+        // Wait for images to load before capturing
+        await waitForImages(el);
+        // Small delay to ensure rendering
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         // Remove scale
         const parent = el.parentElement;
         const originalTransform = parent?.style.transform || "";
@@ -88,10 +138,19 @@ export function useExport() {
         const canvas = await html2canvas(el, {
           scale: 2,
           useCORS: true,
+          allowTaint: true,
           backgroundColor: "#FFFFFF",
           logging: false,
           width: el.offsetWidth,
           height: el.offsetHeight,
+          onclone: (clonedDocument) => {
+            // Ensure images are visible in cloned document
+            const clonedImages = clonedDocument.querySelectorAll("img");
+            clonedImages.forEach((img: any) => {
+              img.style.display = "block";
+              img.style.visibility = "visible";
+            });
+          },
         });
 
         // Restore
@@ -105,6 +164,9 @@ export function useExport() {
         link.href = canvas.toDataURL("image/png");
         link.click();
       }
+    } catch (error) {
+      console.error("JPEG export failed:", error);
+      alert("Export failed. Please try again.");
     } finally {
       setExporting(false);
     }
