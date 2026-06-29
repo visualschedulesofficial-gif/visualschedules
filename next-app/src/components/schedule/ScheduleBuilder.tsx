@@ -165,12 +165,12 @@ export default function ScheduleBuilder() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <AppShell
-        <CardLibrarySidebar />
-        rightPanel={<RightPanel />}
-      >
-        <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
-      </AppShell>
+     <AppShell
+  sidebar={<CardLibrarySidebar />}
+  rightPanel={<RightPanel />}
+>
+  <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+</AppShell>
 
       {/* Invisible overlay for dnd-kit collision detection */}
       <DragOverlay dropAnimation={null} style={{ opacity: 0, position: "fixed", pointerEvents: "none" }}>
