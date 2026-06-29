@@ -200,7 +200,6 @@ export default function AdminCardsPage() {
   }, []);
 
   const handleCardAdded = () => {
-    // Refresh cards list
     (async () => {
       try {
         const res = await fetch("/api/admin/cards");
