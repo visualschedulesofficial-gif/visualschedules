@@ -385,7 +385,6 @@ function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName
 function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const title = useScheduleState((s) => s.title);
   const customColNames = useScheduleState((s) => s.customColNames);
-  // Support 2 or 3 columns: First, Then, (optional) Now
   const ftColCount = customColNames.length <= 3 ? Math.max(2, Math.min(3, customColNames.length)) : 2;
   const ftColNames = ftColCount === 3 ? ["First", "Then", "Now"] : ["First", "Then"];
 
