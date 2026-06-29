@@ -7,15 +7,7 @@ import type { Gender } from "@/types/schedule";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals"];
 
-export function CardLibrarySidebar() {
-  const gender = useScheduleState((s) => s.gender);
-  const setGender = useScheduleState((s) => s.setGender);
-  const language = useScheduleState((s) => s.language);
-  const placeCard = useScheduleState((s) => s.placeCard);
-  const pages = useScheduleState((s) => s.pages);
-
-  const categories = useMemo(() => {
-    const categoryNames: Record<string, string> = {
+const CATEGORY_NAMES: Record<string, string> = {
   characters: "Characters",
   food: "Food",
   routines: "Routines",
@@ -25,16 +17,23 @@ export function CardLibrarySidebar() {
   meals: "Meals",
 };
 
-const categories = useMemo(() => {
-  const uniqueCategories = new Set<string>();
-  ALL_CARDS.forEach((card) => {
-    uniqueCategories.add(card.categoryId);
-  });
-  return Array.from(uniqueCategories).map((catId) => [
-    catId,
-    categoryNames[catId] || catId,
-  ]);
-}, []);
+export function CardLibrarySidebar() {
+  const gender = useScheduleState((s) => s.gender);
+  const setGender = useScheduleState((s) => s.setGender);
+  const language = useScheduleState((s) => s.language);
+  const placeCard = useScheduleState((s) => s.placeCard);
+  const pages = useScheduleState((s) => s.pages);
+
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set<string>();
+    ALL_CARDS.forEach((card) => {
+      uniqueCategories.add(card.categoryId);
+    });
+    return Array.from(uniqueCategories).map((catId) => [
+      catId,
+      CATEGORY_NAMES[catId] || catId,
+    ]);
+  }, []);
 
   const filteredCards = useMemo(() => {
     return ALL_CARDS.filter((card) => {
@@ -66,7 +65,7 @@ const categories = useMemo(() => {
     if (pages.length === 0) return;
     const currentPageIdx = 0;
     const currentPage = pages[currentPageIdx];
-    
+
     if ("slots" in currentPage) {
       const firstEmptySlot = currentPage.slots.findIndex((slot) => slot === null);
       if (firstEmptySlot !== -1) {
