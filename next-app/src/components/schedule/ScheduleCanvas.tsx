@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
@@ -35,11 +35,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex flex-col items-center justify-center overflow-hidden shadow-[inset_0_0_0_0.5px_#D8D8D8]
+      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white
         ${!cardRef
-          ? `transition-[box-shadow,background-color,transform] duration-200 ease-out
-             ${isOver ? "shadow-[inset_0_0_0_1px_#2D6A5F] bg-accent/5 scale-[1.03]" : isDragging ? "shadow-[inset_0_0_0_0.5px_#D8D8D8] bg-accent/[0.01]" : "shadow-[inset_0_0_0_0.5px_#E8E8E8] bg-[#FCFCFC]"}`
-          : `shadow-[inset_0_0_0_0.5px_#E5E5E5] group ${isBlack ? "bg-ink" : "bg-white"}`
+          ? `transition-[background-color,transform] duration-200 ease-out
+             ${isOver ? "bg-accent/8 scale-[1.03]" : isDragging ? "bg-accent/[0.03]" : "bg-white"}`
+          : `group ${isBlack ? "bg-white" : "bg-white"}`
         }
         ${justDropped ? "animate-[cardLand_350ms_cubic-bezier(0.34,1.56,0.64,1)]" : ""}
       `}
@@ -47,17 +47,17 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
       {cardRef && card ? (
         <>
           <div className="absolute inset-0 flex flex-col">
-            <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden ${isBlack ? "bg-[#2A2825]" : "bg-white"}`}>
+            <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden bg-[#F8FAFB]`}>
               {imageUrl ? (
                 <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
               ) : (
-                <svg className={`w-10 h-10 stroke-[1.4] fill-none ${isBlack ? "stroke-[#666]" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
+                <svg className={`w-10 h-10 stroke-[1.4] fill-none stroke-[#DDD]`} viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               )}
             </div>
-            <div className={`flex-[0_0_30%] flex items-center justify-center px-1 shadow-[inset_0_0.5px_0_0_#E5E5E5] ${isBlack ? "bg-ink" : "bg-white"}`}>
-              <span className={`text-[17px] text-center leading-tight font-sans ${isBlack ? "text-white" : "text-[#2C2C2C]"}`}>
+            <div className={`flex-[0_0_30%] flex items-center justify-center px-1 bg-white`}>
+              <span className={`text-[17px] text-center leading-tight font-sans text-[#2C2C2C]`}>
                 {getCardLabel(card, language)}
               </span>
             </div>
@@ -71,11 +71,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
         </>
       ) : (
         <div className={`flex flex-col items-center gap-[5px] transition-transform duration-200 ${isOver ? "scale-125" : ""}`}>
-          <svg className={`w-[18px] h-[18px] stroke-[1.5] fill-none transition-[stroke] duration-200 ${isOver ? "stroke-accent" : isDragging ? "stroke-accent/40" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
+          <svg className={`w-[18px] h-[18px] stroke-[1.5] fill-none transition-[stroke] duration-200 ${isOver ? "stroke-accent" : isDragging ? "stroke-accent/40" : "stroke-[#EEE]"}`} viewBox="0 0 24 24" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          <span className={`text-xs font-medium transition-[color] duration-200 ${isOver ? "text-accent" : isDragging ? "text-accent/40" : "text-[#CCC]"}`}>
+          <span className={`text-xs font-medium transition-[color] duration-200 ${isOver ? "text-accent" : isDragging ? "text-accent/40" : "text-[#EEE]"}`}>
             {isOver ? "Release" : "Drop"}
           </span>
         </div>
