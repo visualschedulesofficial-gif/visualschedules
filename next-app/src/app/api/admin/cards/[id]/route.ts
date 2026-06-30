@@ -41,7 +41,7 @@ export async function DELETE(
   }
 }
 
-// PUT /api/admin/cards/:id — update card name/category
+// PUT /api/admin/cards/:id — update card name/category (kept for compatibility)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -57,8 +57,9 @@ export async function PUT(
     const { name, categoryId } = await request.json();
 
     if (name) {
+      await env.DB.prepare(`DELETE FROM card_translations WHERE card_id = ? AND lang = 'en'`).bind(id).run();
       await env.DB.prepare(
-        `INSERT OR REPLACE INTO card_translations (card_id, lang, label) VALUES (?, 'en', ?)`
+        `INSERT INTO card_translations (card_id, lang, label) VALUES (?, 'en', ?)`
       ).bind(id, name).run();
     }
 
@@ -70,6 +71,57 @@ export async function PUT(
 
     return NextResponse.json({ success: true, id });
   } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Update failed" }, { status: 500 });
+  }
+}
+
+// PATCH /api/admin/cards/:id — full edit: icon, category, and EN/HI labels.
+// Used by the Edit Card form. Replaces translation rows so repeated edits
+// never create duplicates.
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const env = getEnv();
+
+  if (!env.DB) {
+    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  }
+
+  try {
+    const { icon, categoryId, translations } = await request.json();
+
+    // Confirm the card exists
+    const existing = await env.DB.prepare(`SELECT id FROM cards WHERE id = ?`).bind(id).first();
+    if (!existing) {
+      return NextResponse.json({ error: `Card "${id}" not found` }, { status: 404 });
+    }
+
+    if (typeof icon === "string" && icon) {
+      await env.DB.prepare(`UPDATE cards SET icon = ? WHERE id = ?`).bind(icon, id).run();
+    }
+
+    if (typeof categoryId === "string" && categoryId) {
+      await env.DB.prepare(`UPDATE cards SET category_id = ? WHERE id = ?`).bind(categoryId, id).run();
+    }
+
+    if (translations && typeof translations === "object") {
+      for (const [lang, label] of Object.entries(translations)) {
+        if (typeof label !== "string" || !label) continue;
+        // Replace any existing row(s) for this language with one clean row
+        await env.DB.prepare(
+          `DELETE FROM card_translations WHERE card_id = ? AND lang = ?`
+        ).bind(id, lang).run();
+        await env.DB.prepare(
+          `INSERT INTO card_translations (card_id, lang, label) VALUES (?, ?, ?)`
+        ).bind(id, lang, label).run();
+      }
+    }
+
+    return NextResponse.json({ success: true, id });
+  } catch (err: any) {
+    console.error("Card update (PATCH) error:", err);
     return NextResponse.json({ error: err?.message || "Update failed" }, { status: 500 });
   }
 }
