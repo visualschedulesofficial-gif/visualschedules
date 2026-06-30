@@ -35,11 +35,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white
+      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white border-[1.5px] border-dashed
         ${!cardRef
-          ? `transition-[background-color,transform] duration-200 ease-out
-             ${isOver ? "bg-accent/8 scale-[1.03]" : isDragging ? "bg-accent/[0.03]" : "bg-white"}`
-          : `group ${isBlack ? "bg-white" : "bg-white"}`
+          ? `transition-[border-color,background-color,transform] duration-200 ease-out
+             ${isOver ? "border-[#7A8F5E] bg-[#F0F8F0] scale-[1.03]" : isDragging ? "border-[#7A8F5E] bg-white" : "border-[#E0E0E0] bg-white"}`
+          : `border-[#E5E5E5] group bg-white`
         }
         ${justDropped ? "animate-[cardLand_350ms_cubic-bezier(0.34,1.56,0.64,1)]" : ""}
       `}
@@ -56,7 +56,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
                 </svg>
               )}
             </div>
-            <div className={`flex-[0_0_30%] flex items-center justify-center px-1 bg-white`}>
+            <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white`}>
               <span className={`text-[17px] text-center leading-tight font-sans text-[#2C2C2C]`}>
                 {getCardLabel(card, language)}
               </span>
@@ -71,11 +71,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
         </>
       ) : (
         <div className={`flex flex-col items-center gap-[5px] transition-transform duration-200 ${isOver ? "scale-125" : ""}`}>
-          <svg className={`w-[18px] h-[18px] stroke-[1.5] fill-none transition-[stroke] duration-200 ${isOver ? "stroke-accent" : isDragging ? "stroke-accent/40" : "stroke-[#EEE]"}`} viewBox="0 0 24 24" strokeLinecap="round">
+          <svg className={`w-[18px] h-[18px] stroke-[1.5] fill-none transition-[stroke] duration-200 ${isOver ? "stroke-[#7A8F5E]" : isDragging ? "stroke-[#7A8F5E]" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          <span className={`text-xs font-medium transition-[color] duration-200 ${isOver ? "text-accent" : isDragging ? "text-accent/40" : "text-[#EEE]"}`}>
+          <span className={`text-xs font-medium transition-[color] duration-200 ${isOver ? "text-[#7A8F5E]" : isDragging ? "text-[#7A8F5E]" : "text-[#999]"}`}>
             {isOver ? "Release" : "Drop"}
           </span>
         </div>
@@ -442,24 +442,29 @@ export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
   return (
     <>
       {pages.map((_, pageIdx) => (
-        <div key={pageIdx} className="flex flex-col items-center gap-2">
-          <div
-            className="text-[11px] tracking-widest uppercase text-[#B0ACA6] font-medium shrink-0"
-            style={{ width: scheduleType === "daily" ? A4_PORTRAIT.width : A4_LANDSCAPE.width }}
-          >
-            Page {pageIdx + 1}
+        <div key={pageIdx} className="flex flex-col items-center w-full">
+          <div className="flex flex-col items-center gap-2">
+            <div
+              className="text-[11px] tracking-widest uppercase text-[#B0ACA6] font-medium shrink-0"
+              style={{ width: scheduleType === "daily" ? A4_PORTRAIT.width : A4_LANDSCAPE.width }}
+            >
+              Page {pageIdx + 1}
+            </div>
+            {scheduleType === "daily" && (
+              <DailyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+            )}
+            {scheduleType === "weekly" && (
+              <WeeklyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+            )}
+            {scheduleType === "custom" && (
+              <CustomPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+            )}
+            {scheduleType === "firstthen" && (
+              <FirstThenPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+            )}
           </div>
-          {scheduleType === "daily" && (
-            <DailyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-          )}
-          {scheduleType === "weekly" && (
-            <WeeklyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-          )}
-          {scheduleType === "custom" && (
-            <CustomPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-          )}
-          {scheduleType === "firstthen" && (
-            <FirstThenPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+          {pageIdx < pages.length - 1 && (
+            <div className="w-full h-px bg-[#E0E0E0] my-6" />
           )}
         </div>
       ))}
