@@ -1,192 +1,283 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
-import { useExport } from "@/hooks/useExport";
-import type { GridCols } from "@/lib/constants";
 
-export function RightPanel() {
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const gridCols = useScheduleState((s) => s.gridCols);
+// Load scripts dynamically
+function loadExternalScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any)[src]) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureLibraries() {
+  if (typeof (window as any).html2canvas === "undefined") {
+    await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+  }
+  if (typeof (window as any).jspdf === "undefined") {
+    await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  }
+}
+
+// Hide editing-only affordances (remove buttons, drop hints) so exports look like a finished schedule
+function injectExportHideStyle() {
+  const style = document.createElement("style");
+  style.id = "export-hide-style";
+  style.textContent = ".slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}";
+  document.head.appendChild(style);
+  return style;
+}
+
+// html2canvas doesn't respect CSS object-fit on <img> — it stretches the
+// image to fill its box. Work around this by temporarily replacing
+// object-fit with explicit width/height that reproduce the same
+// letterboxed/contain look, which html2canvas renders correctly.
+function lockImageSizesForCapture(pageEl: HTMLElement) {
+  const overrides: Array<{ el: HTMLImageElement; prev: string | null }> = [];
+  pageEl.querySelectorAll("img").forEach((img) => {
+    const parent = img.parentElement;
+    if (!parent) return;
+    const pw = parent.clientWidth;
+    const ph = parent.clientHeight;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    if (!pw || !ph || !iw || !ih) return;
+    const scale = Math.min(pw / iw, ph / ih);
+    const w = Math.round(iw * scale);
+    const h = Math.round(ih * scale);
+    overrides.push({ el: img, prev: img.getAttribute("style") });
+    img.style.width = w + "px";
+    img.style.height = h + "px";
+    img.style.maxWidth = "none";
+    img.style.maxHeight = "none";
+    img.style.objectFit = "";
+    img.style.display = "block";
+    img.style.margin = "auto";
+  });
+  return overrides;
+}
+
+function restoreImageSizes(overrides: Array<{ el: HTMLImageElement; prev: string | null }>) {
+  overrides.forEach(({ el, prev }) => {
+    if (prev) el.setAttribute("style", prev);
+    else el.removeAttribute("style");
+  });
+}
+
+// html2canvas also can't reliably render the text VALUE of <input> elements
+// Swap each one for a plain text div with the same class
+function swapColumnInputsForCapture(pageEl: HTMLElement) {
+  const swaps: Array<{ input: HTMLInputElement; div: HTMLDivElement }> = [];
+  pageEl.querySelectorAll("input.custom-col-input, input.ft-col-input, .col-name-input").forEach((input) => {
+    const inputEl = input as HTMLInputElement;
+    const div = document.createElement("div");
+    div.className = inputEl.className;
+    div.textContent = inputEl.value;
+    inputEl.style.display = "none";
+    inputEl.insertAdjacentElement("afterend", div);
+    swaps.push({ input: inputEl, div });
+  });
+  return swaps;
+}
+
+function restoreColumnInputs(swaps: Array<{ input: HTMLInputElement; div: HTMLDivElement }>) {
+  swaps.forEach(({ input, div }) => {
+    div.remove();
+    input.style.display = "";
+  });
+}
+
+function prepPageForCapture(pageEl: HTMLElement) {
+  return {
+    imgOverrides: lockImageSizesForCapture(pageEl),
+    inputSwaps: swapColumnInputsForCapture(pageEl),
+  };
+}
+
+function restorePageAfterCapture(state: ReturnType<typeof prepPageForCapture>) {
+  restoreImageSizes(state.imgOverrides);
+  restoreColumnInputs(state.inputSwaps);
+}
+
+function getExportFileBaseName(title: string) {
+  const titleVal = (title || "schedule").trim();
+  return titleVal.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "") || "schedule";
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+async function buildPdfBlob(scheduleType: string) {
+  const pages = Array.from(document.querySelectorAll('[data-a4-page]'));
+  if (!pages.length) throw new Error("No pages to export");
+
+  const isLandscape = scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "firstthen";
+  const orientation = isLandscape ? "landscape" : "portrait";
+  const pageWidthMM = isLandscape ? 297 : 210;
+  const pageHeightMM = isLandscape ? 210 : 297;
+
+  await ensureLibraries();
+  const { jsPDF } = (window as any).jspdf;
+  const html2canvas = (window as any).html2canvas;
+
+  const pdf = new jsPDF({ orientation, unit: "mm", format: "a4" });
+
+  for (let i = 0; i < pages.length; i++) {
+    const pageEl = pages[i] as HTMLElement;
+    const prevTransform = pageEl.style.transform;
+    const prevMargin = pageEl.style.margin;
+    pageEl.style.transform = "none";
+    pageEl.style.margin = "0";
+
+    const captureState = prepPageForCapture(pageEl);
+    const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: "#FFFFFF", useCORS: true });
+    restorePageAfterCapture(captureState);
+
+    pageEl.style.transform = prevTransform;
+    pageEl.style.margin = prevMargin;
+
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+    if (i > 0) pdf.addPage("a4", orientation);
+    pdf.addImage(imgData, "JPEG", 0, 0, pageWidthMM, pageHeightMM);
+  }
+
+  return pdf.output("blob");
+}
+
+async function buildJpegBlobs(scheduleType: string) {
+  const pages = Array.from(document.querySelectorAll('[data-a4-page]'));
+  if (!pages.length) throw new Error("No pages to export");
+
+  await ensureLibraries();
+  const html2canvas = (window as any).html2canvas;
+
+  const blobs: Array<{ blob: Blob; index: number }> = [];
+
+  for (let i = 0; i < pages.length; i++) {
+    const pageEl = pages[i] as HTMLElement;
+    const prevTransform = pageEl.style.transform;
+    const prevMargin = pageEl.style.margin;
+    pageEl.style.transform = "none";
+    pageEl.style.margin = "0";
+
+    const captureState = prepPageForCapture(pageEl);
+    const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: "#FFFFFF", useCORS: true });
+    restorePageAfterCapture(captureState);
+
+    pageEl.style.transform = prevTransform;
+    pageEl.style.margin = prevMargin;
+
+    const blob = await new Promise<Blob>((res) => canvas.toBlob(res, "image/jpeg", 0.92));
+    blobs.push({ blob, index: i });
+
+    // Pause between pages to avoid browser treating rapid downloads as pop-up spam
+    if (i < pages.length - 1) {
+      await new Promise((r) => setTimeout(r, 400));
+    }
+  }
+
+  return blobs;
+}
+
+export function useExport() {
   const title = useScheduleState((s) => s.title);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
   const pages = useScheduleState((s) => s.pages);
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState("");
 
-  const setGridCols = useScheduleState((s) => s.setGridCols);
-  const setTitle = useScheduleState((s) => s.setTitle);
-  const addPage = useScheduleState((s) => s.addPage);
-  const { exportPDF, exportJPEG, exporting } = useExport();
+  const showStatus = useCallback((text: string) => {
+    setExportStatus(text);
+  }, []);
 
-  return (
-    <div className="flex flex-col overflow-y-auto">
-      {/* Grid Size (daily only) */}
-      {scheduleType === "daily" && (
-        <section className="p-4 border-b border-border">
-          <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-            Grid Size
-          </label>
-          <div className="flex gap-2">
-            {([2, 3, 4] as GridCols[]).map((cols) => (
-              <button
-                key={cols}
-                onClick={() => setGridCols(cols)}
-                className={`flex-1 py-2.5 text-[13px] font-bold border-2 text-center rounded transition-all font-sans ${
-                  gridCols === cols
-                    ? "bg-[#7A8F5E] text-white border-[#7A8F5E]"
-                    : "border-[#D0D0D0] text-[#1C1B19] hover:border-[#7A8F5E] hover:bg-[#F5F5F5]"
-                }`}
-              >
-                {cols}x{cols === 2 ? 3 : cols === 3 ? 4 : 6}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+  const hideStatus = useCallback(() => {
+    setExportStatus("");
+  }, []);
 
-      {/* Week Mode (weekly only) */}
-      {scheduleType === "weekly" && (
-        <section className="p-4 border-b border-border">
-          <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-            Days
-          </label>
-          <div className="flex gap-2">
-            {(["week", "weekdays"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => useScheduleState.getState().setWeekMode(mode)}
-                className={`flex-1 py-2.5 text-[13px] font-bold border-2 rounded font-sans text-center transition-all ${
-                  useScheduleState.getState().weekMode === mode
-                    ? "bg-[#7A8F5E] text-white border-[#7A8F5E]"
-                    : "border-[#D0D0D0] text-[#1C1B19] hover:border-[#7A8F5E] hover:bg-[#F5F5F5]"
-                }`}
-              >
-                {mode === "week" ? "Full Week" : "Weekdays"}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+  const exportPDF = useCallback(async () => {
+    if (!pages.length) {
+      alert("No pages to export.");
+      return;
+    }
 
-      {/* Column count (custom only) */}
-      {scheduleType === "custom" && (
-        <section className="p-4 border-b border-border">
-          <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-            Columns
-          </label>
-          <div className="flex gap-2">
-            {[2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                onClick={() => {
-                  const names = useScheduleState.getState().customColNames;
-                  const newNames = Array.from({ length: n }, (_, i) => names[i] || `Column ${i + 1}`);
-                  useScheduleState.getState().setCustomColNames(newNames);
-                }}
-                className={`flex-1 py-2.5 text-[13px] font-bold border-2 rounded font-sans text-center transition-all ${
-                  useScheduleState.getState().customColNames.length === n
-                    ? "bg-[#7A8F5E] text-white border-[#7A8F5E]"
-                    : "border-[#D0D0D0] text-[#1C1B19] hover:border-[#7A8F5E] hover:bg-[#F5F5F5]"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+    setExporting(true);
+    showStatus("Preparing your PDF…");
 
-      {/* First-Then columns (2 or 3) */}
-      {scheduleType === "firstthen" && (
-        <section className="p-4 border-b border-border">
-          <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-            Columns
-          </label>
-          <div className="flex gap-[3px]">
-            {[2, 3].map((n) => (
-              <button
-                key={n}
-                onClick={() => {
-                  const newNames = n === 3 ? ["First", "Then", "Now"] : ["First", "Then"];
-                  useScheduleState.getState().setCustomColNames(newNames);
-                }}
-                className={`flex-1 py-[7px] text-[12px] border font-sans text-center transition-all ${
-                  useScheduleState.getState().customColNames.length === n
-                    ? "bg-ink text-white border-ink"
-                    : "border-border text-ink-3 hover:bg-ink hover:text-white hover:border-ink"
-                }`}
-              >
-                {n === 2 ? "First · Then" : "First · Then · Now"}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+    try {
+      const hideStyle = injectExportHideStyle();
+      try {
+        const blob = (await buildPdfBlob(scheduleType)) as Blob;
+        const fileName = getExportFileBaseName(title) + ".pdf";
+        downloadBlob(blob, fileName);
+      } finally {
+        hideStyle.remove();
+      }
+    } catch (err) {
+      console.error("PDF export error:", err);
+      alert("Something went wrong creating the PDF. Please try again.");
+    } finally {
+      setExporting(false);
+      hideStatus();
+    }
+  }, [pages, scheduleType, title, showStatus, hideStatus]);
 
-      {/* Title */}
-      <section className="p-4 border-b border-border">
-        <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-          Title
-        </label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full py-2 px-2.5 border border-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
-        />
-      </section>
+  const exportJPEG = useCallback(async () => {
+    if (!pages.length) {
+      alert("No pages to export.");
+      return;
+    }
 
-      {/* Export Actions */}
-      <section className="p-4 border-b border-border">
-        <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-          Export
-        </label>
-        <button
-          onClick={exportPDF}
-          disabled={exporting}
-          className="w-full text-[13px] tracking-wider uppercase py-2.5 px-3 border-2 border-[#7A8F5E] bg-white text-[#1C1B19] cursor-pointer font-sans font-bold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#7A8F5E] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          {exporting ? "Exporting..." : "📥 PDF"}
-        </button>
-        <button
-          onClick={exportJPEG}
-          disabled={exporting}
-          className="w-full text-[13px] tracking-wider uppercase py-2.5 px-3 border-2 border-[#7A8F5E] bg-white text-[#1C1B19] cursor-pointer font-sans font-bold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#7A8F5E] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          {exporting ? "Exporting..." : "🖼️ JPEG"}
-        </button>
-        <button className="w-full text-[13px] tracking-wider uppercase py-2.5 px-3 bg-[#1C1B19] text-white border-2 border-[#1C1B19] cursor-pointer font-sans font-bold flex items-center justify-center gap-2 rounded hover:bg-[#333] transition-all">
-          💬 WhatsApp
-        </button>
-      </section>
+    setExporting(true);
+    showStatus("Preparing your images…");
 
-      {/* Page Actions */}
-      <section className="p-4">
-        <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-          Pages
-        </label>
-        <div className="flex justify-between py-[5px] text-[13px] border-b border-surface-pressed">
-          <span className="text-[#8A8480]">Current</span>
-          <span className="text-ink font-medium">Page 1 of {pages.length}</span>
-        </div>
-        <button
-          onClick={addPage}
-          className="w-full text-[13px] tracking-wider uppercase py-2.5 px-3 border-2 border-[#7A8F5E] bg-white text-[#1C1B19] cursor-pointer font-sans font-bold flex items-center justify-center gap-2 mt-3 rounded hover:bg-[#7A8F5E] hover:text-white transition-all"
-        >
-          <svg className="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add Page
-        </button>
-      </section>
-    </div>
-  );
+    try {
+      const hideStyle = injectExportHideStyle();
+      try {
+        const baseName = getExportFileBaseName(title);
+        const blobs = await buildJpegBlobs(scheduleType);
+
+        for (let i = 0; i < blobs.length; i++) {
+          const { blob, index } = blobs[i];
+          const fname = pages.length > 1 ? `${baseName}-page-${index + 1}.jpg` : `${baseName}.jpg`;
+          downloadBlob(blob, fname);
+          // Pause between downloads
+          if (i < blobs.length - 1) {
+            await new Promise((r) => setTimeout(r, 400));
+          }
+        }
+      } finally {
+        hideStyle.remove();
+      }
+    } catch (err) {
+      console.error("JPEG export error:", err);
+      alert("Something went wrong creating the images. Please try again.");
+    } finally {
+      setExporting(false);
+      hideStatus();
+    }
+  }, [pages, scheduleType, title, showStatus, hideStatus]);
+
+  return {
+    exportPDF,
+    exportJPEG,
+    exporting,
+    exportStatus,
+  };
 }
