@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, type ParsedCard } from "@/lib/card-data";
-import { LANGUAGES, type Language, type Gender, type ScheduleType } from "@/lib/constants";
+import { LANGUAGES, type Language, type Gender } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
@@ -50,7 +50,7 @@ function DraggableCardItem({
       title={isCharacter ? `Character card - ${imageGender} variant (drag or click)` : "Neutral card - single image (drag or click)"}
     >
       {/* Card Image */}
-      <div className="w-full aspect-square bg-[#2C2C2C] rounded border-[1px] border-[#D0D0D0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E] group-hover:shadow-md transition-all pointer-events-none">
+      <div className="w-full aspect-square bg-white rounded flex items-center justify-center overflow-hidden group-hover:shadow-md transition-all pointer-events-none">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -58,7 +58,7 @@ function DraggableCardItem({
             className="w-full h-full object-contain p-1"
           />
         ) : (
-          <svg className="w-10 h-10 stroke-[#666] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+          <svg className="w-10 h-10 stroke-[#D0D0D0] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <path d="M21 15l-5-5L5 21" />
@@ -90,13 +90,6 @@ const GENDER_LABELS = {
   all: "All Variants",
 };
 
-const SCHEDULE_TYPE_LABELS = {
-  daily: "Daily Schedule",
-  weekly: "Weekly Schedule",
-  custom: "Custom Schedule",
-  firstthen: "First/Then Board",
-};
-
 const CATEGORY_NAMES: Record<string, string> = {
   characters: "Characters",
   food: "Food",
@@ -120,8 +113,6 @@ export function CardLibrarySidebar() {
   const setGender = useScheduleState((s) => s.setGender);
   const language = useScheduleState((s) => s.language);
   const setLanguage = useScheduleState((s) => s.setLanguage);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const setScheduleType = useScheduleState((s) => s.setScheduleType);
   const placeCard = useScheduleState((s) => s.placeCard);
   const pages = useScheduleState((s) => s.pages);
 
@@ -185,55 +176,6 @@ export function CardLibrarySidebar() {
       return a.localeCompare(b);
     });
   }, [cards]);
-
-  const isCharacterCategory = (catId: string) => !NON_CHARACTER_CATEGORIES.includes(catId);
-  const isPaidCategory = (catId: string) => PAID_CATEGORIES.includes(catId);
-
-  const genderOptions: Array<{ value: Gender; label: string }> = [
-    { value: "neutral", label: GENDER_LABELS.neutral },
-    { value: "boy", label: GENDER_LABELS.boy },
-    { value: "girl", label: GENDER_LABELS.girl },
-    { value: "brown", label: GENDER_LABELS.brown },
-    { value: "all", label: GENDER_LABELS.all },
-  ];
-
-  const scheduleTypeOptions: Array<{ value: ScheduleType; label: string }> = [
-    { value: "daily", label: SCHEDULE_TYPE_LABELS.daily },
-    { value: "weekly", label: SCHEDULE_TYPE_LABELS.weekly },
-    { value: "custom", label: SCHEDULE_TYPE_LABELS.custom },
-    { value: "firstthen", label: SCHEDULE_TYPE_LABELS.firstthen },
-  ];
-
-  const handleAddCard = (cardId: string, catId: string) => {
-    if (pages.length === 0) return;
-    const currentPageIdx = 0;
-    const currentPage = pages[currentPageIdx];
-
-    if ("slots" in currentPage) {
-      // Daily schedule - find first empty slot
-      const firstEmptySlot = currentPage.slots.findIndex((slot) => slot === null);
-      if (firstEmptySlot !== -1) {
-        placeCard(currentPageIdx, String(firstEmptySlot), { cardId, catId });
-      }
-    } else if ("columns" in currentPage) {
-      // Weekly/Custom/FirstThen - try to add to first available position in first column
-      const cols = currentPage.columns || {};
-      const colKeys = Object.keys(cols);
-      
-      if (colKeys.length > 0) {
-        const firstColKey = colKeys[0];
-        const firstCol = cols[firstColKey] || [];
-        const firstEmptyIdx = firstCol.findIndex((card) => card === null);
-        
-        if (firstEmptyIdx !== -1) {
-          placeCard(currentPageIdx, firstColKey, { cardId, catId });
-        } else {
-          // If first column is full, just add to the column (it will append)
-          placeCard(currentPageIdx, firstColKey, { cardId, catId });
-        }
-      }
-    }
-  };
 
   const isCategory = (val: string): boolean => {
     return categories.includes(val);
@@ -318,7 +260,13 @@ export function CardLibrarySidebar() {
                   paddingRight: "32px",
                 }}
               >
-                {genderOptions.map((opt) => (
+                {[
+                  { value: "neutral", label: GENDER_LABELS.neutral },
+                  { value: "boy", label: GENDER_LABELS.boy },
+                  { value: "girl", label: GENDER_LABELS.girl },
+                  { value: "brown", label: GENDER_LABELS.brown },
+                  { value: "all", label: GENDER_LABELS.all },
+                ].map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -327,32 +275,9 @@ export function CardLibrarySidebar() {
             </div>
           </div>
 
-          {/* Row 2: Schedule Type */}
-          <div>
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Schedule Type</label>
-            <select
-              value={scheduleType}
-              onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
-              className="w-full px-3 py-2.5 text-[13px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans appearance-none pr-8 bg-no-repeat bg-right"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                backgroundPosition: "right 8px center",
-                backgroundSize: "18px",
-                backgroundRepeat: "no-repeat",
-                paddingRight: "32px",
-              }}
-            >
-              {scheduleTypeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Row 3: Search with Icons */}
+          {/* Row 2: Category/Search */}
           <div className="relative">
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Search Cards</label>
+            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category / Search Card</label>
             <div className="relative flex items-center">
               {/* Search Icon */}
               <svg className="absolute left-3 w-4 h-4 stroke-[#333] fill-none pointer-events-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round">
@@ -400,9 +325,7 @@ export function CardLibrarySidebar() {
                 {categories.map((catId) => (
                   <div
                     key={catId}
-                    className={`px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] font-medium transition-colors border-b border-[#E0E0E0] ${
-                      selectedCategory === catId ? "bg-[#E8F0E3] text-[#2D6A2D]" : "text-[#1C1B19]"
-                    }`}
+                    className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-[#1C1B19] font-medium border-b border-[#E0E0E0] last:border-b-0"
                     onClick={() => {
                       setSearchOrCategory(catId);
                       setIsDropdownOpen(false);
@@ -413,78 +336,75 @@ export function CardLibrarySidebar() {
                 ))}
               </div>
             )}
-
-            {/* Close dropdown when clicking outside */}
-            {isDropdownOpen && (
-              <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-            )}
           </div>
         </div>
       </div>
 
-      {/* Cards Grid */}
-      <div className="flex-1 overflow-y-auto" key={forceUpdate}>
-        {displayCategories.length === 0 ? (
-          <div className="flex items-center justify-center h-32 text-[13px] text-[#666] font-medium">
-            No cards found
+      {/* CARDS SECTION */}
+      <div className="flex-1 overflow-y-auto px-3 py-4">
+        {filteredCards.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-center">
+            <div>
+              <p className="text-[12px] text-[#666] font-medium">No cards found</p>
+              <p className="text-[11px] text-[#999] mt-1">Try a different search or category</p>
+            </div>
           </div>
         ) : (
-          displayCategories.map((catId) => {
-            const cardsInCategory = filteredCards.filter((card) => card.categoryId === catId);
-            if (cardsInCategory.length === 0) return null;
-
-            const isPaid = isPaidCategory(catId);
-            const displayName = CATEGORY_NAMES[catId] || catId;
-
-            return (
-              <div key={`${catId}-${forceUpdate}`} className="border-b border-[#E0E0E0]">
-                {/* Category Header */}
-                <div className="px-3 py-2.5 bg-[#f9f9f9] flex items-center justify-between border-b border-[#E0E0E0]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[13px] font-bold text-[#1C1B19]">{displayName}</span>
-                    <span className="text-[11px] text-[#666] font-medium">({cardsInCategory.length})</span>
-                  </div>
-                  <div className="flex gap-1">
-                    {!isPaid && <span className="text-[8px] font-bold px-2 py-1 bg-[#EAF5EA] text-[#2D6A2D] rounded">FREE</span>}
-                    {isPaid && <span className="text-[8px] font-bold px-2 py-1 bg-[#FFF5EA] text-[#8B5E2A] rounded">PAID</span>}
-                  </div>
-                </div>
-
-                {/* Cards Grid - 2 Columns */}
-                <div className="p-2.5 grid grid-cols-2 gap-2.5">
-                  {cardsInCategory.map((card) => {
-                    const isAdded = addedCardIds.has(card.id);
-
-                    return (
+          <div className="space-y-4">
+            {displayCategories.map((catId) => {
+              const categoryCards = filteredCards.filter((card) => card.categoryId === catId);
+              return (
+                <div key={catId}>
+                  <h3 className="text-[11px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5">
+                    {CATEGORY_NAMES[catId] || catId}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {categoryCards.map((card) => (
                       <DraggableCardItem
-                        key={`${card.id}-${gender}-${forceUpdate}`}
+                        key={`${card.id}-${forceUpdate}`}
                         card={card}
-                        catId={catId}
+                        catId={card.categoryId}
                         gender={gender}
                         language={language}
-                        isAdded={isAdded}
+                        isAdded={addedCardIds.has(card.id)}
                         onClickAdd={handleAddCard}
                       />
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* Unlock Button */}
-      <div className="shrink-0 p-3 border-t border-[#E0E0E0] bg-white">
-        <a
-          href="https://gumroad.com/growgently_co"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full block text-center px-3 py-2.5 bg-[#7A8F5E] text-white text-[12px] font-bold rounded hover:bg-[#6A7F4E] transition-colors uppercase tracking-wide border-2 border-[#7A8F5E]"
-        >
+      {/* UNLOCK ALL CARDS SECTION */}
+      <div className="shrink-0 border-t border-[#E0E0E0] bg-white p-3">
+        <button className="w-full py-2.5 px-3 bg-[#7A8F5E] text-white border-2 border-[#7A8F5E] text-[13px] font-bold uppercase tracking-wider rounded font-sans hover:bg-[#6A7F4E] transition-all">
           🔓 Unlock All Cards
-        </a>
+        </button>
       </div>
     </div>
   );
+
+  function handleAddCard(cardId: string, catId: string) {
+    if (pages.length === 0) return;
+    const currentPageIdx = 0;
+    const currentPage = pages[currentPageIdx];
+
+    if ("slots" in currentPage) {
+      const firstEmptySlot = currentPage.slots.findIndex((slot) => slot === null);
+      if (firstEmptySlot !== -1) {
+        placeCard(currentPageIdx, String(firstEmptySlot), { cardId, catId });
+      }
+    } else if ("columns" in currentPage) {
+      const cols = currentPage.columns || {};
+      const colKeys = Object.keys(cols);
+      
+      if (colKeys.length > 0) {
+        const firstColKey = colKeys[0];
+        placeCard(currentPageIdx, firstColKey, { cardId, catId });
+      }
+    }
+  }
 }
