@@ -148,14 +148,23 @@ async function buildPdfBlob(scheduleType: string) {
 
     // Wait for all images on this page to load
     const imgs = pageEl.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
+    console.log(`Page ${i}: Found ${imgs.length} images`);
     await Promise.allSettled(
-      Array.from(imgs).map(img => 
+      Array.from(imgs).map((img, idx) => 
         new Promise<void>((resolve) => {
           if (img.complete) {
+            console.log(`  Image ${idx} already loaded`);
             resolve();
           } else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
+            console.log(`  Waiting for image ${idx}: ${img.src}`);
+            img.onload = () => {
+              console.log(`  Image ${idx} loaded`);
+              resolve();
+            };
+            img.onerror = () => {
+              console.error(`  Image ${idx} FAILED to load: ${img.src}`);
+              resolve();
+            };
             // Force reload to ensure latest image
             img.src = img.src;
           }
@@ -167,18 +176,20 @@ async function buildPdfBlob(scheduleType: string) {
     await new Promise(r => setTimeout(r, 300));
 
     const captureState = prepPageForCapture(pageEl);
+    console.log(`Page ${i}: Starting html2canvas capture...`);
     const canvas = await html2canvas(pageEl, { 
       scale: 2, 
       backgroundColor: "#FFFFFF", 
       useCORS: true,
       allowTaint: false,
-      logging: false,
+      logging: true,
       windowTimeout: 20000,
       ignoreElements: (el: any) => {
         const className = el.className || '';
         return className.includes('slot-rm') || className.includes('remove');
       }
     });
+    console.log(`Page ${i}: Canvas created, size: ${canvas.width}x${canvas.height}`);
     restorePageAfterCapture(captureState);
 
     pageEl.style.transform = prevTransform;
@@ -187,6 +198,7 @@ async function buildPdfBlob(scheduleType: string) {
     const imgData = canvas.toDataURL("image/jpeg", 0.92);
     if (i > 0) pdf.addPage("a4", orientation);
     pdf.addImage(imgData, "JPEG", 0, 0, pageWidthMM, pageHeightMM);
+    console.log(`Page ${i}: Added to PDF`);
   }
 
   return pdf.output("blob");
@@ -285,9 +297,15 @@ export function useExport() {
     try {
       const hideStyle = injectExportHideStyle();
       try {
+        console.log("Starting PDF export...");
         const blob = (await buildPdfBlob(scheduleType)) as Blob;
+        console.log("PDF blob created successfully:", blob.size, "bytes");
         const fileName = getExportFileBaseName(title) + ".pdf";
         downloadBlob(blob, fileName);
+        console.log("PDF downloaded:", fileName);
+      } catch (err) {
+        console.error("PDF buildPdfBlob error:", err);
+        throw err;
       } finally {
         hideStyle.remove();
       }
