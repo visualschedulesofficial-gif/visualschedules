@@ -1,12 +1,85 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useDraggable } from "@dnd-kit/core";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, type ParsedCard } from "@/lib/card-data";
 import { LANGUAGES, type Language, type Gender, type ScheduleType } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
+
+// Draggable card wrapper component
+function DraggableCardItem({
+  card,
+  catId,
+  gender,
+  language,
+  isAdded,
+  onClickAdd,
+}: {
+  card: ParsedCard;
+  catId: string;
+  gender: Gender;
+  language: Language;
+  isAdded: boolean;
+  onClickAdd: (cardId: string, catId: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: card.id,
+    data: { cardId: card.id, catId },
+  });
+
+  const isCharacter = isCharacterCard(card);
+  const imageGender = isCharacter ? gender : "neutral";
+  const imageUrl = getCardImageUrl(card.id, imageGender);
+
+  return (
+    <button
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={() => onClickAdd(card.id, catId)}
+      className={`flex flex-col items-center gap-1.5 p-1.5 rounded transition-all group cursor-grab active:cursor-grabbing relative ${
+        isDragging ? "opacity-50 scale-95" : ""
+      } ${
+        isAdded 
+          ? "bg-[#E8F0E3] hover:bg-[#D0E8D0]" 
+          : "hover:bg-[#F5F5F5]"
+      }`}
+      title={isCharacter ? `Character card - ${imageGender} variant (drag or click)` : "Neutral card - single image (drag or click)"}
+    >
+      {/* Card Image */}
+      <div className="w-full aspect-square bg-[#2C2C2C] rounded border-[1px] border-[#D0D0D0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E] group-hover:shadow-md transition-all pointer-events-none">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={getCardLabel(card, language)}
+            className="w-full h-full object-contain p-1"
+          />
+        ) : (
+          <svg className="w-10 h-10 stroke-[#666] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="M21 15l-5-5L5 21" />
+          </svg>
+        )}
+      </div>
+
+      {/* Card Label */}
+      <span className="text-[11px] font-semibold text-[#1C1B19] text-center line-clamp-2 leading-tight pointer-events-none">
+        {getCardLabel(card, language)}
+      </span>
+
+      {/* Green Tick for Added Cards */}
+      {isAdded && (
+        <div className="absolute top-1 right-1 bg-[#2D6A2D] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">
+          ✓
+        </div>
+      )}
+    </button>
+  );
+}
 
 // Local labels (avoid import issues)
 const GENDER_LABELS = {
@@ -137,12 +210,28 @@ export function CardLibrarySidebar() {
     const currentPage = pages[currentPageIdx];
 
     if ("slots" in currentPage) {
+      // Daily schedule - find first empty slot
       const firstEmptySlot = currentPage.slots.findIndex((slot) => slot === null);
       if (firstEmptySlot !== -1) {
         placeCard(currentPageIdx, String(firstEmptySlot), { cardId, catId });
       }
     } else if ("columns" in currentPage) {
-      placeCard(currentPageIdx, "0", { cardId, catId });
+      // Weekly/Custom/FirstThen - try to add to first available position in first column
+      const cols = currentPage.columns || {};
+      const colKeys = Object.keys(cols);
+      
+      if (colKeys.length > 0) {
+        const firstColKey = colKeys[0];
+        const firstCol = cols[firstColKey] || [];
+        const firstEmptyIdx = firstCol.findIndex((card) => card === null);
+        
+        if (firstEmptyIdx !== -1) {
+          placeCard(currentPageIdx, firstColKey, { cardId, catId });
+        } else {
+          // If first column is full, just add to the column (it will append)
+          placeCard(currentPageIdx, firstColKey, { cardId, catId });
+        }
+      }
     }
   };
 
@@ -364,51 +453,18 @@ export function CardLibrarySidebar() {
                 {/* Cards Grid - 2 Columns */}
                 <div className="p-2.5 grid grid-cols-2 gap-2.5">
                   {cardsInCategory.map((card) => {
-                    const isCharacter = isCharacterCard(card);
-                    const imageGender = isCharacter ? gender : "neutral";
-                    const imageUrl = getCardImageUrl(card.id, imageGender);
                     const isAdded = addedCardIds.has(card.id);
 
                     return (
-                      <button
-                        key={`${card.id}-${imageGender}-${forceUpdate}`}
-                        onClick={() => handleAddCard(card.id, catId)}
-                        className={`flex flex-col items-center gap-1.5 p-1.5 rounded transition-all group cursor-pointer relative ${
-                          isAdded 
-                            ? "bg-[#E8F0E3] hover:bg-[#D0E8D0]" 
-                            : "hover:bg-[#F5F5F5]"
-                        }`}
-                        title={isCharacter ? `Character card - ${imageGender} variant` : "Neutral card - single image"}
-                      >
-                        {/* Card Image */}
-                        <div className="w-full aspect-square bg-[#2C2C2C] rounded border-2 border-[#D0D0D0] flex items-center justify-center overflow-hidden group-hover:border-[#7A8F5E] group-hover:shadow-md transition-all">
-                          {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={getCardLabel(card, language)}
-                              className="w-full h-full object-contain p-1"
-                            />
-                          ) : (
-                            <svg className="w-10 h-10 stroke-[#666] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                              <rect x="3" y="3" width="18" height="18" rx="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <path d="M21 15l-5-5L5 21" />
-                            </svg>
-                          )}
-                        </div>
-
-                        {/* Card Label */}
-                        <span className="text-[11px] font-semibold text-[#1C1B19] text-center line-clamp-2 leading-tight">
-                          {getCardLabel(card, language)}
-                        </span>
-
-                        {/* Green Tick for Added Cards */}
-                        {isAdded && (
-                          <div className="absolute top-1 right-1 bg-[#2D6A2D] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
-                            ✓
-                          </div>
-                        )}
-                      </button>
+                      <DraggableCardItem
+                        key={`${card.id}-${gender}-${forceUpdate}`}
+                        card={card}
+                        catId={catId}
+                        gender={gender}
+                        language={language}
+                        isAdded={isAdded}
+                        onClickAdd={handleAddCard}
+                      />
                     );
                   })}
                 </div>
