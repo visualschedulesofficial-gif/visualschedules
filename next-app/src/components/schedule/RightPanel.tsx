@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useExport } from "@/hooks/useExport";
 import type { GridCols } from "@/lib/constants";
-import { ALL_CARDS } from "@/lib/card-data";
 
 const SCHEDULE_TYPE_LABELS = {
   daily: "Daily Schedule",
@@ -20,42 +18,13 @@ export function RightPanel() {
   const setGridCols = useScheduleState((s) => s.setGridCols);
   const title = useScheduleState((s) => s.title);
   const pages = useScheduleState((s) => s.pages);
-  const language = useScheduleState((s) => s.language);
 
   const setTitle = useScheduleState((s) => s.setTitle);
   const addPage = useScheduleState((s) => s.addPage);
   const { exportPDF, exportJPEG, exporting } = useExport();
-  
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-
-  // Get unique categories
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    ALL_CARDS.forEach((c) => cats.add(c.categoryId));
-    return Array.from(cats).sort();
-  }, []);
 
   return (
     <div className="flex flex-col overflow-y-auto h-full">
-      {/* Category Selector */}
-      <section className="p-4 border-b border-border shrink-0">
-        <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
-          Category
-        </label>
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-full py-2.5 px-2.5 border-2 border-border bg-white text-[13px] text-ink font-sans rounded cursor-pointer focus:border-accent focus:outline-none"
-        >
-          <option value="">All Cards</option>
-          {categories.map((catId) => (
-            <option key={catId} value={catId}>
-              {catId.charAt(0).toUpperCase() + catId.slice(1)}
-            </option>
-          ))}
-        </select>
-      </section>
-
       {/* Schedule Type Selector */}
       <section className="p-4 border-b border-border shrink-0">
         <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-2.5 block font-medium">
