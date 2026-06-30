@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-
 export const runtime = 'nodejs';
 
 interface Env {
@@ -40,7 +38,7 @@ export async function POST(request: Request, context: any) {
       },
     });
 
-    const imageId = uuidv4();
+    const imageId = `${cardId}-${variant}-${Date.now()}`;
     const imageUrl = `https://cdn.visualschedule.app/${r2Key}`;
 
     await env.DB.prepare(
