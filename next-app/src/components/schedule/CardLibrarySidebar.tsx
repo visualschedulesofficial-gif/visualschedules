@@ -432,20 +432,3 @@ export function CardLibrarySidebar() {
     </div>
   );
 }
-
-function getCardLabel(card: ParsedCard, language: Language): string {
-  if (language === "hi" && card.translations?.hi) {
-    return card.translations.hi;
-  }
-  return card.translations?.en || card.id;
-}
-
-type ParsedCard = {
-  id: string;
-  categoryId: string;
-  icon?: string;
-  translations?: {
-    en?: string;
-    hi?: string;
-  };
-};
