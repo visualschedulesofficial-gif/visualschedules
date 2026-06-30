@@ -35,11 +35,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex flex-col items-center justify-center overflow-hidden
+      className={`relative flex flex-col items-center justify-center overflow-hidden shadow-[inset_0_0_0_0.5px_#D8D8D8]
         ${!cardRef
-          ? `border-[1px] border-dashed transition-[border-color,background-color,transform] duration-200 ease-out
-             ${isOver ? "border-accent bg-accent/10 scale-[1.03]" : isDragging ? "border-accent/30 bg-accent/[0.03]" : "border-[#BBB] bg-[#F0F0F0]"}`
-          : `border-[1px] border-solid border-[#D0D0D0] group ${isBlack ? "bg-ink" : "bg-white"}`
+          ? `transition-[box-shadow,background-color,transform] duration-200 ease-out
+             ${isOver ? "shadow-[inset_0_0_0_1px_#2D6A5F] bg-accent/5 scale-[1.03]" : isDragging ? "shadow-[inset_0_0_0_0.5px_#D8D8D8] bg-accent/[0.01]" : "shadow-[inset_0_0_0_0.5px_#E8E8E8] bg-[#FCFCFC]"}`
+          : `shadow-[inset_0_0_0_0.5px_#E5E5E5] group ${isBlack ? "bg-ink" : "bg-white"}`
         }
         ${justDropped ? "animate-[cardLand_350ms_cubic-bezier(0.34,1.56,0.64,1)]" : ""}
       `}
@@ -56,7 +56,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
                 </svg>
               )}
             </div>
-            <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] ${isBlack ? "border-[#333] bg-ink" : "border-[#E5E5E5] bg-white"}`}>
+            <div className={`flex-[0_0_30%] flex items-center justify-center px-1 shadow-[inset_0_0.5px_0_0_#E5E5E5] ${isBlack ? "bg-ink" : "bg-white"}`}>
               <span className={`text-[17px] text-center leading-tight font-sans ${isBlack ? "text-white" : "text-[#2C2C2C]"}`}>
                 {getCardLabel(card, language)}
               </span>
