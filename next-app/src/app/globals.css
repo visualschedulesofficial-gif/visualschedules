@@ -1,6 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Atkinson+Hyperlegible:wght@400;700&display=swap');
 @import "tailwindcss";
 
-/* ─── Design Tokens (from design.md) ─── */
+/* â”€â”€â”€ Design Tokens (from design.md) â”€â”€â”€ */
 :root {
   --ink: #1C1B19;
   --ink-2: #5C5855;
@@ -30,12 +31,12 @@
   --badge-paid-text: #8B5E2A;
 
   --font-serif: var(--font-playfair), 'Playfair Display', serif;
-  --font-sans: var(--font-atkinson), 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-sans: var(--font-atkinson), 'Atkinson Hyperlegible Next', system-ui, sans-serif;
 
   color-scheme: light;
 }
 
-/* ─── Tailwind Theme ─── */
+/* â”€â”€â”€ Tailwind Theme â”€â”€â”€ */
 @theme inline {
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
@@ -67,7 +68,7 @@
   --font-sans: var(--font-sans);
 }
 
-/* ─── Base Styles ─── */
+/* â”€â”€â”€ Base Styles â”€â”€â”€ */
 html {
   height: 100%;
   font-size: 14px;
@@ -84,13 +85,13 @@ select, input, textarea, button {
   color-scheme: light;
 }
 
-/* ─── Focus ─── */
+/* â”€â”€â”€ Focus â”€â”€â”€ */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* ─── Mobile Scale ─── */
+/* â”€â”€â”€ Mobile Scale â”€â”€â”€ */
 @media (max-width: 768px) {
   :root {
     --mobile-scale: 0.45;
@@ -106,14 +107,14 @@ select, input, textarea, button {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
-/* ─── Animations ─── */
+/* â”€â”€â”€ Animations â”€â”€â”€ */
 @keyframes cardLand {
   0% { transform: scale(0.85); opacity: 0.3; }
   50% { transform: scale(1.04); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* ─── Print ─── */
+/* â”€â”€â”€ Print â”€â”€â”€ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
 
