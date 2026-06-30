@@ -180,6 +180,7 @@ export default function AdminCardsPage() {
   const [cards, setCards] = useState<ParsedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCard, setEditingCard] = useState<ParsedCard | null>(null);
 
@@ -189,12 +190,14 @@ export default function AdminCardsPage() {
         const res = await fetch("/api/admin/cards");
         if (res.ok) {
           const data = await res.json();
-          setCards(data.cards || ALL_CARDS);
+          setCards(data.cards || []);
         } else {
-          setCards(ALL_CARDS);
+          console.error("Failed to fetch cards:", res.status);
+          setCards([]);
         }
-      } catch {
-        setCards(ALL_CARDS);
+      } catch (err) {
+        console.error("Error fetching cards:", err);
+        setCards([]);
       } finally {
         setLoading(false);
       }
@@ -207,13 +210,20 @@ export default function AdminCardsPage() {
         const res = await fetch("/api/admin/cards");
         if (res.ok) {
           const data = await res.json();
-          setCards(data.cards || ALL_CARDS);
+          setCards(data.cards || []);
         }
-      } catch {}
+      } catch (err) {
+        console.error("Error fetching cards:", err);
+      }
     })();
   };
 
-  const filtered = cards.filter((c) => getCardLabel(c, "en").toLowerCase().includes(search.toLowerCase()));
+  // Filter by search text AND category
+  const filtered = cards.filter((c) => {
+    const matchesSearch = getCardLabel(c, "en").toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || c.categoryId === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="flex flex-col h-screen bg-bg">
@@ -227,19 +237,51 @@ export default function AdminCardsPage() {
             + Add Card
           </button>
         </div>
-        <input
-          type="text"
-          placeholder="Search cards..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-3 py-2 text-[14px] border border-border rounded bg-white text-ink outline-none focus:border-accent"
-        />
+        
+        {/* Search + Category Filter Row */}
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            placeholder="Search cards..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-3 py-2 text-[14px] border border-border rounded bg-white text-ink outline-none focus:border-accent"
+          />
+          
+          {/* Category Filter Dropdown */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-3 py-2 text-[14px] border border-border rounded bg-white text-ink outline-none focus:border-accent min-w-[150px]"
+          >
+            <option value="all">All Categories</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Results count */}
+        <p className="text-[12px] text-ink-3 mt-2">
+          {filtered.length} card{filtered.length !== 1 ? "s" : ""} 
+          {selectedCategory !== "all" && ` in ${CATEGORIES.find(c => c.id === selectedCategory)?.name}`}
+        </p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-4 border-border border-t-accent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-ink-3">
+            <svg className="w-12 h-12 mb-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <p className="text-[14px]">No cards found</p>
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
