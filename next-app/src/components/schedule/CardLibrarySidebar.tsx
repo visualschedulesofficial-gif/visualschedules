@@ -44,7 +44,7 @@ function DraggableCardItem({
         isDragging ? "opacity-50 scale-95" : ""
       } ${
         isAdded 
-          ? "bg-[#E8F0E3] hover:bg-[#D0E8D0]" 
+          ? "border border-[#7A8F5E] bg-white" 
           : "hover:bg-[#F5F5F5]"
       }`}
       title={isCharacter ? `Character card - ${imageGender} variant (drag or click)` : "Neutral card - single image (drag or click)"}
