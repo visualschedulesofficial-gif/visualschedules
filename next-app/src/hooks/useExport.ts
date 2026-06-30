@@ -6,7 +6,9 @@ import { useScheduleState } from "@/hooks/useScheduleState";
 // Load scripts dynamically
 function loadExternalScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    if ((window as any)[src]) {
+    // Already on the page?
+    const already = document.querySelector(`script[src="${src}"]`);
+    if (already) {
       resolve();
       return;
     }
@@ -25,6 +27,11 @@ async function ensureLibraries() {
   }
   if (typeof (window as any).jspdf === "undefined") {
     await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  }
+  // Verify the tools actually loaded — if blocked (offline, ad-blocker,
+  // strict content policy) the script tag resolves but the global is missing.
+  if (typeof (window as any).html2canvas === "undefined" || !(window as any).jspdf?.jsPDF) {
+    throw new Error("LIBS_FAILED");
   }
 }
 
@@ -124,9 +131,32 @@ function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
+// Find the schedule pages currently rendered on screen.
+function getPageElements(): HTMLElement[] {
+  return Array.from(document.querySelectorAll("[data-a4-page]")) as HTMLElement[];
+}
+
+// Translate any internal error into a clear, plain-English message.
+function friendlyMessage(err: unknown, kind: "PDF" | "images"): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg === "NO_PAGES" || msg === "No pages to export") {
+    return "There's nothing to export yet. Add at least one card to your schedule, then try again.";
+  }
+  if (msg === "NOT_VISIBLE") {
+    return "The schedule isn't on screen right now. Please make sure your schedule is showing, then try again.";
+  }
+  if (msg === "LIBS_FAILED" || msg.startsWith("Failed to load")) {
+    return `Couldn't load the ${kind} tool. This usually means no internet connection, or a browser extension/ad-blocker is blocking it. Check your connection, disable blockers for this site, and try again.`;
+  }
+  if (msg.toLowerCase().includes("tainted") || msg.toLowerCase().includes("cors") || msg.toLowerCase().includes("security")) {
+    return `Couldn't include one of the card images in the ${kind}. An image may not be loading correctly. Try refreshing the page and exporting again.`;
+  }
+  return `Something went wrong creating the ${kind}. Please refresh the page and try again. (Details: ${msg})`;
+}
+
 async function buildPdfBlob(scheduleType: string) {
-  const pages = Array.from(document.querySelectorAll('[data-a4-page]'));
-  if (!pages.length) throw new Error("No pages to export");
+  const pages = getPageElements();
+  if (!pages.length) throw new Error("NOT_VISIBLE");
 
   const isLandscape = scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "firstthen";
   const orientation = isLandscape ? "landscape" : "portrait";
@@ -147,49 +177,38 @@ async function buildPdfBlob(scheduleType: string) {
     pageEl.style.margin = "0";
 
     // Wait for all images on this page to load
-    const imgs = pageEl.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
-    console.log(`Page ${i}: Found ${imgs.length} images`);
+    const imgs = pageEl.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
     await Promise.allSettled(
-      Array.from(imgs).map((img, idx) => 
-        new Promise<void>((resolve) => {
-          if (img.complete) {
-            console.log(`  Image ${idx} already loaded`);
-            resolve();
-          } else {
-            console.log(`  Waiting for image ${idx}: ${img.src}`);
-            img.onload = () => {
-              console.log(`  Image ${idx} loaded`);
+      Array.from(imgs).map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete) {
               resolve();
-            };
-            img.onerror = () => {
-              console.error(`  Image ${idx} FAILED to load: ${img.src}`);
-              resolve();
-            };
-            // Force reload to ensure latest image
-            img.src = img.src;
-          }
-        })
+            } else {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+              img.src = img.src;
+            }
+          })
       )
     );
 
     // Small delay to ensure images are rendered
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 300));
 
     const captureState = prepPageForCapture(pageEl);
-    console.log(`Page ${i}: Starting html2canvas capture...`);
-    const canvas = await html2canvas(pageEl, { 
-      scale: 2, 
-      backgroundColor: "#FFFFFF", 
+    const canvas = await html2canvas(pageEl, {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
       useCORS: true,
       allowTaint: false,
-      logging: true,
+      logging: false,
       windowTimeout: 20000,
       ignoreElements: (el: any) => {
-        const className = el.className || '';
-        return className.includes('slot-rm') || className.includes('remove');
-      }
+        const className = el.className || "";
+        return className.includes("slot-rm") || className.includes("remove");
+      },
     });
-    console.log(`Page ${i}: Canvas created, size: ${canvas.width}x${canvas.height}`);
     restorePageAfterCapture(captureState);
 
     pageEl.style.transform = prevTransform;
@@ -198,15 +217,14 @@ async function buildPdfBlob(scheduleType: string) {
     const imgData = canvas.toDataURL("image/jpeg", 0.92);
     if (i > 0) pdf.addPage("a4", orientation);
     pdf.addImage(imgData, "JPEG", 0, 0, pageWidthMM, pageHeightMM);
-    console.log(`Page ${i}: Added to PDF`);
   }
 
   return pdf.output("blob");
 }
 
 async function buildJpegBlobs(scheduleType: string) {
-  const pages = Array.from(document.querySelectorAll('[data-a4-page]'));
-  if (!pages.length) throw new Error("No pages to export");
+  const pages = getPageElements();
+  if (!pages.length) throw new Error("NOT_VISIBLE");
 
   await ensureLibraries();
   const html2canvas = (window as any).html2canvas;
@@ -220,38 +238,36 @@ async function buildJpegBlobs(scheduleType: string) {
     pageEl.style.transform = "none";
     pageEl.style.margin = "0";
 
-    // Wait for all images on this page to load
-    const imgs = pageEl.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
+    const imgs = pageEl.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
     await Promise.allSettled(
-      Array.from(imgs).map(img => 
-        new Promise<void>((resolve) => {
-          if (img.complete) {
-            resolve();
-          } else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            // Force reload to ensure latest image
-            img.src = img.src;
-          }
-        })
+      Array.from(imgs).map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete) {
+              resolve();
+            } else {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+              img.src = img.src;
+            }
+          })
       )
     );
 
-    // Small delay to ensure images are rendered
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 300));
 
     const captureState = prepPageForCapture(pageEl);
-    const canvas = await html2canvas(pageEl, { 
-      scale: 2, 
-      backgroundColor: "#FFFFFF", 
+    const canvas = await html2canvas(pageEl, {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
       useCORS: true,
       allowTaint: false,
       logging: false,
       windowTimeout: 20000,
       ignoreElements: (el: any) => {
-        const className = el.className || '';
-        return className.includes('slot-rm') || className.includes('remove');
-      }
+        const className = el.className || "";
+        return className.includes("slot-rm") || className.includes("remove");
+      },
     });
     restorePageAfterCapture(captureState);
 
@@ -261,7 +277,6 @@ async function buildJpegBlobs(scheduleType: string) {
     const blob = await new Promise<Blob>((res) => canvas.toBlob(res, "image/jpeg", 0.92));
     blobs.push({ blob, index: i });
 
-    // Pause between pages to avoid browser treating rapid downloads as pop-up spam
     if (i < pages.length - 1) {
       await new Promise((r) => setTimeout(r, 400));
     }
@@ -287,32 +302,23 @@ export function useExport() {
 
   const exportPDF = useCallback(async () => {
     if (!pages.length) {
-      alert("No pages to export.");
+      alert("There's nothing to export yet. Add at least one card to your schedule, then try again.");
       return;
     }
 
     setExporting(true);
     showStatus("Preparing your PDF…");
 
+    const hideStyle = injectExportHideStyle();
     try {
-      const hideStyle = injectExportHideStyle();
-      try {
-        console.log("Starting PDF export...");
-        const blob = (await buildPdfBlob(scheduleType)) as Blob;
-        console.log("PDF blob created successfully:", blob.size, "bytes");
-        const fileName = getExportFileBaseName(title) + ".pdf";
-        downloadBlob(blob, fileName);
-        console.log("PDF downloaded:", fileName);
-      } catch (err) {
-        console.error("PDF buildPdfBlob error:", err);
-        throw err;
-      } finally {
-        hideStyle.remove();
-      }
+      const blob = (await buildPdfBlob(scheduleType)) as Blob;
+      const fileName = getExportFileBaseName(title) + ".pdf";
+      downloadBlob(blob, fileName);
     } catch (err) {
       console.error("PDF export error:", err);
-      alert("Something went wrong creating the PDF. Please try again.");
+      alert(friendlyMessage(err, "PDF"));
     } finally {
+      hideStyle.remove();
       setExporting(false);
       hideStatus();
     }
@@ -320,35 +326,31 @@ export function useExport() {
 
   const exportJPEG = useCallback(async () => {
     if (!pages.length) {
-      alert("No pages to export.");
+      alert("There's nothing to export yet. Add at least one card to your schedule, then try again.");
       return;
     }
 
     setExporting(true);
     showStatus("Preparing your images…");
 
+    const hideStyle = injectExportHideStyle();
     try {
-      const hideStyle = injectExportHideStyle();
-      try {
-        const baseName = getExportFileBaseName(title);
-        const blobs = await buildJpegBlobs(scheduleType);
+      const baseName = getExportFileBaseName(title);
+      const blobs = await buildJpegBlobs(scheduleType);
 
-        for (let i = 0; i < blobs.length; i++) {
-          const { blob, index } = blobs[i];
-          const fname = pages.length > 1 ? `${baseName}-page-${index + 1}.jpg` : `${baseName}.jpg`;
-          downloadBlob(blob, fname);
-          // Pause between downloads
-          if (i < blobs.length - 1) {
-            await new Promise((r) => setTimeout(r, 400));
-          }
+      for (let i = 0; i < blobs.length; i++) {
+        const { blob, index } = blobs[i];
+        const fname = pages.length > 1 ? `${baseName}-page-${index + 1}.jpg` : `${baseName}.jpg`;
+        downloadBlob(blob, fname);
+        if (i < blobs.length - 1) {
+          await new Promise((r) => setTimeout(r, 400));
         }
-      } finally {
-        hideStyle.remove();
       }
     } catch (err) {
       console.error("JPEG export error:", err);
-      alert("Something went wrong creating the images. Please try again.");
+      alert(friendlyMessage(err, "images"));
     } finally {
+      hideStyle.remove();
       setExporting(false);
       hideStatus();
     }
