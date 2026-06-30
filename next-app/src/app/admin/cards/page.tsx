@@ -190,14 +190,18 @@ export default function AdminCardsPage() {
         const res = await fetch("/api/admin/cards");
         if (res.ok) {
           const data = await res.json();
-          setCards(data.cards || []);
+          // Use API data if available, otherwise fall back to hardcoded
+          const cardsToShow = (data.cards && data.cards.length > 0) ? data.cards : ALL_CARDS;
+          setCards(cardsToShow);
         } else {
-          console.error("Failed to fetch cards:", res.status);
-          setCards([]);
+          // API error - fall back to hardcoded data
+          console.error("Failed to fetch cards from API, using fallback data");
+          setCards(ALL_CARDS);
         }
       } catch (err) {
-        console.error("Error fetching cards:", err);
-        setCards([]);
+        // Network error - fall back to hardcoded data
+        console.error("Error fetching cards, using fallback data:", err);
+        setCards(ALL_CARDS);
       } finally {
         setLoading(false);
       }
@@ -210,10 +214,14 @@ export default function AdminCardsPage() {
         const res = await fetch("/api/admin/cards");
         if (res.ok) {
           const data = await res.json();
-          setCards(data.cards || []);
+          const cardsToShow = (data.cards && data.cards.length > 0) ? data.cards : ALL_CARDS;
+          setCards(cardsToShow);
+        } else {
+          setCards(ALL_CARDS);
         }
       } catch (err) {
-        console.error("Error fetching cards:", err);
+        console.error("Error refreshing cards:", err);
+        setCards(ALL_CARDS);
       }
     })();
   };
