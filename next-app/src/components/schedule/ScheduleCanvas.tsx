@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
@@ -47,7 +47,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
       {cardRef && card ? (
         <>
           <div className="absolute inset-0 flex flex-col">
-            <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden bg-[#F8FAFB]`}>
+            <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden bg-white`}>
               {imageUrl ? (
                 <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
               ) : (
@@ -165,8 +165,11 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
     >
       <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 border-b border-[#EEE] mb-2.5">
         <div className="col-start-2">
-          <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none text-center">{scheduleTypeLabel}</h2>
-          {title && <p className="text-[14px] text-[#666] text-center mt-1">{title}</p>}
+          {title ? (
+            <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none text-center">{title}</h2>
+          ) : (
+            <h2 className="font-serif text-[28px] italic text-[#999] leading-none text-center">Untitled</h2>
+          )}
         </div>
         <div className="col-start-3 justify-self-end">
           <span className="text-[11px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
@@ -208,8 +211,11 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{scheduleTypeLabel}</h2>
-        {title && <p className="text-[14px] text-[#666] mt-1">{title}</p>}
+        {title ? (
+          <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{title}</h2>
+        ) : (
+          <h2 className="font-serif text-[28px] italic text-[#999] leading-none">Untitled</h2>
+        )}
       </div>
       <div className="flex-1 min-h-0 grid border border-weekly-border rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
         {dayKeys.map((key, idx) => (
@@ -315,8 +321,11 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{scheduleTypeLabel}</h2>
-        {title && <p className="text-[14px] text-[#666] mt-1">{title}</p>}
+        {title ? (
+          <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{title}</h2>
+        ) : (
+          <h2 className="font-serif text-[28px] italic text-[#999] leading-none">Untitled</h2>
+        )}
       </div>
       <div className="flex-1 min-h-0 grid border border-weekly-border rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
         {customColNames.map((name, idx) => (
@@ -414,8 +423,11 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{scheduleTypeLabel}</h2>
-        {title && <p className="text-[14px] text-[#666] mt-1">{title}</p>}
+        {title ? (
+          <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{title}</h2>
+        ) : (
+          <h2 className="font-serif text-[28px] italic text-[#999] leading-none">Untitled</h2>
+        )}
       </div>
       <div className="flex-1 min-h-0 grid gap-5" style={{ gridTemplateColumns: `repeat(${ftColNames.length}, 1fr)` }}>
         {ftColNames.map((name, idx) => (
