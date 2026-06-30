@@ -1,7 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
+import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS, SCHEDULE_TYPE_LABELS } from "@/lib/constants";
 import { ALL_CARDS, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
@@ -144,8 +144,10 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
 function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const gridCols = useScheduleState((s) => s.gridCols);
   const title = useScheduleState((s) => s.title);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
   const language = useScheduleState((s) => s.language);
   const spec = GRID_SPECS[gridCols];
+  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
 
   return (
     <div
@@ -155,7 +157,8 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
     >
       <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 border-b border-[#EEE] mb-2.5">
         <div className="col-start-2">
-          <h2 className="font-serif text-[22px] italic text-ink leading-none text-center">{title}</h2>
+          <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none text-center">{scheduleTypeLabel}</h2>
+          {title && <p className="text-[14px] text-[#666] text-center mt-1">{title}</p>}
         </div>
         <div className="col-start-3 justify-self-end">
           <span className="text-[11px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
@@ -182,8 +185,10 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
 
 function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const title = useScheduleState((s) => s.title);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
   const language = useScheduleState((s) => s.language);
   const weekMode = useScheduleState((s) => s.weekMode);
+  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
 
   const days = weekMode === "weekdays" ? DAYS.slice(1, 6) : [...DAYS];
   const dayKeys = weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS];
@@ -195,7 +200,8 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-weekly-head-text leading-none">{title}</h2>
+        <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{scheduleTypeLabel}</h2>
+        {title && <p className="text-[14px] text-[#666] mt-1">{title}</p>}
       </div>
       <div className="flex-1 min-h-0 grid border border-weekly-border rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
         {dayKeys.map((key, idx) => (
@@ -210,7 +216,7 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
   );
 }
 
-function CustomColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName: string; pageIdx: number }) {
+function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: number; colName: string; pageIdx: number; justDroppedSlot: string | null }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
@@ -288,7 +294,9 @@ function CustomColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName: s
 
 function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const title = useScheduleState((s) => s.title);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
   const customColNames = useScheduleState((s) => s.customColNames);
+  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
 
   const colCount = customColNames.length;
 
@@ -299,11 +307,12 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-weekly-head-text leading-none">{title}</h2>
+        <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{scheduleTypeLabel}</h2>
+        {title && <p className="text-[14px] text-[#666] mt-1">{title}</p>}
       </div>
       <div className="flex-1 min-h-0 grid border border-weekly-border rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
         {customColNames.map((name, idx) => (
-          <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} />
+          <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
       <div className="shrink-0 pt-2 flex justify-between items-end">
@@ -314,7 +323,7 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
   );
 }
 
-function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName: string; pageIdx: number }) {
+function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: number; colName: string; pageIdx: number; justDroppedSlot: string | null }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
@@ -384,7 +393,9 @@ function FirstThenColumn({ colIdx, colName, pageIdx }: { colIdx: number; colName
 
 function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const title = useScheduleState((s) => s.title);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
   const customColNames = useScheduleState((s) => s.customColNames);
+  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
   const ftColCount = customColNames.length <= 3 ? Math.max(2, Math.min(3, customColNames.length)) : 2;
   const ftColNames = ftColCount === 3 ? ["First", "Then", "Now"] : ["First", "Then"];
 
@@ -395,11 +406,12 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-weekly-head-text leading-none">{title}</h2>
+        <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{scheduleTypeLabel}</h2>
+        {title && <p className="text-[14px] text-[#666] mt-1">{title}</p>}
       </div>
       <div className="flex-1 min-h-0 grid gap-5" style={{ gridTemplateColumns: `repeat(${ftColNames.length}, 1fr)` }}>
         {ftColNames.map((name, idx) => (
-          <FirstThenColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} />
+          <FirstThenColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
       <div className="shrink-0 pt-2 flex justify-between items-end">
