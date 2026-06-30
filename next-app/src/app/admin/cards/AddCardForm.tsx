@@ -128,8 +128,14 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
       });
 
       if (!cardRes.ok) {
-        const data = await cardRes.json();
-        setError(data.error || "Failed to create card");
+        let errorMsg = "Failed to create card";
+        try {
+          const data = await cardRes.json();
+          errorMsg = data.error || errorMsg;
+        } catch {
+          errorMsg = `Card creation failed (${cardRes.status}): ${cardRes.statusText}`;
+        }
+        setError(errorMsg);
         setLoading(false);
         return;
       }
@@ -153,8 +159,14 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
         });
 
         if (!uploadRes.ok) {
-          const data = await uploadRes.json();
-          setError(`Failed to upload ${variant} image: ${data.error}`);
+          let errorMsg = "Failed to upload image";
+          try {
+            const data = await uploadRes.json();
+            errorMsg = data.error || errorMsg;
+          } catch {
+            errorMsg = `Upload failed (${uploadRes.status}): ${uploadRes.statusText}`;
+          }
+          setError(`Error uploading ${variant} image: ${errorMsg}`);
           setLoading(false);
           return;
         }
