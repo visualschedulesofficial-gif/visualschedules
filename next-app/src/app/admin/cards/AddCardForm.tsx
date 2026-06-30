@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { CATEGORIES } from "@/lib/card-data";
+import { useState, useRef, useEffect } from "react";
+
+interface Category {
+  id: string;
+  name: string;
+  isFree: boolean;
+}
 
 interface AddCardFormProps {
   onClose: () => void;
@@ -11,12 +16,30 @@ interface AddCardFormProps {
 export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
   const [nameEn, setNameEn] = useState("");
   const [nameHi, setNameHi] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]?.id || "daily");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [category, setCategory] = useState("");
   const [icon, setIcon] = useState("star");
   const [isCharacter, setIsCharacter] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Load admin-defined categories from the database
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/categories");
+        if (res.ok) {
+          const data = await res.json();
+          const cats: Category[] = data.categories || [];
+          setCategories(cats);
+          if (cats.length > 0) setCategory(cats[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    })();
+  }, []);
 
   // Image upload state
   const [images, setImages] = useState<Record<string, File | null>>({
@@ -95,6 +118,11 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
       return;
     }
 
+    if (!category) {
+      setError("Please select a category");
+      return;
+    }
+
     if (isCharacter) {
       if (!images.neutral || !images.boy || !images.girl || !images.brown) {
         setError("All 4 character variant images are required");
@@ -150,11 +178,11 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
         if (!file) continue;
 
         const formData = new FormData();
-        formData.append("cardId", cardId);
+        formData.append("file", file);
         formData.append("variant", variant);
-        formData.append("image", file);
 
-        const uploadRes = await fetch("/api/admin/cards/upload", {
+        // Use the schema-consistent endpoint (binding R2, columns r2_key/url).
+        const uploadRes = await fetch(`/api/admin/cards/${cardId}/images`, {
           method: "POST",
           body: formData,
         });
@@ -254,7 +282,7 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               />
             </div>
 
-            {/* Category */}
+            {/* Category (admin-defined, loaded from DB) */}
             <div>
               <label className="block text-[12px] font-semibold text-[#666] uppercase tracking-wide mb-1">
                 Category
@@ -264,11 +292,15 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-3 py-2 border border-[#D0D0D0] rounded text-[14px] outline-none focus:border-[#7A8F5E] focus:ring-2 focus:ring-[#7A8F5E]/30"
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
+                {categories.length === 0 ? (
+                  <option value="">No categories — add one in Categories first</option>
+                ) : (
+                  categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} — {cat.isFree ? "Free" : "Paid"}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
