@@ -9,10 +9,13 @@ function getEnv(): { DB?: any } {
 // POST /api/admin/cards — create a new card
 export async function POST(request: NextRequest) {
   try {
-    const { id, name, categoryId, icon } = await request.json();
+    const { id, icon, categoryId, isCharacter, translations } = await request.json();
 
-    if (!id || !name || !categoryId) {
-      return NextResponse.json({ error: "id, name, and categoryId are required" }, { status: 400 });
+    if (!id || !categoryId || !translations?.en) {
+      return NextResponse.json(
+        { error: "id, categoryId, and translations.en are required" },
+        { status: 400 }
+      );
     }
 
     const env = getEnv();
@@ -20,19 +23,31 @@ export async function POST(request: NextRequest) {
     if (env.DB) {
       // Insert card
       await env.DB.prepare(
-        `INSERT INTO cards (id, icon, category_id, status, sort_order, created_at) VALUES (?, ?, ?, 'live', 0, datetime('now'))`
-      ).bind(id, icon || "s-star", categoryId).run();
+        `INSERT INTO cards (id, icon, category_id, is_character, status, sort_order, created_at) 
+         VALUES (?, ?, ?, ?, 'live', 0, datetime('now'))`
+      ).bind(id, icon || "star", categoryId, isCharacter ? 1 : 0).run();
 
       // Insert English translation
       await env.DB.prepare(
         `INSERT INTO card_translations (card_id, lang, label) VALUES (?, 'en', ?)`
-      ).bind(id, name).run();
+      ).bind(id, translations.en).run();
 
-      return NextResponse.json({ success: true, id, name, categoryId }, { status: 201 });
+      // Insert Hindi translation if provided
+      if (translations.hi && translations.hi !== translations.en) {
+        await env.DB.prepare(
+          `INSERT INTO card_translations (card_id, lang, label) VALUES (?, 'hi', ?)`
+        ).bind(id, translations.hi).run();
+      }
+
+      return NextResponse.json(
+        { success: true, id, cardId: id, translations },
+        { status: 201 }
+      );
     }
 
     return NextResponse.json({ error: "Database not available" }, { status: 503 });
   } catch (err: any) {
+    console.error("Card creation error:", err);
     return NextResponse.json({ error: err?.message || "Failed to create card" }, { status: 500 });
   }
 }
