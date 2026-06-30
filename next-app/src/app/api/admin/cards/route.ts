@@ -21,11 +21,11 @@ export async function POST(request: NextRequest) {
     const env = getEnv();
 
     if (env.DB) {
-      // Insert card
+      // Insert card (without is_character column if it doesn't exist in schema)
       await env.DB.prepare(
-        `INSERT INTO cards (id, icon, category_id, is_character, status, sort_order, created_at) 
-         VALUES (?, ?, ?, ?, 'live', 0, datetime('now'))`
-      ).bind(id, icon || "star", categoryId, isCharacter ? 1 : 0).run();
+        `INSERT INTO cards (id, icon, category_id, status, sort_order, created_at) 
+         VALUES (?, ?, ?, 'live', 0, datetime('now'))`
+      ).bind(id, icon || "star", categoryId).run();
 
       // Insert English translation
       await env.DB.prepare(
