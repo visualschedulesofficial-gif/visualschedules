@@ -146,6 +146,26 @@ async function buildPdfBlob(scheduleType: string) {
     pageEl.style.transform = "none";
     pageEl.style.margin = "0";
 
+    // Wait for all images on this page to load
+    const imgs = pageEl.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
+    await Promise.allSettled(
+      Array.from(imgs).map(img => 
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            // Force reload to ensure latest image
+            img.src = img.src;
+          }
+        })
+      )
+    );
+
+    // Small delay to ensure images are rendered
+    await new Promise(r => setTimeout(r, 300));
+
     const captureState = prepPageForCapture(pageEl);
     const canvas = await html2canvas(pageEl, { 
       scale: 2, 
@@ -153,7 +173,11 @@ async function buildPdfBlob(scheduleType: string) {
       useCORS: false,
       allowTaint: true,
       logging: false,
-      windowTimeout: 10000
+      windowTimeout: 20000,
+      ignoreElements: (el: any) => {
+        const className = el.className || '';
+        return className.includes('slot-rm') || className.includes('remove');
+      }
     });
     restorePageAfterCapture(captureState);
 
@@ -184,6 +208,26 @@ async function buildJpegBlobs(scheduleType: string) {
     pageEl.style.transform = "none";
     pageEl.style.margin = "0";
 
+    // Wait for all images on this page to load
+    const imgs = pageEl.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
+    await Promise.allSettled(
+      Array.from(imgs).map(img => 
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            // Force reload to ensure latest image
+            img.src = img.src;
+          }
+        })
+      )
+    );
+
+    // Small delay to ensure images are rendered
+    await new Promise(r => setTimeout(r, 300));
+
     const captureState = prepPageForCapture(pageEl);
     const canvas = await html2canvas(pageEl, { 
       scale: 2, 
@@ -191,7 +235,11 @@ async function buildJpegBlobs(scheduleType: string) {
       useCORS: false,
       allowTaint: true,
       logging: false,
-      windowTimeout: 10000
+      windowTimeout: 20000,
+      ignoreElements: (el: any) => {
+        const className = el.className || '';
+        return className.includes('slot-rm') || className.includes('remove');
+      }
     });
     restorePageAfterCapture(captureState);
 
