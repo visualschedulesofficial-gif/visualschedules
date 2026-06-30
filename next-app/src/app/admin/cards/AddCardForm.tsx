@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { CATEGORIES } from "@/lib/card-data";
 
 interface AddCardFormProps {
   onClose: () => void;
@@ -10,7 +11,7 @@ interface AddCardFormProps {
 export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
   const [nameEn, setNameEn] = useState("");
   const [nameHi, setNameHi] = useState("");
-  const [category, setCategory] = useState("characters");
+  const [category, setCategory] = useState(CATEGORIES[0]?.id || "daily");
   const [icon, setIcon] = useState("star");
   const [isCharacter, setIsCharacter] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -263,17 +264,11 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-3 py-2 border border-[#D0D0D0] rounded text-[14px] outline-none focus:border-[#7A8F5E] focus:ring-2 focus:ring-[#7A8F5E]/30"
               >
-                <option value="characters">Characters</option>
-                <option value="food">Food</option>
-                <option value="routines">Routines</option>
-                <option value="activities">Activities</option>
-                <option value="rewards">Rewards</option>
-                <option value="snacks">Snacks</option>
-                <option value="meals">Meals</option>
-                <option value="social">Social</option>
-                <option value="art">Art</option>
-                <option value="home">Home</option>
-                <option value="school">School</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
 
