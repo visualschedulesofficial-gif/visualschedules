@@ -147,7 +147,14 @@ async function buildPdfBlob(scheduleType: string) {
     pageEl.style.margin = "0";
 
     const captureState = prepPageForCapture(pageEl);
-    const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: "#FFFFFF", useCORS: true });
+    const canvas = await html2canvas(pageEl, { 
+      scale: 2, 
+      backgroundColor: "#FFFFFF", 
+      useCORS: false,
+      allowTaint: true,
+      logging: false,
+      windowTimeout: 10000
+    });
     restorePageAfterCapture(captureState);
 
     pageEl.style.transform = prevTransform;
@@ -178,7 +185,14 @@ async function buildJpegBlobs(scheduleType: string) {
     pageEl.style.margin = "0";
 
     const captureState = prepPageForCapture(pageEl);
-    const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: "#FFFFFF", useCORS: true });
+    const canvas = await html2canvas(pageEl, { 
+      scale: 2, 
+      backgroundColor: "#FFFFFF", 
+      useCORS: false,
+      allowTaint: true,
+      logging: false,
+      windowTimeout: 10000
+    });
     restorePageAfterCapture(captureState);
 
     pageEl.style.transform = prevTransform;
