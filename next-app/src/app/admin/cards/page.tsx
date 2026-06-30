@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ALL_CARDS, CATEGORIES, getCardLabel, isCharacterCard, type ParsedCard } from "@/lib/card-data";
 import { AddCardForm } from "./AddCardForm";
+import { EditCardForm } from "./EditCardForm";
 
 function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: { cardId: string; variant: string; label: string; colorClass: string; existingUrl: string | null }) {
   const [preview, setPreview] = useState<string | null>(existingUrl);
@@ -180,6 +181,7 @@ export default function AdminCardsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingCard, setEditingCard] = useState<ParsedCard | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -242,7 +244,19 @@ export default function AdminCardsPage() {
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
             {filtered.map((card) => (
-              <CardItem key={card.id} card={card} onEdit={() => {}} onDelete={() => {}} />
+              <CardItem 
+                key={card.id} 
+                card={card} 
+                onEdit={(c) => setEditingCard(c)}
+                onDelete={async (cardId) => {
+                  try {
+                    await fetch(`/api/admin/cards/${cardId}`, { method: "DELETE" });
+                    handleCardAdded();
+                  } catch (err) {
+                    alert("Failed to delete card");
+                  }
+                }}
+              />
             ))}
           </div>
         )}
@@ -252,6 +266,17 @@ export default function AdminCardsPage() {
         <AddCardForm 
           onClose={() => setShowAddForm(false)}
           onCardAdded={handleCardAdded}
+        />
+      )}
+
+      {editingCard && (
+        <EditCardForm
+          card={editingCard}
+          onClose={() => setEditingCard(null)}
+          onCardUpdated={() => {
+            setEditingCard(null);
+            handleCardAdded();
+          }}
         />
       )}
     </div>
