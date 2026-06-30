@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { type ParsedCard, isCharacterCard } from "@/lib/card-data";
+import { type ParsedCard, isCharacterCard, CATEGORIES } from "@/lib/card-data";
 
 interface EditCardFormProps {
   card: ParsedCard;
@@ -12,7 +12,7 @@ interface EditCardFormProps {
 export function EditCardForm({ card, onClose, onCardUpdated }: EditCardFormProps) {
   const [nameEn, setNameEn] = useState(card.translations?.en || "");
   const [nameHi, setNameHi] = useState(card.translations?.hi || "");
-  const [category, setCategory] = useState(card.categoryId || "characters");
+  const [category, setCategory] = useState(card.categoryId || CATEGORIES[0]?.id || "daily");
   const [icon, setIcon] = useState(card.icon || "star");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -253,17 +253,11 @@ export function EditCardForm({ card, onClose, onCardUpdated }: EditCardFormProps
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-3 py-2 border border-[#D0D0D0] rounded text-[14px] outline-none focus:border-[#7A8F5E] focus:ring-2 focus:ring-[#7A8F5E]/30"
               >
-                <option value="characters">Characters</option>
-                <option value="food">Food</option>
-                <option value="routines">Routines</option>
-                <option value="activities">Activities</option>
-                <option value="rewards">Rewards</option>
-                <option value="snacks">Snacks</option>
-                <option value="meals">Meals</option>
-                <option value="social">Social</option>
-                <option value="art">Art</option>
-                <option value="home">Home</option>
-                <option value="school">School</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
 
