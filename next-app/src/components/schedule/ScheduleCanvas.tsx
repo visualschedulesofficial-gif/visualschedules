@@ -1,10 +1,18 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS, SCHEDULE_TYPE_LABELS } from "@/lib/constants";
+import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
 import { ALL_CARDS, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
+
+// Local schedule type labels (avoiding import issues)
+const SCHEDULE_TYPE_LABELS = {
+  daily: "Daily Schedule",
+  weekly: "Weekly Schedule",
+  custom: "Custom Schedule",
+  firstthen: "First/Then Board",
+} as const;
 
 function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pageIdx: number; justDropped: boolean }) {
   const pages = useScheduleState((s) => s.pages);
