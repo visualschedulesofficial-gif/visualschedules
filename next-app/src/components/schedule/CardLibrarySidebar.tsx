@@ -50,7 +50,7 @@ function DraggableCardItem({
       title={isCharacter ? `Character card - ${imageGender} variant (drag or click)` : "Neutral card - single image (drag or click)"}
     >
       {/* Card Image */}
-      <div className="w-full aspect-square bg-white rounded flex items-center justify-center overflow-hidden group-hover:shadow-md transition-all pointer-events-none">
+      <div className="w-full aspect-square bg-white rounded border-[1.5px] border-dashed border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:shadow-md transition-all pointer-events-none">
         {imageUrl ? (
           <img
             src={imageUrl}
