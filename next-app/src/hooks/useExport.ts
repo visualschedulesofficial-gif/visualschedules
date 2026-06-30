@@ -205,8 +205,11 @@ async function buildPdfBlob(scheduleType: string) {
       logging: false,
       windowTimeout: 20000,
       ignoreElements: (el: any) => {
-        const className = el.className || "";
-        return className.includes("slot-rm") || className.includes("remove");
+        // SVG elements store className as an object (SVGAnimatedString), not a
+        // string, so read it safely to avoid "includes is not a function".
+        const raw = el.className;
+        const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
+        return cn.includes("slot-rm") || cn.includes("remove");
       },
     });
     restorePageAfterCapture(captureState);
@@ -265,8 +268,11 @@ async function buildJpegBlobs(scheduleType: string) {
       logging: false,
       windowTimeout: 20000,
       ignoreElements: (el: any) => {
-        const className = el.className || "";
-        return className.includes("slot-rm") || className.includes("remove");
+        // SVG elements store className as an object (SVGAnimatedString), not a
+        // string, so read it safely to avoid "includes is not a function".
+        const raw = el.className;
+        const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
+        return cn.includes("slot-rm") || cn.includes("remove");
       },
     });
     restorePageAfterCapture(captureState);
