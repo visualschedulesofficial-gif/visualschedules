@@ -170,8 +170,8 @@ async function buildPdfBlob(scheduleType: string) {
     const canvas = await html2canvas(pageEl, { 
       scale: 2, 
       backgroundColor: "#FFFFFF", 
-      useCORS: false,
-      allowTaint: true,
+      useCORS: true,
+      allowTaint: false,
       logging: false,
       windowTimeout: 20000,
       ignoreElements: (el: any) => {
@@ -232,8 +232,8 @@ async function buildJpegBlobs(scheduleType: string) {
     const canvas = await html2canvas(pageEl, { 
       scale: 2, 
       backgroundColor: "#FFFFFF", 
-      useCORS: false,
-      allowTaint: true,
+      useCORS: true,
+      allowTaint: false,
       logging: false,
       windowTimeout: 20000,
       ignoreElements: (el: any) => {
