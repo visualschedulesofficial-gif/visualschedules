@@ -24,6 +24,7 @@ function DraggableCardItem({
   language: Language;
   isAdded: boolean;
   onClickAdd: (cardId: string, catId: string) => void;
+  isFree: boolean;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
@@ -77,6 +78,15 @@ function DraggableCardItem({
           ✓
         </div>
       )}
+
+      {/* Free / Paid badge — bottom-left */}
+      <div className={`absolute bottom-[26px] left-1 text-[8px] font-bold tracking-wide px-1 py-[1px] rounded pointer-events-none ${
+        isFree
+          ? "bg-[#E6F2E6] text-[#2D6A2D] border border-[#BCE0BC]"
+          : "bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]"
+      }`}>
+        {isFree ? "Free" : "Paid"}
+      </div>
     </button>
   );
 }
@@ -399,6 +409,7 @@ export function CardLibrarySidebar() {
                         language={language}
                         isAdded={addedCardIds.has(card.id)}
                         onClickAdd={handleAddCard}
+                        isFree={(card as any).isFree !== false}
                       />
                     ))}
                   </div>
