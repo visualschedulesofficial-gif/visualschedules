@@ -41,15 +41,7 @@ async function ensureLibraries() {
 function injectExportHideStyle() {
   const style = document.createElement("style");
   style.id = "export-hide-style";
-  style.textContent = [
-    ".slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}",
-    // Force CSS variable borders to literal values for html2canvas
-    "[class*='border-weekly-border'],[class*='border-b-weekly-border'],[class*='border-r-weekly-border']{border-color:#C5D2B8!important}",
-    // Use Georgia as export font for headings (Playwrite won't render in html2canvas)
-    ".font-serif{font-family:Georgia,serif!important;font-style:italic}",
-    // Force all borders to light not black
-    ".border-\\[\\#C5D2B8\\]{border-color:#C5D2B8!important}",
-  ].join("");
+  style.textContent = ".slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}";
   document.head.appendChild(style);
   return style;
 }
@@ -214,6 +206,18 @@ async function buildPdfBlob(scheduleType: string) {
       allowTaint: false,
       logging: false,
       windowTimeout: 20000,
+      onclone: (_doc: Document) => {
+        // Apply export styles only to the CLONE — real canvas is never touched,
+        // so there is no flicker on the live page.
+        const s = _doc.createElement("style");
+        s.textContent = [
+          // Georgia replaces Playwrite for export (web fonts don't render in html2canvas)
+          ".font-serif{font-family:Georgia,serif!important;font-style:italic!important}",
+          // Resolve CSS variable borders to hex so they aren't black
+          "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
+        ].join("");
+        _doc.head.appendChild(s);
+      },
       ignoreElements: (el: any) => {
         // SVG elements store className as an object (SVGAnimatedString), not a
         // string, so read it safely to avoid "includes is not a function".
@@ -277,6 +281,18 @@ async function buildJpegBlobs(scheduleType: string) {
       allowTaint: false,
       logging: false,
       windowTimeout: 20000,
+      onclone: (_doc: Document) => {
+        // Apply export styles only to the CLONE — real canvas is never touched,
+        // so there is no flicker on the live page.
+        const s = _doc.createElement("style");
+        s.textContent = [
+          // Georgia replaces Playwrite for export (web fonts don't render in html2canvas)
+          ".font-serif{font-family:Georgia,serif!important;font-style:italic!important}",
+          // Resolve CSS variable borders to hex so they aren't black
+          "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
+        ].join("");
+        _doc.head.appendChild(s);
+      },
       ignoreElements: (el: any) => {
         // SVG elements store className as an object (SVGAnimatedString), not a
         // string, so read it safely to avoid "includes is not a function".
