@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useScheduleState } from "@/hooks/useScheduleState";
-import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, type ParsedCard } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, setRuntimeCards, type ParsedCard } from "@/lib/card-data";
 import { LANGUAGES, type Language, type Gender } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
@@ -23,8 +23,8 @@ function DraggableCardItem({
   gender: Gender;
   language: Language;
   isAdded: boolean;
-  onClickAdd: (cardId: string, catId: string) => void;
   isFree: boolean;
+  onClickAdd: (cardId: string, catId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
@@ -79,8 +79,8 @@ function DraggableCardItem({
         </div>
       )}
 
-      {/* Free / Paid badge — bottom-left */}
-      <div className={`absolute bottom-[26px] left-1 text-[8px] font-bold tracking-wide px-1 py-[1px] rounded pointer-events-none ${
+      {/* Free / Paid badge */}
+      <div className={`absolute bottom-[28px] left-1 text-[9px] font-bold tracking-wide px-1 py-[1px] rounded-sm pointer-events-none leading-tight ${
         isFree
           ? "bg-[#E6F2E6] text-[#2D6A2D] border border-[#BCE0BC]"
           : "bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]"
@@ -170,7 +170,12 @@ export function CardLibrarySidebar() {
         const res = await fetch("/api/cards");
         if (res.ok) {
           const data = await res.json();
-          setCards(mergeCards(data.cards || []));
+          const dbCards = (data.cards || []).map((c: ParsedCard) => ({
+            ...c,
+            icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
+          }));
+          setRuntimeCards(dbCards);
+          setCards(mergeCards(dbCards));
         } else {
           setCards(ALL_CARDS);
         }
@@ -408,8 +413,8 @@ export function CardLibrarySidebar() {
                         gender={gender}
                         language={language}
                         isAdded={addedCardIds.has(card.id)}
-                        onClickAdd={handleAddCard}
                         isFree={(card as any).isFree !== false}
+                        onClickAdd={handleAddCard}
                       />
                     ))}
                   </div>
