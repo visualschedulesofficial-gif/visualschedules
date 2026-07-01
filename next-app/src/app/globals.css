@@ -124,3 +124,24 @@ select, input, textarea, button {
     background: #FFFFFF !important;
   }
 }
+
+/* ── Font size floor: nothing smaller than 12px ─────────────────────────────
+   Tailwind's text-xs = 12px, text-[9px/10px/11px] are too small on screen.
+   Override all sub-12px utilities to render at 12px minimum.
+   Badge/pill exceptions kept at their explicit sizes via .badge-text class.   */
+.text-\[9px\]  { font-size: 12px !important; }
+.text-\[10px\] { font-size: 12px !important; }
+.text-\[11px\] { font-size: 12px !important; }
+.text-xs       { font-size: 12px !important; }
+
+/* tracking-widest/wider on labels often pairs with small text — keep readable */
+[class*="tracking-wid"] { font-size: max(12px, 1em); }
+
+/* Admin table headers, section labels — lift to 12px minimum */
+.text-\[10px\].tracking-wider,
+.text-\[10px\].tracking-widest,
+.text-\[11px\].tracking-wider,
+.text-\[11px\].tracking-widest {
+  font-size: 12px !important;
+  letter-spacing: 0.08em;
+}
