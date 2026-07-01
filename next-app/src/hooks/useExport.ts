@@ -211,7 +211,7 @@ async function buildPdfBlob(scheduleType: string) {
         // string, so read it safely to avoid "includes is not a function".
         const raw = el.className;
         const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
-        return cn.includes("slot-rm") || cn.includes("remove");
+        return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
       },
     });
     restorePageAfterCapture(captureState);
@@ -274,7 +274,7 @@ async function buildJpegBlobs(scheduleType: string) {
         // string, so read it safely to avoid "includes is not a function".
         const raw = el.className;
         const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
-        return cn.includes("slot-rm") || cn.includes("remove");
+        return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
       },
     });
     restorePageAfterCapture(captureState);
