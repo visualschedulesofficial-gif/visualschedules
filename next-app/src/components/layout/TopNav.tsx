@@ -21,14 +21,24 @@ export function TopNav({
   showBuilderControls = false,
 }: TopNavProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Read session on mount
+  // Read session + subscription on mount
   useEffect(() => {
     fetch("/api/auth/session")
       .then((r) => r.json())
-      .then((data) => setUser(data.user || null))
+      .then((data) => {
+        setUser(data.user || null);
+        if (data.user) {
+          // Check subscription status
+          fetch("/api/user/subscription")
+            .then((r) => r.json())
+            .then((sub) => setHasSubscription(!!sub.subscription))
+            .catch(() => setHasSubscription(false));
+        }
+      })
       .catch(() => setUser(null));
   }, []);
 
@@ -145,10 +155,8 @@ export function TopNav({
                       <line x1="8" y1="21" x2="16" y2="21" />
                       <line x1="12" y1="17" x2="12" y2="21" />
                     </svg>
-                    Buy Plans
+                    {hasSubscription ? "My Plan" : "Buy Plans"}
                   </Link>
-
-
                 </div>
 
                 {/* Divider + Logout */}
