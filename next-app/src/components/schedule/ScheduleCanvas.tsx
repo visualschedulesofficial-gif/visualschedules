@@ -104,7 +104,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
       <div
         ref={setNodeRef}
         className={`flex-1 flex flex-col gap-1 p-1 justify-center transition-colors duration-150
-          ${isOver ? "bg-weekly-hover" : "bg-weekly-body-bg"}
+          ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
         `}
       >
         {cards.map((cardRef, idx) => {
@@ -123,7 +123,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
                 )}
               </div>
               <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
-                {getCardLabel(card, language)}
+                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </div>
               <button
                 onClick={() => removeCard(pageIdx, dayKey, idx)}
@@ -135,7 +135,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
           );
         })}
         {cards.length < MAX_WEEKLY_CARDS && (
-          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-transparent"}`}>
+          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-transparent"}`}>
             {(isDragging || isOver) && (
               <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -166,9 +166,9 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
       <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 border-b border-[#EEE] mb-2.5">
         <div className="col-start-2">
           {title ? (
-            <h2 className="font-serif text-[28px] italic text-[#7A8F5E] leading-none text-center">{title}</h2>
+            <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }} className="text-center">{title}</h2>
           ) : (
-            <h2 className="font-serif text-[28px] italic text-[#999] leading-none text-center">Untitled</h2>
+            <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#BBB", lineHeight: 1 }} className="text-center">Untitled</h2>
           )}
         </div>
         <div className="col-start-3 justify-self-end">
@@ -209,14 +209,14 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
-      <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
+      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
         {title ? (
-          <h2 className="font-serif text-[28px] italic text-[#7A8F5E] leading-none">{title}</h2>
+          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }}>{title}</h2>
         ) : (
-          <h2 className="font-serif text-[28px] italic text-[#999] leading-none">Untitled</h2>
+          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#BBB", lineHeight: 1 }}>Untitled</h2>
         )}
       </div>
-      <div className="flex-1 min-h-0 grid border border-weekly-border rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
+      <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
         {dayKeys.map((key, idx) => (
           <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
@@ -260,7 +260,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
       <div
         ref={setNodeRef}
         className={`flex-1 flex flex-col gap-1 p-1 justify-center transition-colors duration-150
-          ${isOver ? "bg-weekly-hover" : "bg-weekly-body-bg"}
+          ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
         `}
       >
         {cards.map((cardRef, idx) => {
@@ -279,7 +279,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
                 )}
               </div>
               <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
-                {getCardLabel(card, language)}
+                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </div>
               <button
                 onClick={() => removeCard(pageIdx, String(colIdx), idx)}
@@ -291,7 +291,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
           );
         })}
         {cards.length < MAX_CUSTOM_CARDS && (
-          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-transparent"}`}>
+          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-transparent"}`}>
             {(isDragging || isOver) && (
               <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -319,14 +319,14 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
-      <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
+      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
         {title ? (
-          <h2 className="font-serif text-[28px] italic text-[#7A8F5E] leading-none">{title}</h2>
+          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }}>{title}</h2>
         ) : (
-          <h2 className="font-serif text-[28px] italic text-[#999] leading-none">Untitled</h2>
+          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#BBB", lineHeight: 1 }}>Untitled</h2>
         )}
       </div>
-      <div className="flex-1 min-h-0 grid border border-weekly-border rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
+      <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
         {customColNames.map((name, idx) => (
           <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
@@ -353,13 +353,13 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
   const hasCard = cards.length > 0;
 
   return (
-    <div className="flex flex-col border-2 border-weekly-border rounded-[10px] overflow-hidden bg-weekly-body-bg min-w-0">
+    <div className="flex flex-col border-2 border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#FAFBF7] min-w-0">
       <div className="bg-weekly-head-bg border-b-2 border-b-weekly-border px-2 py-3.5 text-center shrink-0">
         <span className="text-[30px] font-semibold text-weekly-head-text font-sans tracking-tight">{colName}</span>
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 flex items-center justify-center p-4 min-h-0 transition-colors duration-150 ${isOver ? "bg-weekly-hover" : ""}`}
+        className={`flex-1 flex items-center justify-center p-4 min-h-0 transition-colors duration-150 ${isOver ? "bg-[#EFF2E8]" : ""}`}
       >
         {hasCard ? (
           (() => {
@@ -392,7 +392,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
             );
           })()
         ) : (
-          <div className={`w-full h-full max-w-[460px] border-[3px] border-solid rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-65 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-weekly-border"}`}>
+          <div className={`w-full h-full max-w-[460px] border-[3px] border-solid rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-65 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-[#C5D2B8]"}`}>
             <svg className={`w-[52px] h-[52px] stroke-[1.4] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -421,9 +421,8 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
-      <div className="text-center pb-3 border-b border-weekly-border mb-3 shrink-0">
-        <h2 className="font-serif text-[28px] italic text-[#1C1B19] leading-none">{scheduleTypeLabel}</h2>
-        {title && <p className="text-[14px] text-[#666] mt-1">{title}</p>}
+      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
+        <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }}>{title || scheduleTypeLabel}</h2>
       </div>
       <div className="flex-1 min-h-0 grid gap-5" style={{ gridTemplateColumns: `repeat(${ftColNames.length}, 1fr)` }}>
         {ftColNames.map((name, idx) => (
