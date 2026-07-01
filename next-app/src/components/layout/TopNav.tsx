@@ -1,204 +1,411 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useState } from "react";
+import { useScheduleState } from "@/hooks/useScheduleState";
 
-interface User {
-  id: string;
-  email: string;
-  role: string;
-}
-
-interface TopNavProps {
-  onToggleSidebar?: () => void;
-  onToggleRightPanel?: () => void;
-  showBuilderControls?: boolean;
-}
-
-export function TopNav({
-  onToggleSidebar,
-  onToggleRightPanel,
-  showBuilderControls = false,
-}: TopNavProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [hasSubscription, setHasSubscription] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Read session + subscription on mount
-  useEffect(() => {
-    fetch("/api/auth/session")
-      .then((r) => r.json())
-      .then((data) => {
-        setUser(data.user || null);
-        if (data.user) {
-          // Check subscription status
-          fetch("/api/user/subscription")
-            .then((r) => r.json())
-            .then((sub) => setHasSubscription(!!sub.subscription))
-            .catch(() => setHasSubscription(false));
-        }
-      })
-      .catch(() => setUser(null));
-  }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
+// Load scripts dynamically
+function loadExternalScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Already on the page?
+    const already = document.querySelector(`script[src="${src}"]`);
+    if (already) {
+      resolve();
+      return;
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
 
-  async function handleLogout() {
-    await fetch("/api/auth/session", { method: "DELETE" });
-    setUser(null);
-    setDropdownOpen(false);
-    window.location.href = "/schedule";
+async function ensureLibraries() {
+  if (typeof (window as any).html2canvas === "undefined") {
+    // html2canvas-pro is a drop-in fork that understands modern Tailwind v4
+    // colors (oklch/oklab). The original html2canvas 1.4.1 crashes on them.
+    await loadExternalScript("https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.11/dist/html2canvas-pro.min.js");
+  }
+  if (typeof (window as any).jspdf === "undefined") {
+    await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  }
+  // Verify the tools actually loaded — if blocked (offline, ad-blocker,
+  // strict content policy) the script tag resolves but the global is missing.
+  if (typeof (window as any).html2canvas === "undefined" || !(window as any).jspdf?.jsPDF) {
+    throw new Error("LIBS_FAILED");
+  }
+}
+
+// Hide editing-only affordances (remove buttons, drop hints) so exports look like a finished schedule
+function injectExportHideStyle() {
+  const style = document.createElement("style");
+  style.id = "export-hide-style";
+  style.textContent = ".slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}";
+  document.head.appendChild(style);
+  return style;
+}
+
+// html2canvas doesn't respect CSS object-fit on <img> — it stretches the
+// image to fill its box. Work around this by temporarily replacing
+// object-fit with explicit width/height that reproduce the same
+// letterboxed/contain look, which html2canvas renders correctly.
+function lockImageSizesForCapture(pageEl: HTMLElement) {
+  const overrides: Array<{ el: HTMLImageElement; prev: string | null }> = [];
+  pageEl.querySelectorAll("img").forEach((img) => {
+    const parent = img.parentElement;
+    if (!parent) return;
+    const pw = parent.clientWidth;
+    const ph = parent.clientHeight;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    if (!pw || !ph || !iw || !ih) return;
+    const scale = Math.min(pw / iw, ph / ih);
+    const w = Math.round(iw * scale);
+    const h = Math.round(ih * scale);
+    overrides.push({ el: img, prev: img.getAttribute("style") });
+    img.style.width = w + "px";
+    img.style.height = h + "px";
+    img.style.maxWidth = "none";
+    img.style.maxHeight = "none";
+    img.style.objectFit = "";
+    img.style.display = "block";
+    img.style.margin = "auto";
+  });
+  return overrides;
+}
+
+function restoreImageSizes(overrides: Array<{ el: HTMLImageElement; prev: string | null }>) {
+  overrides.forEach(({ el, prev }) => {
+    if (prev) el.setAttribute("style", prev);
+    else el.removeAttribute("style");
+  });
+}
+
+// html2canvas also can't reliably render the text VALUE of <input> elements
+// Swap each one for a plain text div with the same class
+function swapColumnInputsForCapture(pageEl: HTMLElement) {
+  const swaps: Array<{ input: HTMLInputElement; div: HTMLDivElement }> = [];
+  pageEl.querySelectorAll("input.custom-col-input, input.ft-col-input, .col-name-input").forEach((input) => {
+    const inputEl = input as HTMLInputElement;
+    const div = document.createElement("div");
+    div.className = inputEl.className;
+    div.textContent = inputEl.value;
+    inputEl.style.display = "none";
+    inputEl.insertAdjacentElement("afterend", div);
+    swaps.push({ input: inputEl, div });
+  });
+  return swaps;
+}
+
+function restoreColumnInputs(swaps: Array<{ input: HTMLInputElement; div: HTMLDivElement }>) {
+  swaps.forEach(({ input, div }) => {
+    div.remove();
+    input.style.display = "";
+  });
+}
+
+function prepPageForCapture(pageEl: HTMLElement) {
+  return {
+    imgOverrides: lockImageSizesForCapture(pageEl),
+    inputSwaps: swapColumnInputsForCapture(pageEl),
+  };
+}
+
+function restorePageAfterCapture(state: ReturnType<typeof prepPageForCapture>) {
+  restoreImageSizes(state.imgOverrides);
+  restoreColumnInputs(state.inputSwaps);
+}
+
+function getExportFileBaseName(title: string) {
+  const titleVal = (title || "schedule").trim();
+  return titleVal.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "") || "schedule";
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// Find the schedule pages currently rendered on screen.
+function getPageElements(): HTMLElement[] {
+  return Array.from(document.querySelectorAll("[data-a4-page]")) as HTMLElement[];
+}
+
+// Translate any internal error into a clear, plain-English message.
+function friendlyMessage(err: unknown, kind: "PDF" | "images"): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg === "NO_PAGES" || msg === "No pages to export") {
+    return "There's nothing to export yet. Add at least one card to your schedule, then try again.";
+  }
+  if (msg === "NOT_VISIBLE") {
+    return "The schedule isn't on screen right now. Please make sure your schedule is showing, then try again.";
+  }
+  if (msg === "LIBS_FAILED" || msg.startsWith("Failed to load")) {
+    return `Couldn't load the ${kind} tool. This usually means no internet connection, or a browser extension/ad-blocker is blocking it. Check your connection, disable blockers for this site, and try again.`;
+  }
+  if (msg.toLowerCase().includes("tainted") || msg.toLowerCase().includes("cors") || msg.toLowerCase().includes("security")) {
+    return `Couldn't include one of the card images in the ${kind}. An image may not be loading correctly. Try refreshing the page and exporting again.`;
+  }
+  return `Something went wrong creating the ${kind}. Please refresh the page and try again. (Details: ${msg})`;
+}
+
+async function buildPdfBlob(scheduleType: string) {
+  const pages = getPageElements();
+  if (!pages.length) throw new Error("NOT_VISIBLE");
+
+  const isLandscape = scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "firstthen";
+  const orientation = isLandscape ? "landscape" : "portrait";
+  const pageWidthMM = isLandscape ? 297 : 210;
+  const pageHeightMM = isLandscape ? 210 : 297;
+
+  await ensureLibraries();
+  const { jsPDF } = (window as any).jspdf;
+  const html2canvas = (window as any).html2canvas;
+
+  const pdf = new jsPDF({ orientation, unit: "mm", format: "a4" });
+
+  for (let i = 0; i < pages.length; i++) {
+    const pageEl = pages[i] as HTMLElement;
+    const prevTransform = pageEl.style.transform;
+    const prevMargin = pageEl.style.margin;
+    pageEl.style.transform = "none";
+    pageEl.style.margin = "0";
+
+    // Wait for all images on this page to load
+    const imgs = pageEl.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
+    await Promise.allSettled(
+      Array.from(imgs).map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete) {
+              resolve();
+            } else {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+              img.src = img.src;
+            }
+          })
+      )
+    );
+
+    // Small delay to ensure images are rendered
+    await new Promise((r) => setTimeout(r, 300));
+
+    const captureState = prepPageForCapture(pageEl);
+    const canvas = await html2canvas(pageEl, {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      windowTimeout: 20000,
+      ignoreElements: (el: any) => {
+        // SVG elements store className as an object (SVGAnimatedString), not a
+        // string, so read it safely to avoid "includes is not a function".
+        const raw = el.className;
+        const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
+        return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
+      },
+    });
+    restorePageAfterCapture(captureState);
+
+    pageEl.style.transform = prevTransform;
+    pageEl.style.margin = prevMargin;
+
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+    if (i > 0) pdf.addPage("a4", orientation);
+    pdf.addImage(imgData, "JPEG", 0, 0, pageWidthMM, pageHeightMM);
   }
 
-  // Initial letter for avatar
-  const initial = user?.email?.[0]?.toUpperCase() || "?";
+  return pdf.output("blob");
+}
 
-  return (
-    <nav className="h-[56px] bg-surface border-b border-border flex items-center justify-between px-4 shrink-0 gap-3 relative md:h-[66px] md:px-7 md:gap-5 z-50">
+async function buildJpegBlobs(scheduleType: string) {
+  const pages = getPageElements();
+  if (!pages.length) throw new Error("NOT_VISIBLE");
 
-      {/* Left — mobile sidebar toggle (builder only) */}
-      {showBuilderControls && (
-        <button
-          className="flex md:hidden flex-col gap-[5px] bg-transparent border-none cursor-pointer p-2 shrink-0 -ml-2"
-          onClick={onToggleSidebar}
-          aria-label="Card library"
-        >
-          <span className="block w-5 h-0.5 bg-ink rounded-sm" />
-          <span className="block w-5 h-0.5 bg-ink rounded-sm" />
-          <span className="block w-5 h-0.5 bg-ink rounded-sm" />
-        </button>
-      )}
+  await ensureLibraries();
+  const html2canvas = (window as any).html2canvas;
 
-      {/* Logo */}
-      <Link
-        href="/schedule"
-        className="font-serif text-base md:text-2xl italic text-ink no-underline whitespace-nowrap shrink-0 leading-none"
-      >
-        Visual Schedules
-      </Link>
+  const blobs: Array<{ blob: Blob; index: number }> = [];
 
-      {/* Right — auth area */}
-      <div className="flex items-center gap-2 shrink-0">
-        {!user ? (
-          // Not logged in — single Sign In button
-          <Link
-            href="/login"
-            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all whitespace-nowrap"
-          >
-            Sign In
-          </Link>
-        ) : (
-          // Logged in — avatar + dropdown
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen((v) => !v)}
-              className="flex items-center gap-2 px-2 py-1.5 hover:bg-surface-hover transition-colors rounded-sm"
-              aria-label="Account menu"
-            >
-              {/* Avatar circle */}
-              <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-white text-[12px] font-semibold font-sans shrink-0">
-                {initial}
-              </div>
-              {/* Email (desktop only) */}
-              <span className="hidden md:block text-[12px] text-ink-2 font-sans max-w-[140px] truncate">
-                {user.email}
-              </span>
-              {/* Chevron */}
-              <svg
-                className={`w-3.5 h-3.5 stroke-ink-2 stroke-2 fill-none transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
-                viewBox="0 0 24 24"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
+  for (let i = 0; i < pages.length; i++) {
+    const pageEl = pages[i] as HTMLElement;
+    const prevTransform = pageEl.style.transform;
+    const prevMargin = pageEl.style.margin;
+    pageEl.style.transform = "none";
+    pageEl.style.margin = "0";
 
-            {/* Dropdown */}
-            {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-52 bg-surface border border-border shadow-lg z-[200]">
-                {/* Email header */}
-                <div className="px-3 py-2.5 border-b border-border">
-                  <p className="text-[10px] tracking-wider uppercase text-ink-3 font-medium mb-0.5">Signed in as</p>
-                  <p className="text-[12px] text-ink truncate font-sans">{user.email}</p>
-                </div>
+    const imgs = pageEl.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
+    await Promise.allSettled(
+      Array.from(imgs).map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete) {
+              resolve();
+            } else {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+              img.src = img.src;
+            }
+          })
+      )
+    );
 
-                {/* Menu items */}
-                <div className="py-1">
-                  <Link
-                    href="/schedules"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 text-[12px] text-ink no-underline hover:bg-surface-hover transition-colors font-sans"
-                  >
-                    <svg className="w-4 h-4 stroke-ink-2 stroke-[1.5] fill-none shrink-0" viewBox="0 0 24 24">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                    My Schedules
-                  </Link>
+    await new Promise((r) => setTimeout(r, 300));
 
-                  <Link
-                    href="/plans"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 text-[12px] text-ink no-underline hover:bg-surface-hover transition-colors font-sans"
-                  >
-                    <svg className="w-4 h-4 stroke-ink-2 stroke-[1.5] fill-none shrink-0" viewBox="0 0 24 24">
-                      <rect x="2" y="3" width="20" height="14" rx="2" />
-                      <line x1="8" y1="21" x2="16" y2="21" />
-                      <line x1="12" y1="17" x2="12" y2="21" />
-                    </svg>
-                    {hasSubscription ? "My Plan" : "Buy Plans"}
-                  </Link>
-                </div>
+    const captureState = prepPageForCapture(pageEl);
+    const canvas = await html2canvas(pageEl, {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      windowTimeout: 20000,
+      ignoreElements: (el: any) => {
+        // SVG elements store className as an object (SVGAnimatedString), not a
+        // string, so read it safely to avoid "includes is not a function".
+        const raw = el.className;
+        const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
+        return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
+      },
+    });
+    restorePageAfterCapture(captureState);
 
-                {/* Divider + Logout */}
-                <div className="border-t border-border py-1">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] text-[#C53030] hover:bg-[#FEF0F0] transition-colors font-sans text-left"
-                  >
-                    <svg className="w-4 h-4 stroke-[#C53030] stroke-[1.5] fill-none shrink-0" viewBox="0 0 24 24">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                    Log Out
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+    pageEl.style.transform = prevTransform;
+    pageEl.style.margin = prevMargin;
 
-      {/* Right — mobile right panel toggle (builder only) */}
-      {showBuilderControls && (
-        <button
-          className="flex md:hidden items-center justify-center bg-transparent border-none cursor-pointer p-2 shrink-0 -mr-2"
-          onClick={onToggleRightPanel}
-          aria-label="Schedule settings"
-        >
-          <svg className="w-5 h-5 stroke-ink stroke-2 fill-none" viewBox="0 0 24 24">
-            <line x1="4" y1="21" x2="4" y2="14" />
-            <line x1="4" y1="10" x2="4" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12" y2="3" />
-            <line x1="20" y1="21" x2="20" y2="16" />
-            <line x1="20" y1="12" x2="20" y2="3" />
-            <line x1="1" y1="14" x2="7" y2="14" />
-            <line x1="9" y1="8" x2="15" y2="8" />
-            <line x1="17" y1="16" x2="23" y2="16" />
-          </svg>
-        </button>
-      )}
-    </nav>
-  );
+    const blob = await new Promise<Blob>((res) => canvas.toBlob(res, "image/jpeg", 0.92));
+    blobs.push({ blob, index: i });
+
+    if (i < pages.length - 1) {
+      await new Promise((r) => setTimeout(r, 400));
+    }
+  }
+
+  return blobs;
+}
+
+export function useExport() {
+  const title = useScheduleState((s) => s.title);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
+  const pages = useScheduleState((s) => s.pages);
+  const scheduleId = useScheduleState((s) => s.id);
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState("");
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Save schedule to DB — silently, never blocks or errors the export
+  const saveToDatabase = async () => {
+    try {
+      const state = useScheduleState.getState();
+      const res = await fetch("/api/schedules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: state.id,
+          title: state.title,
+          scheduleType: state.scheduleType,
+          language: state.language,
+          gender: state.gender,
+          gridCols: state.gridCols,
+          customColNames: state.customColNames,
+          weekMode: state.weekMode,
+          cardStyle: state.cardStyle,
+          data: { pages: state.pages },
+        }),
+      });
+      if (res.ok) {
+        setLastSaved(new Date());
+        state.markClean?.();
+      }
+    } catch {
+      // Save failure never interrupts the export
+    }
+  };
+
+  const showStatus = useCallback((text: string) => {
+    setExportStatus(text);
+  }, []);
+
+  const hideStatus = useCallback(() => {
+    setExportStatus("");
+  }, []);
+
+  const exportPDF = useCallback(async () => {
+    if (!pages.length) {
+      alert("There's nothing to export yet. Add at least one card to your schedule, then try again.");
+      return;
+    }
+
+    setExporting(true);
+    showStatus("Preparing your PDF…");
+
+    const hideStyle = injectExportHideStyle();
+    try {
+      const blob = (await buildPdfBlob(scheduleType)) as Blob;
+      const fileName = getExportFileBaseName(title) + ".pdf";
+      downloadBlob(blob, fileName);
+      // Save to database after successful export (silently)
+      showStatus("Saving…");
+      await saveToDatabase();
+    } catch (err) {
+      console.error("PDF export error:", err);
+      alert(friendlyMessage(err, "PDF"));
+    } finally {
+      hideStyle.remove();
+      setExporting(false);
+      hideStatus();
+    }
+  }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
+
+  const exportJPEG = useCallback(async () => {
+    if (!pages.length) {
+      alert("There's nothing to export yet. Add at least one card to your schedule, then try again.");
+      return;
+    }
+
+    setExporting(true);
+    showStatus("Preparing your images…");
+
+    const hideStyle = injectExportHideStyle();
+    try {
+      const baseName = getExportFileBaseName(title);
+      const blobs = await buildJpegBlobs(scheduleType);
+
+      for (let i = 0; i < blobs.length; i++) {
+        const { blob, index } = blobs[i];
+        const fname = pages.length > 1 ? `${baseName}-page-${index + 1}.jpg` : `${baseName}.jpg`;
+        downloadBlob(blob, fname);
+        if (i < blobs.length - 1) {
+          await new Promise((r) => setTimeout(r, 400));
+        }
+      }
+      // Save to database after successful export (silently)
+      showStatus("Saving…");
+      await saveToDatabase();
+    } catch (err) {
+      console.error("JPEG export error:", err);
+      alert(friendlyMessage(err, "images"));
+    } finally {
+      hideStyle.remove();
+      setExporting(false);
+      hideStatus();
+    }
+  }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
+
+  return {
+    exportPDF,
+    exportJPEG,
+    exporting,
+    exportStatus,
+    lastSaved,
+  };
 }
