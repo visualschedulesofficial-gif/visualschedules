@@ -52,7 +52,7 @@ function createEmptyColumnPage(): ColumnPageData {
 
 export const useScheduleState = create<ScheduleState>((set, get) => ({
   id: null,
-  title: "Morning Routine",
+  title: "Daily Schedule",
   scheduleType: "daily",
   language: "en",
   gender: "neutral",
@@ -65,11 +65,17 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
 
   setTitle: (title) => set({ title, isDirty: true }),
   setScheduleType: (scheduleType) => {
+    const TYPE_TITLES: Record<string, string> = {
+      daily: "Daily Schedule",
+      weekly: "Weekly Schedule",
+      custom: "Custom Schedule",
+      firstthen: "First/Then Board",
+    };
     const pages =
       scheduleType === "daily"
         ? [createEmptyDailyPage(GRID_SPECS[get().gridCols].slots)]
         : [createEmptyColumnPage()];
-    set({ scheduleType, pages, isDirty: true });
+    set({ scheduleType, pages, title: TYPE_TITLES[scheduleType] || "My Schedule", isDirty: true });
   },
   setLanguage: (language) => set({ language, isDirty: true }),
   setGender: (gender) => set({ gender, isDirty: true }),
@@ -163,7 +169,7 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   reset: () =>
     set({
       id: null,
-      title: "Morning Routine",
+      title: "Daily Schedule",
       scheduleType: "daily",
       language: "en",
       gender: "neutral",
