@@ -79,40 +79,18 @@ body {
   background: var(--bg);
   color: #1C1B19;
   font-weight: 400;
-  /* WCAG AA: minimum 4.5:1 contrast — #1C1B19 on #EDEADE = ~12:1 ✓ */
-}
-
-/* ── Accessibility: minimum font size floor ──────────────────────────────
-   WCAG 1.4.4 requires text to be resizable and readable.
-   Our html base is 14px. Tailwind's rem-based utilities (text-xs = 0.75rem)
-   compute to 10.5px which is below the accessible minimum.
-   This @layer override lifts everything to a minimum of 12px.          */
-@layer base {
-  * {
-    /* Minimum readable size — no element should render text below 12px */
-    min-font-size: 12px;
-  }
-
-  /* Inputs, buttons, selects often inherit small sizes — fix explicitly */
-  input, select, textarea, button, label, a, p, span, li, td, th {
-    font-size: max(12px, 1em);
-  }
 }
 
 select, input, textarea, button {
   color-scheme: light;
+  font-size: inherit;
 }
 
-/* ── Focus — WCAG 2.4.7 visible focus ── */
+/* ── Focus — WCAG 2.4.7 ── */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-
-/* ── Colour contrast helpers ── */
-/* ink-3 (#6B6560) on white = 5.1:1 — passes AA for normal text ✓     */
-/* ink-2 (#5C5855) on white = 7.2:1 — passes AAA ✓                    */
-/* Avoid using ink-3 at sizes below 14px for body copy                 */
 
 /* ── Mobile Scale ── */
 @media (max-width: 768px) {
