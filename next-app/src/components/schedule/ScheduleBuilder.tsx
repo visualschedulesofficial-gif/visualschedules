@@ -19,7 +19,7 @@ import { RightPanel } from "@/components/schedule/RightPanel";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { ALL_CARDS, getCardLabel, setCardImages as setCardImagesGlobal, setLabelOverrides, type CardImageMap } from "@/lib/card-data";
+import { ALL_CARDS, findCard, setRuntimeCards, getCardLabel, setCardImages as setCardImagesGlobal, setLabelOverrides, type CardImageMap, type ParsedCard } from "@/lib/card-data";
 
 function PointerOverlay({ label }: { label: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -70,15 +70,29 @@ export default function ScheduleBuilder() {
 
   useAutoSave();
 
-  // Load card images + label overrides from D1 on mount
+  // Load runtime cards + images + label overrides from D1 on mount
   useEffect(() => {
+    // Load cards into runtime registry so canvas can find them
+    fetch("/api/cards")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.cards && data.cards.length > 0) {
+          // Strip the free:/paid: prefix from icon before registering
+          const cleaned = data.cards.map((c: ParsedCard) => ({
+            ...c,
+            icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
+          }));
+          setRuntimeCards(cleaned);
+        }
+      })
+      .catch(() => {});
+
+    // Load images + label overrides
     fetch("/api/cards/images")
       .then((r) => r.json())
       .then((data) => {
         if (data.images) {
-          // Set the global card images (for ScheduleCanvas)
           setCardImagesGlobal(data.images);
-          // Also set local state (for prop passing)
           setLocalCardImages(data.images);
         }
         if (data.labels) {
@@ -91,7 +105,7 @@ export default function ScheduleBuilder() {
   }, []);
 
   const handleClickPlace = useCallback((cardId: string) => {
-    const card = ALL_CARDS.find((c) => c.id === cardId);
+    const card = findCard(cardId);
     if (!card) return;
 
     const { pages, scheduleType, gridCols } = useScheduleState.getState();
@@ -130,7 +144,7 @@ export default function ScheduleBuilder() {
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const cardId = event.active.id as string;
-    const card = ALL_CARDS.find((c) => c.id === cardId);
+    const card = findCard(cardId);
     if (card) {
       setActiveCard({ id: card.id, label: getCardLabel(card, language) });
     }
@@ -143,7 +157,7 @@ export default function ScheduleBuilder() {
     if (!over) return;
 
     const cardId = active.id as string;
-    const card = ALL_CARDS.find((c) => c.id === cardId);
+    const card = findCard(cardId);
     if (!card) return;
 
     // Droppable IDs are formatted as "pageIdx-slotKey"
