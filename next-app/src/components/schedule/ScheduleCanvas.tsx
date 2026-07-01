@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
@@ -35,11 +35,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white border-[1.5px] border-dashed
+      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white border-[1.5px] border-solid
         ${!cardRef
           ? `transition-[border-color,background-color,transform] duration-200 ease-out
-             ${isOver ? "border-[#7A8F5E] bg-[#F0F8F0] scale-[1.03]" : isDragging ? "border-[#7A8F5E] bg-white" : "border-[#E0E0E0] bg-white"}`
-          : `border-[#E5E5E5] group bg-white`
+             ${isOver ? "border-[#7A8F5E] bg-[#F0F8F0] scale-[1.03]" : isDragging ? "border-[#7A8F5E] bg-white" : "border-[#C7D7B8] bg-white"}`
+          : `border-[#C7D7B8] group bg-white`
         }
         ${justDropped ? "animate-[cardLand_350ms_cubic-bezier(0.34,1.56,0.64,1)]" : ""}
       `}
@@ -57,7 +57,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
               )}
             </div>
             <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white`}>
-              <span className={`text-[17px] text-center leading-tight font-sans text-[#2C2C2C]`}>
+              <span className={`text-[20px] text-center leading-tight font-sans text-[#2C2C2C]`}>
                 {getCardLabel(card, language)}
               </span>
             </div>
@@ -112,7 +112,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className="bg-white border border-[#E0E5D5] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
+            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
                 {imageUrl ? (
                   <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
@@ -122,7 +122,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[11px] text-ink text-center leading-tight font-sans shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
                 {getCardLabel(card, language)}
               </div>
               <button
@@ -135,7 +135,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
           );
         })}
         {cards.length < MAX_WEEKLY_CARDS && (
-          <div className={`flex items-center justify-center shrink-0 h-7 border border-dashed rounded transition-colors duration-150 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-transparent"}`}>
+          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-transparent"}`}>
             {(isDragging || isOver) && (
               <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -268,7 +268,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className="bg-white border border-[#E0E5D5] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
+            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
                 {imageUrl ? (
                   <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
@@ -278,7 +278,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[11px] text-ink text-center leading-tight font-sans shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
                 {getCardLabel(card, language)}
               </div>
               <button
@@ -291,7 +291,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
           );
         })}
         {cards.length < MAX_CUSTOM_CARDS && (
-          <div className={`flex items-center justify-center shrink-0 h-7 border border-dashed rounded transition-colors duration-150 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-transparent"}`}>
+          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-transparent"}`}>
             {(isDragging || isOver) && (
               <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -367,7 +367,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
             if (!card) return null;
             const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
             return (
-              <div className="w-full h-full max-w-[460px] bg-white border-2 border-[#E0E5D5] rounded-[10px] flex flex-col overflow-hidden relative group">
+              <div className="w-full h-full max-w-[460px] bg-white border-2 border-[#C7D7B8] rounded-[10px] flex flex-col overflow-hidden relative group">
                 <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white">
                   {imageUrl ? (
                     <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
@@ -392,7 +392,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
             );
           })()
         ) : (
-          <div className={`w-full h-full max-w-[460px] border-[3px] border-dashed rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-65 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-weekly-border"}`}>
+          <div className={`w-full h-full max-w-[460px] border-[3px] border-solid rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-65 ${isOver ? "border-weekly-accent bg-weekly-hover" : isDragging ? "border-weekly-border" : "border-weekly-border"}`}>
             <svg className={`w-[52px] h-[52px] stroke-[1.4] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
