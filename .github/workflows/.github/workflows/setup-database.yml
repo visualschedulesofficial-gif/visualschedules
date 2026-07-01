@@ -1,0 +1,21 @@
+name: Setup Database
+
+# Adds a manual "Run workflow" button in the Actions tab.
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Create the database tables
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: next-app
+          # Runs the SQL file that creates the tables + starter categories.
+          command: d1 execute visual-schedules-db --remote --file=../setup-database.sql --yes
