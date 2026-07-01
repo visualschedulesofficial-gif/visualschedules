@@ -42,7 +42,7 @@ export async function POST(
       console.log(`[Upload] R2 binding not available, would upload to: ${r2Key}`);
     }
 
-    const R2_PUBLIC = "https://cdn.visualschedule.app";
+    const R2_PUBLIC = "/api/images";
     const publicUrl = `${R2_PUBLIC}/${r2Key}`;
 
     // Store in D1
@@ -78,7 +78,7 @@ export async function GET(
       `SELECT variant, r2_key, url FROM card_images WHERE card_id = ?`
     ).bind(cardId).all();
 
-    const R2_PUBLIC = "https://cdn.visualschedule.app";
+    const R2_PUBLIC = "/api/images";
     const images = (result.results || []).map((img: any) => ({
       ...img,
       url: `${R2_PUBLIC}/${img.r2_key}`,
