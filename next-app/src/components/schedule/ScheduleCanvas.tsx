@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
-import { ALL_CARDS, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
+import { ALL_CARDS, findCard, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
 
@@ -27,7 +27,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
     id: `${pageIdx}-${slotIdx}`,
   });
 
-  const card = cardRef ? ALL_CARDS.find((c) => c.id === cardRef.cardId) : null;
+  const card = cardRef ? findCard(cardRef.cardId) ?? null : null;
   const imageUrl = card ? getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral") : null;
   const isDragging = !!active;
   const isBlack = cardStyle === "black";
@@ -57,7 +57,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
               )}
             </div>
             <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white`}>
-              <span className={`text-[20px] text-center leading-tight font-sans text-[#2C2C2C]`}>
+              <span className={`text-[14px] text-center leading-tight font-sans text-[#2C2C2C]`}>
                 {getCardLabel(card, language)}
               </span>
             </div>
@@ -108,7 +108,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
         `}
       >
         {cards.map((cardRef, idx) => {
-          const card = ALL_CARDS.find((c) => c.id === cardRef.cardId);
+          const card = findCard(cardRef?.cardId ?? "");
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
@@ -122,7 +122,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[14px] text-ink text-center leading-tight font-sans shrink-0">
                 {getCardLabel(card, language)}
               </div>
               <button
@@ -175,8 +175,8 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
           <span className="text-[11px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="grid gap-2 h-full" style={{ gridTemplateColumns: `repeat(${spec.cols}, 1fr)`, gridTemplateRows: `repeat(${spec.rows}, 1fr)` }}>
+      <div className="flex-1 min-h-0 overflow-hidden" style={{ minHeight: 0 }}>
+        <div className="grid gap-[6px] h-full" style={{ gridTemplateColumns: `repeat(${spec.cols}, 1fr)`, gridTemplateRows: `repeat(${spec.rows}, 1fr)` }}>
           {Array.from({ length: spec.slots }).map((_, i) => (
             <DailyDropSlot key={i} slotIdx={i} pageIdx={pageIdx} justDropped={justDroppedSlot === `${pageIdx}-${i}`} />
           ))}
@@ -264,7 +264,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
         `}
       >
         {cards.map((cardRef, idx) => {
-          const card = ALL_CARDS.find((c) => c.id === cardRef.cardId);
+          const card = findCard(cardRef?.cardId ?? "");
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
@@ -278,7 +278,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[14px] text-ink text-center leading-tight font-sans shrink-0">
                 {getCardLabel(card, language)}
               </div>
               <button
@@ -363,7 +363,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
       >
         {hasCard ? (
           (() => {
-            const card = ALL_CARDS.find((c) => c.id === cards[0].cardId);
+            const card = findCard(cards[0].cardId);
             if (!card) return null;
             const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
             return (
@@ -378,7 +378,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
                   )}
                 </div>
                 <div className="shrink-0 px-2.5 py-4 border-t-2 border-[#F0F0F0] bg-white text-center">
-                  <span className="text-[32px] font-semibold text-ink-2 font-sans leading-tight">
+                  <span className="text-[20px] font-semibold text-ink-2 font-sans leading-tight">
                     {getCardLabel(card, language)}
                   </span>
                 </div>
