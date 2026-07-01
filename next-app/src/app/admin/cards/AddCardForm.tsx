@@ -137,45 +137,46 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
               </div>
             </div>
 
-            {/* Category + Icon */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] tracking-widest uppercase text-[#8A8480] mb-1 block font-medium">Category *</label>
-                <select value={category} onChange={e => setCategory(e.target.value)} className="w-full px-3 py-2 border border-[#D0D0D0] text-[13px] outline-none focus:border-[#7A8F5E]">
-                  {categories.length === 0
-                    ? <option value="">No categories yet</option>
-                    : categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)
-                  }
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] tracking-widest uppercase text-[#8A8480] mb-1 block font-medium">Icon</label>
-                <input type="text" value={icon} onChange={e => setIcon(e.target.value)} placeholder="s-star" className="w-full px-3 py-2 border border-[#D0D0D0] text-[13px] outline-none focus:border-[#7A8F5E]" />
+            {/* Category — full width */}
+            <div>
+              <label className="text-[10px] tracking-widest uppercase text-[#8A8480] mb-1 block font-medium">Category *</label>
+              <select value={category} onChange={e => setCategory(e.target.value)} className="w-full px-3 py-2 border border-[#D0D0D0] text-[13px] outline-none focus:border-[#7A8F5E]">
+                {categories.length === 0
+                  ? <option value="">No categories yet</option>
+                  : categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)
+                }
+              </select>
+            </div>
+
+            {/* Free / Paid toggle — sits right below category */}
+            <div>
+              <label className="text-[10px] tracking-widest uppercase text-[#8A8480] mb-2 block font-medium">Access</label>
+              <div className="flex items-center gap-3">
+                {/* Toggle switch */}
+                <button
+                  type="button"
+                  onClick={() => setIsFree(v => !v)}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${isFree ? "bg-[#2D6A2D]" : "bg-[#8B5E2A]"}`}
+                  aria-label="Toggle free or paid"
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isFree ? "translate-x-0" : "translate-x-6"}`}
+                  />
+                </button>
+                {/* Label that changes */}
+                <span className={`text-[13px] font-semibold ${isFree ? "text-[#2D6A2D]" : "text-[#8B5E2A]"}`}>
+                  {isFree ? "Free" : "Paid"}
+                </span>
+                <span className="text-[11px] text-[#999]">
+                  {isFree ? "— usable by all" : "— requires subscription"}
+                </span>
               </div>
             </div>
 
-            {/* FREE / PAID toggle — card-level */}
+            {/* Icon — below the toggle */}
             <div>
-              <label className="text-[10px] tracking-widest uppercase text-[#8A8480] mb-2 block font-medium">Access</label>
-              <div className="flex gap-0 border border-[#D0D0D0] w-fit">
-                <button
-                  type="button"
-                  onClick={() => setIsFree(true)}
-                  className={`px-5 py-2 text-[11px] tracking-wider uppercase font-medium transition-colors ${isFree ? "bg-[#2D6A2D] text-white" : "text-[#666] hover:text-[#333]"}`}
-                >
-                  ✓ Free
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsFree(false)}
-                  className={`px-5 py-2 text-[11px] tracking-wider uppercase font-medium transition-colors ${!isFree ? "bg-[#8B5E2A] text-white" : "text-[#666] hover:text-[#333]"}`}
-                >
-                  ★ Paid
-                </button>
-              </div>
-              <p className="text-[11px] text-[#999] mt-1.5">
-                {isFree ? "Visible and usable by all users." : "Visible to all but drag-and-drop requires a subscription."}
-              </p>
+              <label className="text-[10px] tracking-widest uppercase text-[#8A8480] mb-1 block font-medium">Icon</label>
+              <input type="text" value={icon} onChange={e => setIcon(e.target.value)} placeholder="s-star" className="w-full px-3 py-2 border border-[#D0D0D0] text-[13px] outline-none focus:border-[#7A8F5E]" />
             </div>
 
             {/* Card Type */}
