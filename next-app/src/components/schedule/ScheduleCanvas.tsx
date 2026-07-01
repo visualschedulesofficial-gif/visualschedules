@@ -99,7 +99,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
   return (
     <div className="flex flex-col border-r border-r-weekly-border last:border-r-0 min-w-0 overflow-hidden">
       <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
-        <div style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "16px", color: "#4A5A3E" }}>{dayName}</div>
+        <div className="font-serif text-[15px] text-[#4A5A3E]">{dayName}</div>
       </div>
       <div
         ref={setNodeRef}
@@ -166,9 +166,9 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
       <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 border-b border-[#EEE] mb-2.5">
         <div className="col-start-2">
           {title ? (
-            <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }} className="text-center">{title}</h2>
+            <h2 className="font-serif text-[32px] text-[#5A8A3C] leading-none text-center pb-1">{title}</h2>
           ) : (
-            <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#CCC", lineHeight: 1.2 }} className="text-center">Untitled</h2>
+            <h2 className="font-serif text-[32px] text-[#CCC] leading-none text-center pb-1">Untitled</h2>
           )}
         </div>
         <div className="col-start-3 justify-self-end">
@@ -184,7 +184,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
       </div>
       <div className="shrink-0 py-1.5 pb-4 border-t border-bg-muted flex justify-between items-end">
         <div className="flex items-baseline gap-1.5">
-          <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
+          <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
           <span className="text-[10px] text-[#C0C0C0]">in collab with <a href="https://dataorc.in" className="text-[#AAA] underline">DataOrc</a></span>
         </div>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
@@ -211,9 +211,9 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
         {title ? (
-          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }}>{title}</h2>
+          <h2 className="font-serif text-[32px] text-[#5A8A3C] leading-none pb-1">{title}</h2>
         ) : (
-          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#CCC", lineHeight: 1.2 }}>Untitled</h2>
+          <h2 className="font-serif text-[32px] text-[#CCC] leading-none pb-1">Untitled</h2>
         )}
       </div>
       <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
@@ -222,7 +222,7 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
         ))}
       </div>
       <div className="shrink-0 pt-2 flex justify-between items-end">
-        <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
+        <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
     </div>
@@ -321,9 +321,9 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
         {title ? (
-          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }}>{title}</h2>
+          <h2 className="font-serif text-[32px] text-[#5A8A3C] leading-none pb-1">{title}</h2>
         ) : (
-          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#CCC", lineHeight: 1.2 }}>Untitled</h2>
+          <h2 className="font-serif text-[32px] text-[#CCC] leading-none pb-1">Untitled</h2>
         )}
       </div>
       <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
@@ -332,7 +332,7 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
         ))}
       </div>
       <div className="shrink-0 pt-2 flex justify-between items-end">
-        <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
+        <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
     </div>
@@ -355,7 +355,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
   return (
     <div className="flex flex-col border-2 border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#FAFBF7] min-w-0">
       <div className="bg-[#E8EDE0] border-b-2 border-b-[#C5D2B8] px-2 py-3.5 text-center shrink-0">
-        <span style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "28px", color: "#4A5A3E" }}>{colName}</span>
+        <span className="font-serif text-[28px] text-[#4A5A3E]">{colName}</span>
       </div>
       <div
         ref={setNodeRef}
@@ -422,7 +422,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
-        <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }}>{title || scheduleTypeLabel}</h2>
+        <h2 className="font-serif text-[32px] text-[#5A8A3C] leading-none pb-1">{title || scheduleTypeLabel}</h2>
       </div>
       <div className="flex-1 min-h-0 grid gap-5" style={{ gridTemplateColumns: `repeat(${ftColNames.length}, 1fr)` }}>
         {ftColNames.map((name, idx) => (
@@ -430,7 +430,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
         ))}
       </div>
       <div className="shrink-0 pt-2 flex justify-between items-end">
-        <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
+        <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
     </div>
