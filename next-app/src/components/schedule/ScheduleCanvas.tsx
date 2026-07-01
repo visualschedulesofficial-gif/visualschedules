@@ -47,9 +47,9 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
       {cardRef && card ? (
         <>
           <div className="absolute inset-0 flex flex-col">
-            <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden bg-[#F8FAFB]`}>
+            <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden bg-white`}>
               {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
               ) : (
                 <svg className={`w-10 h-10 stroke-[1.4] fill-none stroke-[#DDD]`} viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -70,7 +70,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
           </button>
         </>
       ) : (
-        <div className={`flex flex-col items-center gap-[5px] transition-transform duration-200 ${isOver ? "scale-125" : ""}`}>
+        <div className={`dz-hint flex flex-col items-center gap-[5px] transition-transform duration-200 ${isOver ? "scale-125" : ""}`}>
           <svg className={`w-[18px] h-[18px] stroke-[1.5] fill-none transition-[stroke] duration-200 ${isOver ? "stroke-[#7A8F5E]" : isDragging ? "stroke-[#7A8F5E]" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -175,14 +175,13 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
           <span className="text-[11px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
         </div>
       </div>
-      <div className="shrink-0 overflow-hidden">
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${spec.cols}, ${spec.cellW}px)`, gridTemplateRows: `repeat(${spec.rows}, ${spec.cellH}px)` }}>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="grid gap-2 h-full" style={{ gridTemplateColumns: `repeat(${spec.cols}, 1fr)`, gridTemplateRows: `repeat(${spec.rows}, 1fr)` }}>
           {Array.from({ length: spec.slots }).map((_, i) => (
             <DailyDropSlot key={i} slotIdx={i} pageIdx={pageIdx} justDropped={justDroppedSlot === `${pageIdx}-${i}`} />
           ))}
         </div>
       </div>
-      <div className="flex-1" />
       <div className="shrink-0 py-1.5 pb-4 border-t border-bg-muted flex justify-between items-end">
         <div className="flex items-baseline gap-1.5">
           <span className="font-serif text-[13px] italic text-[#AAA]">Grow Gently</span>
