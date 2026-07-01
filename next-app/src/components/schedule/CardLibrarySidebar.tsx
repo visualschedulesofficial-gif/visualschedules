@@ -90,7 +90,9 @@ const GENDER_LABELS = {
   all: "All Variants",
 };
 
-const CATEGORY_NAMES: Record<string, string> = {
+// Last-resort display fallback for built-in category ids. The live names come
+// from the database (admin-defined); this is only used if that fetch fails.
+const CATEGORY_NAME_FALLBACK: Record<string, string> = {
   characters: "Characters",
   food: "Food",
   routines: "Routines",
@@ -108,6 +110,12 @@ const CATEGORY_NAMES: Record<string, string> = {
   all: "All (No Character)",
 };
 
+// Merge DB cards with the static seed cards (DB wins on id collision).
+function mergeCards(dbCards: ParsedCard[]): ParsedCard[] {
+  const dbIds = new Set(dbCards.map((c) => c.id));
+  return [...dbCards, ...ALL_CARDS.filter((c) => !dbIds.has(c.id))];
+}
+
 export function CardLibrarySidebar() {
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
@@ -117,10 +125,14 @@ export function CardLibrarySidebar() {
   const pages = useScheduleState((s) => s.pages);
 
   const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
+  const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchOrCategory, setSearchOrCategory] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Resolve a category id to its display name (DB first, then fallback, then id)
+  const catName = (catId: string) => categoryNames[catId] || CATEGORY_NAME_FALLBACK[catId] || catId;
 
   // Track added cards
   const addedCardIds = useMemo(() => {
@@ -141,14 +153,14 @@ export function CardLibrarySidebar() {
     return ids;
   }, [pages]);
 
-  // Fetch cards from API
+  // Fetch cards from API (merge DB cards with static seed cards)
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch("/api/cards");
         if (res.ok) {
           const data = await res.json();
-          setCards(data.cards || ALL_CARDS);
+          setCards(mergeCards(data.cards || []));
         } else {
           setCards(ALL_CARDS);
         }
@@ -156,6 +168,25 @@ export function CardLibrarySidebar() {
         setCards(ALL_CARDS);
       } finally {
         setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Fetch admin-defined category names so new categories display correctly
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/categories");
+        if (res.ok) {
+          const data = await res.json();
+          const map: Record<string, string> = {};
+          (data.categories || []).forEach((c: { id: string; name: string }) => {
+            map[c.id] = c.name;
+          });
+          setCategoryNames(map);
+        }
+      } catch {
+        // fall back to CATEGORY_NAME_FALLBACK / id
       }
     })();
   }, []);
@@ -331,7 +362,7 @@ export function CardLibrarySidebar() {
                       setIsDropdownOpen(false);
                     }}
                   >
-                    {CATEGORY_NAMES[catId] || catId}
+                    {catName(catId)}
                   </div>
                 ))}
               </div>
@@ -356,7 +387,7 @@ export function CardLibrarySidebar() {
               return (
                 <div key={catId}>
                   <h3 className="text-[11px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5">
-                    {CATEGORY_NAMES[catId] || catId}
+                    {catName(catId)}
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
                     {categoryCards.map((card) => (
