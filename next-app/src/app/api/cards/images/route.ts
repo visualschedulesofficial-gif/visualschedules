@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       `SELECT card_id, variant, r2_key FROM card_images`
     ).all();
 
-    const R2_PUBLIC = "https://cdn.visualschedule.app";
+    const R2_PUBLIC = "/api/images";
     const images: Record<string, Record<string, string>> = {};
     for (const row of (imgResult.results || [])) {
       const r = row as { card_id: string; variant: string; r2_key: string };
