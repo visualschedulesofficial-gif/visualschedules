@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { Playwrite_DE_Grund } from "next/font/google";
 import "./globals.css";
 
-// Google Fonts will be loaded at runtime via CSS, not during build
-// This allows builds to succeed in environments without external network access
+const playwrite = Playwrite_DE_Grund({
+  weight: ["400"],
+  variable: "--font-playwrite",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Visual Schedules — Grow Gently",
@@ -27,7 +31,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="h-full"
+      className={`h-full ${playwrite.variable}`}
     >
       <body className="h-full overflow-hidden font-sans bg-bg text-[#2C2C2C]">
         {children}
