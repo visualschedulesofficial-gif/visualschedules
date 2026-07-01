@@ -20,12 +20,10 @@ export interface ParsedCategory {
 export const CATEGORIES: ParsedCategory[] = cardsJson.categories as ParsedCategory[];
 export const ALL_CARDS: ParsedCard[] = cardsJson.cards as unknown as ParsedCard[];
 
-// Helper function to check if card is character type
 export function isCharacterCard(card: ParsedCard): boolean {
   return card.isCharacter === true;
 }
 
-// Helper function to get appropriate gender for card
 export function getCardGender(card: ParsedCard, selectedGender: string): string {
   if (isCharacterCard(card)) {
     return selectedGender;
@@ -33,7 +31,6 @@ export function getCardGender(card: ParsedCard, selectedGender: string): string 
   return "neutral";
 }
 
-// Label overrides from D1 (set at runtime by ScheduleBuilder)
 let _labelOverrides: Record<string, Record<string, string>> = {};
 
 export function setLabelOverrides(overrides: Record<string, Record<string, string>>) {
@@ -48,7 +45,6 @@ export function getCardLabel(card: ParsedCard, lang: string): string {
   return card.translations[lang] || card.translations["en"] || card.id;
 }
 
-// Dynamic image map — populated from /api/cards/images at runtime
 export type CardImageMap = Record<string, Record<string, string>>;
 
 let _cardImages: CardImageMap = {};
@@ -77,7 +73,6 @@ export function getCardsByCategory(categoryId: string): ParsedCard[] {
   return ALL_CARDS.filter((c) => c.categoryId === categoryId);
 }
 
-// Backward compat
 export const SAMPLE_CARDS = ALL_CARDS.map((c) => ({
   id: c.id,
   label: c.translations["en"] || c.id,
@@ -85,10 +80,8 @@ export const SAMPLE_CARDS = ALL_CARDS.map((c) => ({
   category: c.categoryId,
 }));
 
-// ── Runtime card registry ─────────────────────────────────────────────────
-// Populated from /api/cards at startup so that DB-only cards (when
-// cards-parsed.json is empty) work correctly on the canvas and in drag-drop.
-
+// Runtime card registry — populated from /api/cards at startup.
+// Allows DB-only cards to work when cards-parsed.json is empty.
 let _runtimeCards: ParsedCard[] = [];
 
 export function setRuntimeCards(cards: ParsedCard[]) {
