@@ -1,9 +1,22 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ALL_CARDS, CATEGORIES, getCardLabel, isCharacterCard, type ParsedCard } from "@/lib/card-data";
+import { ALL_CARDS, getCardLabel, isCharacterCard, type ParsedCard } from "@/lib/card-data";
 import { AddCardForm } from "./AddCardForm";
 import { EditCardForm } from "./EditCardForm";
+
+interface Category {
+  id: string;
+  name: string;
+  isFree: boolean;
+}
+
+// Merge DB cards with the static seed cards. DB wins on id collision, so newly
+// added cards appear AND the original built-in cards stay visible.
+function mergeCards(dbCards: ParsedCard[]): ParsedCard[] {
+  const dbIds = new Set(dbCards.map((c) => c.id));
+  return [...dbCards, ...ALL_CARDS.filter((c) => !dbIds.has(c.id))];
+}
 
 function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: { cardId: string; variant: string; label: string; colorClass: string; existingUrl: string | null }) {
   const [preview, setPreview] = useState<string | null>(existingUrl);
@@ -178,11 +191,27 @@ function CardItem({ card, onEdit, onDelete }: { card: ParsedCard; onEdit: (card:
 
 export default function AdminCardsPage() {
   const [cards, setCards] = useState<ParsedCard[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCard, setEditingCard] = useState<ParsedCard | null>(null);
+
+  // Load admin-defined categories from the database (for the filter dropdown)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data.categories || []);
+        }
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -190,16 +219,13 @@ export default function AdminCardsPage() {
         const res = await fetch("/api/admin/cards");
         if (res.ok) {
           const data = await res.json();
-          // Use API data if available, otherwise fall back to hardcoded
-          const cardsToShow = (data.cards && data.cards.length > 0) ? data.cards : ALL_CARDS;
-          setCards(cardsToShow);
+          // Merge DB cards with built-in cards so nothing disappears
+          setCards(mergeCards(data.cards || []));
         } else {
-          // API error - fall back to hardcoded data
           console.error("Failed to fetch cards from API, using fallback data");
           setCards(ALL_CARDS);
         }
       } catch (err) {
-        // Network error - fall back to hardcoded data
         console.error("Error fetching cards, using fallback data:", err);
         setCards(ALL_CARDS);
       } finally {
@@ -214,8 +240,7 @@ export default function AdminCardsPage() {
         const res = await fetch("/api/admin/cards");
         if (res.ok) {
           const data = await res.json();
-          const cardsToShow = (data.cards && data.cards.length > 0) ? data.cards : ALL_CARDS;
-          setCards(cardsToShow);
+          setCards(mergeCards(data.cards || []));
         } else {
           setCards(ALL_CARDS);
         }
@@ -245,7 +270,7 @@ export default function AdminCardsPage() {
             + Add Card
           </button>
         </div>
-        
+
         {/* Search + Category Filter Row */}
         <div className="flex gap-2 items-center">
           <input
@@ -255,17 +280,17 @@ export default function AdminCardsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 px-3 py-2 text-[14px] border border-border rounded bg-white text-ink outline-none focus:border-accent"
           />
-          
-          {/* Category Filter Dropdown */}
+
+          {/* Category Filter Dropdown (from database) */}
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-3 py-2 text-[14px] border border-border rounded bg-white text-ink outline-none focus:border-accent min-w-[150px]"
           >
             <option value="all">All Categories</option>
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name}
+                {cat.name} — {cat.isFree ? "Free" : "Paid"}
               </option>
             ))}
           </select>
@@ -273,8 +298,8 @@ export default function AdminCardsPage() {
 
         {/* Results count */}
         <p className="text-[12px] text-ink-3 mt-2">
-          {filtered.length} card{filtered.length !== 1 ? "s" : ""} 
-          {selectedCategory !== "all" && ` in ${CATEGORIES.find(c => c.id === selectedCategory)?.name}`}
+          {filtered.length} card{filtered.length !== 1 ? "s" : ""}
+          {selectedCategory !== "all" && ` in ${categories.find((c) => c.id === selectedCategory)?.name || selectedCategory}`}
         </p>
       </div>
 
@@ -294,9 +319,9 @@ export default function AdminCardsPage() {
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
             {filtered.map((card) => (
-              <CardItem 
-                key={card.id} 
-                card={card} 
+              <CardItem
+                key={card.id}
+                card={card}
                 onEdit={(c) => setEditingCard(c)}
                 onDelete={async (cardId) => {
                   try {
@@ -313,7 +338,7 @@ export default function AdminCardsPage() {
       </div>
 
       {showAddForm && (
-        <AddCardForm 
+        <AddCardForm
           onClose={() => setShowAddForm(false)}
           onCardAdded={handleCardAdded}
         />
