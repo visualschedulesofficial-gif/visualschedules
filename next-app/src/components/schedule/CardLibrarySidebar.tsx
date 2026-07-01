@@ -16,6 +16,7 @@ function DraggableCardItem({
   gender,
   language,
   isAdded,
+  isFree,
   onClickAdd,
 }: {
   card: ParsedCard;
