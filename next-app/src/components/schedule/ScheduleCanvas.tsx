@@ -57,8 +57,8 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
               )}
             </div>
             <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white`}>
-              <span className={`text-[20px] text-center leading-tight font-sans text-[#2C2C2C]`}>
-                {getCardLabel(card, language)}
+              <span className="text-[14px] text-center leading-tight font-sans text-[#2C2C2C]">
+                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </span>
             </div>
           </div>
@@ -98,8 +98,8 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
 
   return (
     <div className="flex flex-col border-r border-r-weekly-border last:border-r-0 min-w-0 overflow-hidden">
-      <div className="bg-weekly-head-bg border-b border-b-weekly-border px-1.5 py-2.5 text-center shrink-0">
-        <div className="text-sm text-weekly-head-text font-sans tracking-wide">{dayName}</div>
+      <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
+        <div style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "16px", color: "#4A5A3E" }}>{dayName}</div>
       </div>
       <div
         ref={setNodeRef}
@@ -122,7 +122,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[14px] text-ink text-center leading-tight font-sans shrink-0">
                 {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </div>
               <button
@@ -166,9 +166,9 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
       <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 border-b border-[#EEE] mb-2.5">
         <div className="col-start-2">
           {title ? (
-            <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }} className="text-center">{title}</h2>
+            <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }} className="text-center">{title}</h2>
           ) : (
-            <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#BBB", lineHeight: 1 }} className="text-center">Untitled</h2>
+            <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#CCC", lineHeight: 1.2 }} className="text-center">Untitled</h2>
           )}
         </div>
         <div className="col-start-3 justify-self-end">
@@ -211,9 +211,9 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
         {title ? (
-          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }}>{title}</h2>
+          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }}>{title}</h2>
         ) : (
-          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#BBB", lineHeight: 1 }}>Untitled</h2>
+          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#CCC", lineHeight: 1.2 }}>Untitled</h2>
         )}
       </div>
       <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
@@ -245,7 +245,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
 
   return (
     <div className="flex flex-col border-r border-r-weekly-border last:border-r-0 min-w-0 overflow-hidden">
-      <div className="bg-weekly-head-bg border-b border-b-weekly-border px-1.5 py-2.5 text-center shrink-0">
+      <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
         <input
           type="text"
           value={colName}
@@ -254,7 +254,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
             names[colIdx] = e.target.value;
             setCustomColNames(names);
           }}
-          className="w-full text-center border-none bg-transparent text-sm text-weekly-head-text font-sans tracking-wide outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
+          className="w-full text-center border-none bg-transparent text-sm text-[#4A5A3E] font-sans tracking-wide outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
         />
       </div>
       <div
@@ -278,7 +278,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[13px] text-ink text-center leading-tight font-sans shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[14px] text-ink text-center leading-tight font-sans shrink-0">
                 {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </div>
               <button
@@ -321,9 +321,9 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
         {title ? (
-          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }}>{title}</h2>
+          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }}>{title}</h2>
         ) : (
-          <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#BBB", lineHeight: 1 }}>Untitled</h2>
+          <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#CCC", lineHeight: 1.2 }}>Untitled</h2>
         )}
       </div>
       <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
@@ -354,8 +354,8 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
 
   return (
     <div className="flex flex-col border-2 border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#FAFBF7] min-w-0">
-      <div className="bg-weekly-head-bg border-b-2 border-b-weekly-border px-2 py-3.5 text-center shrink-0">
-        <span className="text-[30px] font-semibold text-weekly-head-text font-sans tracking-tight">{colName}</span>
+      <div className="bg-[#E8EDE0] border-b-2 border-b-[#C5D2B8] px-2 py-3.5 text-center shrink-0">
+        <span style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "28px", color: "#4A5A3E" }}>{colName}</span>
       </div>
       <div
         ref={setNodeRef}
@@ -378,8 +378,8 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
                   )}
                 </div>
                 <div className="shrink-0 px-2.5 py-4 border-t-2 border-[#F0F0F0] bg-white text-center">
-                  <span className="text-[32px] font-semibold text-ink-2 font-sans leading-tight">
-                    {getCardLabel(card, language)}
+                  <span className="text-[16px] font-semibold text-ink-2 font-sans leading-tight">
+                    {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
                   </span>
                 </div>
                 <button
@@ -422,7 +422,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
-        <h2 style={{ fontFamily: "Caveat, cursive", fontSize: "36px", color: "#5A8A3C", lineHeight: 1 }}>{title || scheduleTypeLabel}</h2>
+        <h2 style={{ fontFamily: '"Playwrite DE Grund", cursive', fontSize: "32px", color: "#5A8A3C", lineHeight: 1.2 }}>{title || scheduleTypeLabel}</h2>
       </div>
       <div className="flex-1 min-h-0 grid gap-5" style={{ gridTemplateColumns: `repeat(${ftColNames.length}, 1fr)` }}>
         {ftColNames.map((name, idx) => (
