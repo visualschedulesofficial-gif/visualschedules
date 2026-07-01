@@ -38,34 +38,34 @@ async function translateAll(
 
   const targets = Object.keys(LANG_MAP).filter((l) => l !== "en");
 
-  // Translate each language — MyMemory is one request per language pair
-  // We run them in parallel (Promise.allSettled so one failure doesn't stop others)
-  const translations = await Promise.allSettled(
-    targets.map(async (lang) => {
-      const source = "en-US";
-      const target = LANG_MAP[lang];
-      const params = new URLSearchParams({
-        q: englishText,
-        langpair: `${source}|${target}`,
-      });
-      if (adminEmail) params.set("de", adminEmail);
-
-      const res = await fetch(
-        `https://api.mymemory.translated.net/get?${params}`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      const data = await res.json();
-
-      if (data.responseStatus === 200 && data.responseData?.translatedText) {
-        return { lang, text: data.responseData.translatedText };
+  // Translate in small batches to respect Cloudflare Workers subrequest limits
+  const BATCH_SIZE = 4;
+  for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+    const batch = targets.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (lang) => {
+        const source = "en-US";
+        const target = LANG_MAP[lang];
+        const params = new URLSearchParams({
+          q: englishText,
+          langpair: `${source}|${target}`,
+        });
+        if (adminEmail) params.set("de", adminEmail);
+        const res = await fetch(
+          `https://api.mymemory.translated.net/get?${params}`,
+          { signal: AbortSignal.timeout(8000) }
+        );
+        const data = await res.json();
+        if (data.responseStatus === 200 && data.responseData?.translatedText) {
+          return { lang, text: data.responseData.translatedText };
+        }
+        return { lang, text: englishText };
+      })
+    );
+    for (const result of batchResults) {
+      if (result.status === "fulfilled") {
+        results[result.value.lang] = result.value.text;
       }
-      return { lang, text: englishText }; // fallback to English
-    })
-  );
-
-  for (const result of translations) {
-    if (result.status === "fulfilled") {
-      results[result.value.lang] = result.value.text;
     }
   }
 
