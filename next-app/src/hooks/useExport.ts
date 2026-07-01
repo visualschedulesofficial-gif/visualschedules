@@ -41,7 +41,15 @@ async function ensureLibraries() {
 function injectExportHideStyle() {
   const style = document.createElement("style");
   style.id = "export-hide-style";
-  style.textContent = ".slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}";
+  style.textContent = [
+    ".slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}",
+    // Force CSS variable borders to literal values for html2canvas
+    "[class*='border-weekly-border'],[class*='border-b-weekly-border'],[class*='border-r-weekly-border']{border-color:#C5D2B8!important}",
+    // Use Georgia as export font for headings (Playwrite won't render in html2canvas)
+    ".font-serif{font-family:Georgia,serif!important;font-style:italic}",
+    // Force all borders to light not black
+    ".border-\\[\\#C5D2B8\\]{border-color:#C5D2B8!important}",
+  ].join("");
   document.head.appendChild(style);
   return style;
 }
