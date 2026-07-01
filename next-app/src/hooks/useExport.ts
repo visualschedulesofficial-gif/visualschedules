@@ -23,7 +23,9 @@ function loadExternalScript(src: string): Promise<void> {
 
 async function ensureLibraries() {
   if (typeof (window as any).html2canvas === "undefined") {
-    await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+    // html2canvas-pro is a drop-in fork that understands modern Tailwind v4
+    // colors (oklch/oklab). The original html2canvas 1.4.1 crashes on them.
+    await loadExternalScript("https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.11/dist/html2canvas-pro.min.js");
   }
   if (typeof (window as any).jspdf === "undefined") {
     await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
