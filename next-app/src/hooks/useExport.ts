@@ -297,8 +297,39 @@ export function useExport() {
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const pages = useScheduleState((s) => s.pages);
+  const scheduleId = useScheduleState((s) => s.id);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState("");
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Save schedule to DB — silently, never blocks or errors the export
+  const saveToDatabase = async () => {
+    try {
+      const state = useScheduleState.getState();
+      const res = await fetch("/api/schedules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: state.id,
+          title: state.title,
+          scheduleType: state.scheduleType,
+          language: state.language,
+          gender: state.gender,
+          gridCols: state.gridCols,
+          customColNames: state.customColNames,
+          weekMode: state.weekMode,
+          cardStyle: state.cardStyle,
+          data: { pages: state.pages },
+        }),
+      });
+      if (res.ok) {
+        setLastSaved(new Date());
+        state.markClean?.();
+      }
+    } catch {
+      // Save failure never interrupts the export
+    }
+  };
 
   const showStatus = useCallback((text: string) => {
     setExportStatus(text);
@@ -322,6 +353,9 @@ export function useExport() {
       const blob = (await buildPdfBlob(scheduleType)) as Blob;
       const fileName = getExportFileBaseName(title) + ".pdf";
       downloadBlob(blob, fileName);
+      // Save to database after successful export (silently)
+      showStatus("Saving…");
+      await saveToDatabase();
     } catch (err) {
       console.error("PDF export error:", err);
       alert(friendlyMessage(err, "PDF"));
@@ -330,7 +364,7 @@ export function useExport() {
       setExporting(false);
       hideStatus();
     }
-  }, [pages, scheduleType, title, showStatus, hideStatus]);
+  }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
 
   const exportJPEG = useCallback(async () => {
     if (!pages.length) {
@@ -354,6 +388,9 @@ export function useExport() {
           await new Promise((r) => setTimeout(r, 400));
         }
       }
+      // Save to database after successful export (silently)
+      showStatus("Saving…");
+      await saveToDatabase();
     } catch (err) {
       console.error("JPEG export error:", err);
       alert(friendlyMessage(err, "images"));
@@ -362,12 +399,13 @@ export function useExport() {
       setExporting(false);
       hideStatus();
     }
-  }, [pages, scheduleType, title, showStatus, hideStatus]);
+  }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
 
   return {
     exportPDF,
     exportJPEG,
     exporting,
     exportStatus,
+    lastSaved,
   };
 }
