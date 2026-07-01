@@ -19,7 +19,7 @@ import { RightPanel } from "@/components/schedule/RightPanel";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { ALL_CARDS, findCard, setRuntimeCards, getCardLabel, setCardImages as setCardImagesGlobal, setLabelOverrides, type CardImageMap, type ParsedCard } from "@/lib/card-data";
+import { findCard, setRuntimeCards, getCardLabel, setCardImages as setCardImagesGlobal, setLabelOverrides, type CardImageMap, type ParsedCard } from "@/lib/card-data";
 
 function PointerOverlay({ label }: { label: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -70,14 +70,13 @@ export default function ScheduleBuilder() {
 
   useAutoSave();
 
-  // Load runtime cards + images + label overrides from D1 on mount
+  // Load runtime cards + images from D1 on mount
   useEffect(() => {
-    // Load cards into runtime registry so canvas can find them
+    // 1. Load cards into runtime registry so canvas can find them
     fetch("/api/cards")
       .then((r) => r.json())
       .then((data) => {
-        if (data.cards && data.cards.length > 0) {
-          // Strip the free:/paid: prefix from icon before registering
+        if (data.cards?.length > 0) {
           const cleaned = data.cards.map((c: ParsedCard) => ({
             ...c,
             icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
@@ -87,12 +86,14 @@ export default function ScheduleBuilder() {
       })
       .catch(() => {});
 
-    // Load images + label overrides
+    // 2. Load images
     fetch("/api/cards/images")
       .then((r) => r.json())
       .then((data) => {
         if (data.images) {
+          // Set the global card images (for ScheduleCanvas)
           setCardImagesGlobal(data.images);
+          // Also set local state (for prop passing)
           setLocalCardImages(data.images);
         }
         if (data.labels) {
