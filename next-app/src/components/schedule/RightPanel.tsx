@@ -223,7 +223,7 @@ export function RightPanel() {
       <section className="p-4 mt-auto border-t border-border shrink-0">
         <div className="text-center space-y-3">
           <a
-            href="https://instagram.com/growgently_co"
+            href="https://www.instagram.com/visual_schedule_official/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 py-2 px-3 rounded border border-[#E5E5E5] hover:bg-[#F5F5F5] transition-all text-[13px] font-sans text-[#1C1B19]"
@@ -235,7 +235,7 @@ export function RightPanel() {
           </a>
 
           <a
-            href="mailto:growgently.co@gmail.com"
+            href="mailto:visualschedulesofficial@gmail.com"
             className="flex items-center justify-center gap-2 py-2 px-3 rounded border border-[#E5E5E5] hover:bg-[#F5F5F5] transition-all text-[13px] font-sans text-[#1C1B19]"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -246,7 +246,7 @@ export function RightPanel() {
           </a>
 
           <a
-            href="tel:+919876543210"
+            href="tel:+919529723925"
             className="flex items-center justify-center gap-2 py-2 px-3 rounded border border-[#E5E5E5] hover:bg-[#F5F5F5] transition-all text-[13px] font-sans text-[#1C1B19]"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
