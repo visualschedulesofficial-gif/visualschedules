@@ -1,4 +1,4 @@
-use client";
+use "client";
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
