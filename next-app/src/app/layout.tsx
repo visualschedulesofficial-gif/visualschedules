@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import { Playwrite_DE_Grund } from "next/font/google";
 import "./globals.css";
-
-const playwrite = Playwrite_DE_Grund({
-  weight: ["400"],
-  variable: "--font-playwrite",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Visual Schedules — Grow Gently",
@@ -43,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full ${playwrite.variable}`}
+      className="h-full"
     >
       <body className="h-full overflow-hidden font-sans bg-bg text-[#2C2C2C]">
         {children}
