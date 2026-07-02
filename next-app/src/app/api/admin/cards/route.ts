@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-function getEnv(): { DB?: any } {
+function getEnv(): { DB?: any; AI?: any } {
   const symbol = Symbol.for("__cloudflare-context__");
   const ctx = (globalThis as any)[symbol];
   return ctx?.env || {};
@@ -17,78 +17,107 @@ function buildIcon(icon: string, isFree: boolean): string {
   return `${isFree ? "free" : "paid"}:${base}`;
 }
 
-// MyMemory language code mapping
-// Our app uses some codes that differ from MyMemory's expected format
-const LANG_MAP: Record<string, string> = {
-  en: "en-US", hi: "hi-IN", mr: "mr-IN", pa: "pa-IN",
-  gu: "gu-IN", ta: "ta-IN", te: "te-IN", bn: "bn-IN",
-  ur: "ur-PK", kn: "kn-IN", ml: "ml-IN", es: "es-ES",
-  fr: "fr-FR", de: "de-DE", ar: "ar-SA", zh: "zh-CN",
-  ja: "ja-JP", ko: "ko-KR", pt: "pt-BR", ind: "id-ID",
-  ms: "ms-MY", th: "th-TH", ru: "ru-RU", tl: "tl-PH",
-  vi: "vi-VN",
+// All supported language codes and their full names for the prompt
+const LANG_NAMES: Record<string, string> = {
+  mr: "Marathi", pa: "Punjabi", gu: "Gujarati", ta: "Tamil",
+  te: "Telugu", bn: "Bengali", ur: "Urdu", kn: "Kannada",
+  ml: "Malayalam", es: "Spanish", fr: "French", de: "German",
+  ar: "Arabic", zh: "Chinese (Simplified)", ja: "Japanese",
+  ko: "Korean", pt: "Portuguese", ind: "Indonesian", ms: "Malay",
+  th: "Thai", ru: "Russian", tl: "Filipino", vi: "Vietnamese",
 };
 
-// Translate English text into all target languages via MyMemory (free, no key)
-async function translateAll(
+// Auto-translate using Cloudflare AI (built-in, no API key needed)
+// Falls back to MyMemory if AI binding not available
+async function autoTranslate(
   englishText: string,
-  adminEmail?: string
+  hindiText: string,
+  env: any
 ): Promise<Record<string, string>> {
-  const results: Record<string, string> = { en: englishText };
+  const results: Record<string, string> = {
+    en: englishText,
+    hi: hindiText || englishText,
+  };
 
-  const targets = Object.keys(LANG_MAP).filter((l) => l !== "en");
-
-  // Translate in small batches to respect Cloudflare Workers subrequest limits
-  const BATCH_SIZE = 4;
-  for (let i = 0; i < targets.length; i += BATCH_SIZE) {
-    const batch = targets.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.allSettled(
-      batch.map(async (lang) => {
-        const source = "en-US";
-        const target = LANG_MAP[lang];
-        const params = new URLSearchParams({
-          q: englishText,
-          langpair: `${source}|${target}`,
-        });
-        if (adminEmail) params.set("de", adminEmail);
-        const res = await fetch(
-          `https://api.mymemory.translated.net/get?${params}`,
-          { signal: AbortSignal.timeout(8000) }
+  // Try Cloudflare AI first (built-in translation model)
+  if (env.AI) {
+    try {
+      const targetLangs = Object.entries(LANG_NAMES);
+      // Translate in batches of 5
+      for (let i = 0; i < targetLangs.length; i += 5) {
+        const batch = targetLangs.slice(i, i + 5);
+        await Promise.allSettled(
+          batch.map(async ([code, langName]) => {
+            try {
+              const response = await env.AI.run(
+                "@cf/meta/m2m100-1.2b",
+                { text: englishText, source_lang: "english", target_lang: langName.toLowerCase() }
+              );
+              if (response?.translated_text) {
+                results[code] = response.translated_text;
+              }
+            } catch {
+              // Skip failed language
+            }
+          })
         );
-        const data = await res.json();
-        if (data.responseStatus === 200 && data.responseData?.translatedText) {
-          return { lang, text: data.responseData.translatedText };
+      }
+      return results;
+    } catch {
+      // Fall through to MyMemory
+    }
+  }
+
+  // Fallback: MyMemory (free, no key)
+  const LANG_MAP: Record<string, string> = {
+    mr: "mr-IN", pa: "pa-IN", gu: "gu-IN", ta: "ta-IN", te: "te-IN",
+    bn: "bn-IN", ur: "ur-PK", kn: "kn-IN", ml: "ml-IN", es: "es-ES",
+    fr: "fr-FR", de: "de-DE", ar: "ar-SA", zh: "zh-CN", ja: "ja-JP",
+    ko: "ko-KR", pt: "pt-BR", ind: "id-ID", ms: "ms-MY", th: "th-TH",
+    ru: "ru-RU", tl: "tl-PH", vi: "vi-VN",
+  };
+
+  const targets = Object.keys(LANG_MAP);
+  for (let i = 0; i < targets.length; i += 4) {
+    const batch = targets.slice(i, i + 4);
+    await Promise.allSettled(
+      batch.map(async (lang) => {
+        try {
+          const params = new URLSearchParams({
+            q: englishText,
+            langpair: `en-US|${LANG_MAP[lang]}`,
+          });
+          const res = await fetch(
+            `https://api.mymemory.translated.net/get?${params}`,
+            { signal: AbortSignal.timeout(6000) }
+          );
+          const data = await res.json();
+          if (data.responseStatus === 200 && data.responseData?.translatedText) {
+            results[lang] = data.responseData.translatedText;
+          }
+        } catch {
+          // Skip
         }
-        return { lang, text: englishText };
       })
     );
-    for (const result of batchResults) {
-      if (result.status === "fulfilled") {
-        results[result.value.lang] = result.value.text;
-      }
-    }
   }
 
   return results;
 }
 
-// GET /api/admin/cards — list all cards from D1
+// GET /api/admin/cards
 export async function GET() {
   try {
     const env = getEnv();
-    if (!env.DB) {
-      return NextResponse.json({ cards: [], source: "fallback" }, { status: 200 });
-    }
+    if (!env.DB) return NextResponse.json({ cards: [], source: "fallback" });
 
     const result = await env.DB.prepare(
-      `SELECT
-         c.id, c.icon, c.category_id, c.sort_order,
+      `SELECT c.id, c.icon, c.category_id, c.sort_order,
          (SELECT GROUP_CONCAT(ct.lang || ':::' || ct.label, ';;;')
             FROM card_translations ct WHERE ct.card_id = c.id) AS labels,
          (SELECT GROUP_CONCAT(DISTINCT ci.variant)
             FROM card_images ci WHERE ci.card_id = c.id) AS variants
-       FROM cards c
-       WHERE c.status = 'live'
+       FROM cards c WHERE c.status = 'live'
        ORDER BY c.sort_order ASC, c.id ASC`
     ).all();
 
@@ -114,12 +143,11 @@ export async function GET() {
 
     return NextResponse.json({ cards, source: "database", count: cards.length });
   } catch (err: any) {
-    console.error("Cards fetch error:", err);
     return NextResponse.json({ cards: [], source: "error" });
   }
 }
 
-// POST /api/admin/cards — create card + auto-translate into all 25 languages
+// POST /api/admin/cards — create card + auto-translate
 export async function POST(request: NextRequest) {
   try {
     const { id, icon, isFree, categoryId, isCharacter, translations } = await request.json();
@@ -132,41 +160,29 @@ export async function POST(request: NextRequest) {
     }
 
     const env = getEnv();
-    if (!env.DB) {
-      return NextResponse.json({ error: "Database not available" }, { status: 503 });
-    }
+    if (!env.DB) return NextResponse.json({ error: "Database not available" }, { status: 503 });
 
     const existing = await env.DB.prepare(`SELECT id FROM cards WHERE id = ?`).bind(id).first();
     if (existing) {
-      return NextResponse.json(
-        { error: `Card "${id}" already exists.` },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: `Card "${id}" already exists.` }, { status: 409 });
     }
 
     const iconField = buildIcon(icon || "s-star", !!isFree);
-
     await env.DB.prepare(
       `INSERT INTO cards (id, icon, category_id, status, sort_order, created_at)
        VALUES (?, ?, ?, 'live', 0, datetime('now'))`
     ).bind(id, iconField, categoryId).run();
 
-    // Auto-translate English name into all 25 languages via MyMemory
-    // Use Hindi from the form if provided (usually more accurate than auto-translate)
+    // Auto-translate into all languages
+    // User-provided Hindi is always used as-is (more accurate than auto)
     let allTranslations: Record<string, string>;
     try {
-      allTranslations = await translateAll(translations.en);
-      // If admin provided Hindi, use that (overrides auto-translate)
-      if (translations.hi && translations.hi !== translations.en) {
-        allTranslations.hi = translations.hi;
-      }
+      allTranslations = await autoTranslate(translations.en, translations.hi, env);
     } catch {
-      // If translation fails entirely, save with just en + hi
-      allTranslations = { en: translations.en };
-      if (translations.hi) allTranslations.hi = translations.hi;
+      allTranslations = { en: translations.en, hi: translations.hi || translations.en };
     }
 
-    // Save all translations to the database
+    // Save all translations
     for (const [lang, label] of Object.entries(allTranslations)) {
       if (!label || typeof label !== "string") continue;
       await env.DB.prepare(
@@ -174,14 +190,13 @@ export async function POST(request: NextRequest) {
       ).bind(id, lang, label).run();
     }
 
-    return NextResponse.json(
-      {
-        success: true, id, isFree: !!isFree,
-        translatedLanguages: Object.keys(allTranslations).length,
-        message: `Card created with ${Object.keys(allTranslations).length} language translations!`,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      success: true, id,
+      isFree: !!isFree,
+      translatedLanguages: Object.keys(allTranslations).length,
+      message: `Card created with ${Object.keys(allTranslations).length} translations!`,
+    }, { status: 201 });
+
   } catch (err: any) {
     console.error("Card creation error:", err);
     if (err?.message?.includes("UNIQUE")) {
