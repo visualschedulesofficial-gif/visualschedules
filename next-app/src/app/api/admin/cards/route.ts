@@ -27,6 +27,65 @@ const LANG_NAMES: Record<string, string> = {
   th: "Thai", ru: "Russian", tl: "Filipino", vi: "Vietnamese",
 };
 
+// ── Claude AI translation (first choice, if ANTHROPIC_API_KEY secret is set) ──
+// One request translates into ALL languages at once. The admin's own Hindi is
+// sent as a register guide so every language matches the same everyday,
+// parent-to-child simplicity. The admin's Hindi is never overwritten.
+async function claudeTranslate(
+  englishText: string,
+  hindiText: string,
+  env: any
+): Promise<Record<string, string> | null> {
+  if (!env.ANTHROPIC_API_KEY) return null;
+  try {
+    const codeList = Object.entries(LANG_NAMES)
+      .map(([code, name]) => `${code} = ${name}`)
+      .join(", ");
+    const hindiHint = hindiText
+      ? `\nThe parent's own Hindi for this card is "${hindiText}" — match this same level of everyday, spoken simplicity in every language.`
+      : "";
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5",
+        max_tokens: 1500,
+        system:
+          "You translate labels for a children's visual schedule app used by parents of young neurodiverse children. For each target language, give the simplest, most common everyday word or short phrase a parent would naturally SAY to a small child — conversational register, never formal, literary, or technical. Use the language's native script only (no romanization). Respond with ONLY a valid JSON object mapping each language code to its translation. No markdown, no code fences, no explanation.",
+        messages: [
+          {
+            role: "user",
+            content: `Card label (English): "${englishText}"${hindiHint}\nTranslate into all of these languages: ${codeList}`,
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const text = (data?.content?.[0]?.text || "").trim().replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object") return null;
+    const results: Record<string, string> = {};
+    let count = 0;
+    for (const code of Object.keys(LANG_NAMES)) {
+      const v = typeof parsed[code] === "string" ? parsed[code].trim() : "";
+      if (v && v.length <= 80) {
+        results[code] = v;
+        count++;
+      }
+    }
+    // Only accept if it covered most languages; otherwise fall back
+    return count >= Object.keys(LANG_NAMES).length * 0.7 ? results : null;
+  } catch {
+    return null;
+  }
+}
+
 // Auto-translate using Cloudflare AI (built-in, no API key needed)
 // Falls back to MyMemory if AI binding not available
 async function autoTranslate(
@@ -38,6 +97,13 @@ async function autoTranslate(
     en: englishText,
     hi: hindiText || englishText,
   };
+
+  // 1st choice: Claude AI — one call, all languages, register-matched
+  const claudeResults = await claudeTranslate(englishText, hindiText, env);
+  if (claudeResults) {
+    // Admin's own English + Hindi always win over AI output
+    return { ...claudeResults, en: englishText, hi: hindiText || claudeResults.hi || englishText };
+  }
 
   // Try Cloudflare AI first. We use a small LLM instead of a plain
   // translation model because it can follow instructions about REGISTER:
