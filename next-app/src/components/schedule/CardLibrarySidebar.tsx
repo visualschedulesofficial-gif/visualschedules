@@ -33,7 +33,6 @@ function DraggableCardItem({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
     data: { cardId: card.id, catId },
-    disabled: isLocked,
   });
 
   const isCharacter = isCharacterCard(card);
