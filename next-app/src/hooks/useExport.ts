@@ -259,6 +259,14 @@ async function buildPdfBlob(scheduleType: string) {
           ".font-sans{font-family:'Atkinson Hyperlegible',system-ui,sans-serif!important}",
           // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
+          // Pin card borders: exports were falling back to the default border
+          // color (text ink = near-black). Force the light green from the
+          // canvas, 1px solid, on every element that asks for it.
+          '[class*="border-[#C7D7B8]"]{border-color:#C7D7B8!important;border-style:solid!important;border-width:1px!important}',
+          '[class*="border-[#C5D2B8]"]{border-color:#C5D2B8!important;border-style:solid!important}',
+          '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
+          '[class*="border-b-[#C5D2B8]"]{border-bottom-color:#C5D2B8!important}',
+          '[class*="border-r-[#C5D2B8]"]{border-right-color:#C5D2B8!important}',
         ].join("");
         _doc.head.appendChild(s);
       },
@@ -359,6 +367,14 @@ async function buildJpegBlobs(scheduleType: string) {
           ".font-sans{font-family:'Atkinson Hyperlegible',system-ui,sans-serif!important}",
           // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
+          // Pin card borders: exports were falling back to the default border
+          // color (text ink = near-black). Force the light green from the
+          // canvas, 1px solid, on every element that asks for it.
+          '[class*="border-[#C7D7B8]"]{border-color:#C7D7B8!important;border-style:solid!important;border-width:1px!important}',
+          '[class*="border-[#C5D2B8]"]{border-color:#C5D2B8!important;border-style:solid!important}',
+          '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
+          '[class*="border-b-[#C5D2B8]"]{border-bottom-color:#C5D2B8!important}',
+          '[class*="border-r-[#C5D2B8]"]{border-right-color:#C5D2B8!important}',
         ].join("");
         _doc.head.appendChild(s);
       },
