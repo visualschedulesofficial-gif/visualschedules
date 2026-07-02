@@ -16,6 +16,7 @@ import { createPortal } from "react-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardLibrarySidebar } from "@/components/schedule/CardLibrarySidebar";
 import { RightPanel } from "@/components/schedule/RightPanel";
+import { MobileScheduleBuilder } from "@/components/schedule/MobileScheduleBuilder";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -65,10 +66,22 @@ export default function ScheduleBuilder() {
   const [activeCard, setActiveCard] = useState<{ id: string; label: string } | null>(null);
   const [justDroppedSlot, setJustDroppedSlot] = useState<string | null>(null);
   const [cardImages, setLocalCardImages] = useState<CardImageMap>({});
+  const [cardsLoaded, setCardsLoaded] = useState(false);
+  // Mobile gets its own linear layout; desktop keeps the three-panel one.
+  // Only one renders at a time so the exporter always finds a single canvas.
+  const [isMobile, setIsMobile] = useState(false);
   const placeCard = useScheduleState((s) => s.placeCard);
   const language = useScheduleState((s) => s.language);
 
   useAutoSave();
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   // Load runtime cards + images from D1 on mount
   useEffect(() => {
@@ -83,6 +96,7 @@ export default function ScheduleBuilder() {
           }));
           setRuntimeCards(cleaned);
         }
+        setCardsLoaded(true);
       })
       .catch(() => {});
 
@@ -180,12 +194,23 @@ export default function ScheduleBuilder() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-     <AppShell
-  sidebar={<CardLibrarySidebar />}
-  rightPanel={<RightPanel />}
->
-  <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
-</AppShell>
+     {isMobile ? (
+       <AppShell>
+         <MobileScheduleBuilder
+           onAddCard={handleClickPlace}
+           cardsLoaded={cardsLoaded}
+           justDroppedSlot={justDroppedSlot}
+           cardImages={cardImages}
+         />
+       </AppShell>
+     ) : (
+       <AppShell
+         sidebar={<CardLibrarySidebar />}
+         rightPanel={<RightPanel />}
+       >
+         <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+       </AppShell>
+     )}
 
       {/* Invisible overlay for dnd-kit collision detection */}
       <DragOverlay dropAnimation={null} style={{ opacity: 0, position: "fixed", pointerEvents: "none" }}>
