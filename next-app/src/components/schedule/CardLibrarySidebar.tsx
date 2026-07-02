@@ -17,6 +17,7 @@ function DraggableCardItem({
   language,
   isAdded,
   isFree,
+  hasSubscription,
   onClickAdd,
 }: {
   card: ParsedCard;
@@ -25,11 +26,14 @@ function DraggableCardItem({
   language: Language;
   isAdded: boolean;
   isFree: boolean;
+  hasSubscription: boolean;
   onClickAdd: (cardId: string, catId: string) => void;
 }) {
+  const isLocked = !isFree && !hasSubscription;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
     data: { cardId: card.id, catId },
+    disabled: isLocked,
   });
 
   const isCharacter = isCharacterCard(card);
@@ -39,17 +43,23 @@ function DraggableCardItem({
   return (
     <button
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      onClick={() => onClickAdd(card.id, catId)}
-      className={`flex flex-col items-center gap-1.5 p-1.5 rounded transition-all group cursor-grab active:cursor-grabbing relative ${
-        isDragging ? "opacity-50 scale-95" : ""
-      } ${
-        isAdded 
-          ? "border border-[#7A8F5E] bg-white" 
-          : "hover:bg-[#F5F5F5]"
-      }`}
-      title={isCharacter ? `Character card - ${imageGender} variant (drag or click)` : "Neutral card - single image (drag or click)"}
+      {...(isLocked ? {} : listeners)}
+      {...(isLocked ? {} : attributes)}
+      onClick={() => {
+        if (isLocked) {
+          window.location.href = "/plans";
+          return;
+        }
+        onClickAdd(card.id, catId);
+      }}
+      className={`flex flex-col items-center gap-1.5 p-1.5 rounded transition-all group relative ${
+        isLocked
+          ? "cursor-pointer opacity-80"
+          : isDragging
+          ? "opacity-50 scale-95 cursor-grabbing"
+          : "cursor-grab hover:bg-[#F5F5F5]"
+      } ${isAdded ? "border border-[#7A8F5E] bg-white" : ""}`}
+      title={isLocked ? "Subscribe to unlock paid cards" : isCharacter ? `Character card - ${imageGender} variant` : "Neutral card - single image"}
     >
       {/* Card Image */}
       <div className="w-full aspect-square bg-white rounded border-[1.5px] border-dashed border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:shadow-md transition-all pointer-events-none">
@@ -88,6 +98,16 @@ function DraggableCardItem({
       }`}>
         {isFree ? "Free" : "Paid"}
       </div>
+
+      {/* Lock icon overlay for paid cards without subscription */}
+      {isLocked && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded pointer-events-none">
+          <svg className="w-6 h-6 stroke-[#9A6B12] stroke-2 fill-none" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+      )}
     </button>
   );
 }
@@ -136,6 +156,7 @@ export function CardLibrarySidebar() {
   const pages = useScheduleState((s) => s.pages);
 
   const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchOrCategory, setSearchOrCategory] = useState("");
@@ -163,6 +184,14 @@ export function CardLibrarySidebar() {
     });
     return ids;
   }, [pages]);
+
+  // Check subscription status
+  useEffect(() => {
+    fetch("/api/user/subscription")
+      .then((r) => r.json())
+      .then((data) => setHasSubscription(!!data.subscription))
+      .catch(() => setHasSubscription(false));
+  }, []);
 
   // Fetch cards from API (merge DB cards with static seed cards)
   useEffect(() => {
@@ -415,6 +444,7 @@ export function CardLibrarySidebar() {
                         language={language}
                         isAdded={addedCardIds.has(card.id)}
                         isFree={(card as any).isFree !== false}
+                        hasSubscription={hasSubscription}
                         onClickAdd={handleAddCard}
                       />
                     ))}
@@ -428,7 +458,10 @@ export function CardLibrarySidebar() {
 
       {/* UNLOCK ALL CARDS SECTION */}
       <div className="shrink-0 border-t border-[#E0E0E0] bg-white p-3">
-        <button className="w-full py-2.5 px-3 bg-[#7A8F5E] text-white border-2 border-[#7A8F5E] text-[13px] font-bold uppercase tracking-wider rounded font-sans hover:bg-[#6A7F4E] transition-all">
+        <button
+          onClick={() => { window.location.href = "/plans"; }}
+          className="w-full py-2.5 px-3 bg-[#7A8F5E] text-white border-2 border-[#7A8F5E] text-[13px] font-bold uppercase tracking-wider rounded font-sans hover:bg-[#6A7F4E] transition-all"
+        >
           🔓 Unlock All Cards
         </button>
       </div>
