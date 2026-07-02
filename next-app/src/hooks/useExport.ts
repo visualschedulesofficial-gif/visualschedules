@@ -46,6 +46,7 @@ async function ensureFontsLoaded() {
     if (!f) return;
     await Promise.allSettled([
       f.load('400 30px "Playwrite DE Grund"'),
+      f.load('400 18px "Playwrite DE Grund"'),
       f.load('400 18px "Atkinson Hyperlegible"'),
       f.load('700 18px "Atkinson Hyperlegible"'),
     ]);
@@ -228,6 +229,28 @@ async function buildPdfBlob(scheduleType: string) {
       onclone: (_doc: Document) => {
         // Apply export styles only to the CLONE — real canvas is never touched,
         // so there is no flicker on the live page.
+        // SAFETY NET: copy every style rule the live page has in memory
+        // straight into the clone as plain text. Without this, the clone
+        // re-downloads CSS files from the server — and right after a deploy
+        // those old files are gone (404), producing a completely unstyled
+        // export. This makes the capture independent of the network.
+        let liveCss = "";
+        try {
+          for (const sheet of Array.from(document.styleSheets)) {
+            try {
+              for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
+                liveCss += rule.cssText + "\n";
+              }
+            } catch {
+              // Cross-origin stylesheet (e.g. Google Fonts) — skip; fonts are
+              // already loaded in the main document and remain usable.
+            }
+          }
+        } catch {}
+        const baseStyles = _doc.createElement("style");
+        baseStyles.textContent = liveCss;
+        _doc.head.appendChild(baseStyles);
+
         const s = _doc.createElement("style");
         s.textContent = [
           // Keep the real title font in the export; Georgia is only a fallback
@@ -306,6 +329,28 @@ async function buildJpegBlobs(scheduleType: string) {
       onclone: (_doc: Document) => {
         // Apply export styles only to the CLONE — real canvas is never touched,
         // so there is no flicker on the live page.
+        // SAFETY NET: copy every style rule the live page has in memory
+        // straight into the clone as plain text. Without this, the clone
+        // re-downloads CSS files from the server — and right after a deploy
+        // those old files are gone (404), producing a completely unstyled
+        // export. This makes the capture independent of the network.
+        let liveCss = "";
+        try {
+          for (const sheet of Array.from(document.styleSheets)) {
+            try {
+              for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
+                liveCss += rule.cssText + "\n";
+              }
+            } catch {
+              // Cross-origin stylesheet (e.g. Google Fonts) — skip; fonts are
+              // already loaded in the main document and remain usable.
+            }
+          }
+        } catch {}
+        const baseStyles = _doc.createElement("style");
+        baseStyles.textContent = liveCss;
+        _doc.head.appendChild(baseStyles);
+
         const s = _doc.createElement("style");
         s.textContent = [
           // Keep the real title font in the export; Georgia is only a fallback
