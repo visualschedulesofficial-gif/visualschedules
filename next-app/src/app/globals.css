@@ -81,10 +81,12 @@ body {
   font-weight: 400;
 }
 
-select, input, textarea, button {
-  color-scheme: light;
-  font-family: inherit;
-  font-size: inherit;
+@layer base {
+  select, input, textarea, button {
+    color-scheme: light;
+    font-family: inherit;
+    font-size: inherit;
+  }
 }
 
 /* ── Focus — WCAG 2.4.7 ── */
