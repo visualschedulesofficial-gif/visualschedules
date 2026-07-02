@@ -30,8 +30,8 @@
   --badge-paid-bg: #FFF5EA;
   --badge-paid-text: #8B5E2A;
 
-  --font-serif: 'Playwrite DE Grund', cursive;
-  --font-sans: var(--font-atkinson), 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-serif: 'Playwrite DE Grund', Georgia, cursive;
+  --font-sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
 
   color-scheme: light;
 }
@@ -83,6 +83,7 @@ body {
 
 select, input, textarea, button {
   color-scheme: light;
+  font-family: inherit;
   font-size: inherit;
 }
 
