@@ -155,7 +155,7 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
                 {/* Toggle switch */}
                 <button
                   type="button"
-                  onClick={() => setIsFree(v => !v)}
+                  onClick={() => setIsFree(!isFree)}
                   className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${isFree ? "bg-[#2D6A2D]" : "bg-[#8B5E2A]"}`}
                   aria-label="Toggle free or paid"
                 >
