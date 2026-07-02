@@ -1,10 +1,24 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
 import { findCard, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
+
+// Paid users get branding-free schedules: check once, hide the footer if active.
+// If the check fails (offline, logged out), branding stays — the safe default.
+function useIsPaid() {
+  const [isPaid, setIsPaid] = useState(false);
+  useEffect(() => {
+    fetch("/api/user/subscription")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setIsPaid(!!d?.subscription))
+      .catch(() => {});
+  }, []);
+  return isPaid;
+}
 
 // Local schedule type labels (avoiding import issues)
 const SCHEDULE_TYPE_LABELS = {
@@ -150,6 +164,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
 }
 
 function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const isPaid = useIsPaid();
   const gridCols = useScheduleState((s) => s.gridCols);
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
@@ -163,7 +178,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
       style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "36px 48px 0" }}
     >
-      <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 border-b border-[#EEE] mb-2.5">
+      <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 mb-2.5">
         <div className="col-start-2">
           {title ? (
             <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug text-center">{title}</h2>
@@ -182,6 +197,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
           ))}
         </div>
       </div>
+      {!isPaid && (
       <div className="shrink-0 py-1.5 pb-4 border-t border-bg-muted flex justify-between items-end">
         <div className="flex items-baseline gap-1.5">
           <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
@@ -189,11 +205,13 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
         </div>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
+      )}
     </div>
   );
 }
 
 function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const isPaid = useIsPaid();
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const language = useScheduleState((s) => s.language);
@@ -221,10 +239,12 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
+      {!isPaid && (
       <div className="shrink-0 pt-2 flex justify-between items-end">
         <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
+      )}
     </div>
   );
 }
@@ -306,6 +326,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
 }
 
 function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const isPaid = useIsPaid();
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const customColNames = useScheduleState((s) => s.customColNames);
@@ -331,10 +352,12 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
+      {!isPaid && (
       <div className="shrink-0 pt-2 flex justify-between items-end">
         <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
+      )}
     </div>
   );
 }
@@ -408,6 +431,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
 }
 
 function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const isPaid = useIsPaid();
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const customColNames = useScheduleState((s) => s.customColNames);
@@ -429,10 +453,12 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
           <FirstThenColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
+      {!isPaid && (
       <div className="shrink-0 pt-2 flex justify-between items-end">
         <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
         <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
       </div>
+      )}
     </div>
   );
 }
