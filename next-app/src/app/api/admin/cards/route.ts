@@ -39,7 +39,10 @@ async function autoTranslate(
     hi: hindiText || englishText,
   };
 
-  // Try Cloudflare AI first (built-in translation model)
+  // Try Cloudflare AI first. We use a small LLM instead of a plain
+  // translation model because it can follow instructions about REGISTER:
+  // visual-schedule cards need the simple, everyday word a parent says to a
+  // young child (e.g. Hindi "नहाना", not the formal "स्नान").
   if (env.AI) {
     try {
       const targetLangs = Object.entries(LANG_NAMES);
@@ -49,6 +52,32 @@ async function autoTranslate(
         await Promise.allSettled(
           batch.map(async ([code, langName]) => {
             try {
+              // 1st choice: LLM with a child-friendly prompt
+              const llm = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+                messages: [
+                  {
+                    role: "system",
+                    content:
+                      "You translate single words or short phrases for a children's visual schedule app used by parents of young neurodiverse children. Give the simplest, most common everyday word a parent would naturally say to a small child in the target language — conversational register, NOT formal or literary. Reply with ONLY the translated word/phrase in the target language's native script. No quotes, no punctuation, no explanation, no romanization.",
+                  },
+                  {
+                    role: "user",
+                    content: `Translate to ${langName}: ${englishText}`,
+                  },
+                ],
+                max_tokens: 40,
+              });
+              const llmText = (llm?.response || "")
+                .trim()
+                .replace(/^["'«»""]+|["'«»""]+$/g, "")
+                .replace(/[.。]$/, "")
+                .trim();
+              // Sanity check: short, non-empty, not an explanation
+              if (llmText && llmText.length <= 60 && !/translat|sorry|cannot/i.test(llmText)) {
+                results[code] = llmText;
+                return;
+              }
+              // 2nd choice: dedicated translation model
               const response = await env.AI.run(
                 "@cf/meta/m2m100-1.2b",
                 { text: englishText, source_lang: "english", target_lang: langName.toLowerCase() }
