@@ -1,4 +1,4 @@
-use "client";
+"use client";
 
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
@@ -17,7 +17,7 @@ const SCHEDULE_TYPE_LABELS = {
 function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pageIdx: number; justDropped: boolean }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
-  const cardSt " yle = useScheduleState((s) => s.cardStyle);
+  const cardStyle = useScheduleState((s) => s.cardStyle);
   const language = useScheduleState((s) => s.language);
   const gender = useScheduleState((s) => s.gender);
   const page = pages[pageIdx] as DailyPageData;
@@ -254,7 +254,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
             names[colIdx] = e.target.value;
             setCustomColNames(names);
           }}
-          className="w-full text-center border-none bg-transparent text-sm text-[#4A5A3E] font-sans tracking-wide outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
+          className="w-full text-center border-none bg-transparent font-serif text-[15px] text-[#4A5A3E] outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
         />
       </div>
       <div
