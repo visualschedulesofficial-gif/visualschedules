@@ -37,6 +37,24 @@ async function ensureLibraries() {
   }
 }
 
+// Make sure the actual webfonts (Playwrite title font + Atkinson card font)
+// are fully loaded before html2canvas takes its picture. Without this, the
+// browser may still be showing a fallback font at capture time.
+async function ensureFontsLoaded() {
+  try {
+    const f: any = (document as any).fonts;
+    if (!f) return;
+    await Promise.allSettled([
+      f.load('400 30px "Playwrite DE Grund"'),
+      f.load('400 18px "Atkinson Hyperlegible"'),
+      f.load('700 18px "Atkinson Hyperlegible"'),
+    ]);
+    await f.ready;
+  } catch {
+    // If the Font Loading API is unavailable, capture proceeds anyway
+  }
+}
+
 // Hide editing-only affordances (remove buttons, drop hints) so exports look like a finished schedule
 function injectExportHideStyle() {
   const style = document.createElement("style");
@@ -166,6 +184,7 @@ async function buildPdfBlob(scheduleType: string) {
   const pageHeightMM = isLandscape ? 210 : 297;
 
   await ensureLibraries();
+  await ensureFontsLoaded();
   const { jsPDF } = (window as any).jspdf;
   const html2canvas = (window as any).html2canvas;
 
@@ -211,8 +230,10 @@ async function buildPdfBlob(scheduleType: string) {
         // so there is no flicker on the live page.
         const s = _doc.createElement("style");
         s.textContent = [
-          // Georgia replaces Playwrite for export (web fonts don't render in html2canvas)
-          ".font-serif{font-family:Georgia,serif!important;font-style:italic!important}",
+          // Keep the real title font in the export; Georgia is only a fallback
+          ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
+          // Card/label font, pinned so the clone can't fall back to a system font
+          ".font-sans{font-family:'Atkinson Hyperlegible',system-ui,sans-serif!important}",
           // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
         ].join("");
@@ -244,6 +265,7 @@ async function buildJpegBlobs(scheduleType: string) {
   if (!pages.length) throw new Error("NOT_VISIBLE");
 
   await ensureLibraries();
+  await ensureFontsLoaded();
   const html2canvas = (window as any).html2canvas;
 
   const blobs: Array<{ blob: Blob; index: number }> = [];
@@ -286,8 +308,10 @@ async function buildJpegBlobs(scheduleType: string) {
         // so there is no flicker on the live page.
         const s = _doc.createElement("style");
         s.textContent = [
-          // Georgia replaces Playwrite for export (web fonts don't render in html2canvas)
-          ".font-serif{font-family:Georgia,serif!important;font-style:italic!important}",
+          // Keep the real title font in the export; Georgia is only a fallback
+          ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
+          // Card/label font, pinned so the clone can't fall back to a system font
+          ".font-sans{font-family:'Atkinson Hyperlegible',system-ui,sans-serif!important}",
           // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
         ].join("");
