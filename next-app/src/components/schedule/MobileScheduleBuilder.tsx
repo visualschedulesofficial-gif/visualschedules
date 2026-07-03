@@ -140,10 +140,14 @@ export function MobileScheduleBuilder({
   const [zoom, setZoom] = useState(0.42);
   useEffect(() => {
     const update = () =>
-      setZoom(Math.min(1, (window.innerWidth - 24) / baseW));
+      setZoom(Math.min(1, (window.innerWidth - 26) / baseW));
     update();
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
   }, [baseW]);
 
   return (
