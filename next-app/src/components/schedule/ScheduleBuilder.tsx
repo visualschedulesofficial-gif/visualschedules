@@ -92,6 +92,7 @@ export default function ScheduleBuilder() {
         if (data.cards?.length > 0) {
           const cleaned = data.cards.map((c: ParsedCard) => ({
             ...c,
+            isFree: !(c.icon || "").startsWith("paid:"),
             icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
           }));
           setRuntimeCards(cleaned);
