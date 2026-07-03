@@ -81,6 +81,14 @@ export function MobileScheduleBuilder({
   const { exportPDF, exportJPEG, exporting } = useExport();
 
   const [category, setCategory] = useState("");
+  const [hasSubscription, setHasSubscription] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/user/subscription")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setHasSubscription(!!d?.subscription))
+      .catch(() => {});
+  }, []);
   const [search, setSearch] = useState("");
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
 
@@ -271,12 +279,24 @@ export function MobileScheduleBuilder({
             const img =
               getCardImageUrl(card.id, variant) ||
               getCardImageUrl(card.id, "neutral");
+            const isLocked = (card as any).isFree === false && !hasSubscription;
             return (
               <button
                 key={card.id}
-                onClick={() => onAddCard(card.id)}
-                className="shrink-0 w-[96px] bg-white border border-[#C7D7B8] rounded snap-start active:scale-95 transition-transform"
+                onClick={() => {
+                  if (isLocked) {
+                    window.location.href = "/plans";
+                    return;
+                  }
+                  onAddCard(card.id);
+                }}
+                className="relative shrink-0 w-[96px] bg-white border border-[#C7D7B8] rounded snap-start active:scale-95 transition-transform"
               >
+                {isLocked && (
+                  <span className="absolute top-1 left-1 z-10 text-[9px] font-bold tracking-wide px-1 py-[1px] rounded-sm leading-tight bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]">
+                    🔒 Paid
+                  </span>
+                )}
                 <div className="w-full aspect-square flex items-center justify-center overflow-hidden rounded-t">
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -308,8 +328,10 @@ export function MobileScheduleBuilder({
       {/* 6. Live preview */}
       <section>
         <SectionLabel>Your schedule</SectionLabel>
-        <div className="w-full overflow-hidden rounded border border-border bg-white">
-          <div style={{ zoom }}>
+        {/* While exporting, zoom must be 1 — the capture engine mis-renders
+            text inside CSS zoom. The preview briefly enlarges, then returns. */}
+        <div className={exporting ? "w-full" : "w-full overflow-hidden rounded border border-border bg-white"}>
+          <div style={{ zoom: exporting ? 1 : zoom }}>
             <ScheduleCanvas
               justDroppedSlot={justDroppedSlot}
               cardImages={cardImages}
