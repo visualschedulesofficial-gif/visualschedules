@@ -60,12 +60,12 @@ export function AppShell({ sidebar, rightPanel, children }: AppShellProps) {
           </MobileDrawer>
         )}
 
-        {/* Main canvas area — scales A4 to fit on mobile */}
+        {/* Main canvas area (desktop). On mobile the linear builder manages its own layout. */}
         <main
           id="canvas-wrap"
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-bg-muted flex flex-col items-center p-5 gap-6 md:p-5 max-md:p-2 max-md:pb-[72px]"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-bg-muted flex flex-col items-center p-5 gap-6 md:p-5 max-md:p-0 max-md:items-stretch"
         >
-          <div className="max-md:w-full max-md:origin-top max-md:scale-[var(--mobile-scale,0.45)] max-md:min-w-[794px]">
+          <div className="max-md:w-full">
             {children}
           </div>
         </main>
