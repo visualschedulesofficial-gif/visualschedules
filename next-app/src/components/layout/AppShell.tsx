@@ -48,7 +48,7 @@ export function AppShell({ sidebar, rightPanel, children }: AppShellProps) {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Desktop sidebar */}
         {sidebar && (
-          <aside className="w-[285px] shrink-0 bg-surface border-r border-border flex-col overflow-hidden hidden md:flex">
+          <aside id="library-panel" className="w-[285px] shrink-0 bg-surface border-r border-border flex-col overflow-hidden hidden md:flex transition-[width] duration-200">
             {sidebar}
           </aside>
         )}
