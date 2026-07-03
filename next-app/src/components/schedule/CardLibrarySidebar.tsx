@@ -151,6 +151,7 @@ export function CardLibrarySidebar() {
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
   const [cols, setCols] = useState<2 | 3>(2);
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchOrCategory, setSearchOrCategory] = useState("");
@@ -272,9 +273,10 @@ export function CardLibrarySidebar() {
     return cards.filter((card) => {
       const matchesSearch = searchText === "" || getCardLabel(card, language).toLowerCase().includes(searchText.toLowerCase());
       const matchesCategory = !selectedCategory || card.categoryId === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const matchesFree = !showFreeOnly || (card as any).isFree !== false;
+      return matchesSearch && matchesCategory && matchesFree;
     });
-  }, [cards, searchText, selectedCategory, language]);
+  }, [cards, searchText, selectedCategory, language, showFreeOnly]);
 
   const displayCategories = useMemo(() => {
     const cats = new Set<string>();
@@ -303,6 +305,17 @@ export function CardLibrarySidebar() {
         <div className="p-3 space-y-3">
           {/* Panel controls: cards per row + panel width */}
           <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={() => setShowFreeOnly(!showFreeOnly)}
+              title="Show only free cards"
+              className={`text-[10px] px-2 py-1 border rounded ${
+                showFreeOnly
+                  ? "border-[#BCE0BC] bg-[#E6F2E6] text-[#2D6A2D] font-semibold"
+                  : "border-[#E0E0E0] text-[#666] hover:bg-[#f5f5f5]"
+              }`}
+            >
+              {showFreeOnly ? "Free only" : "All cards"}
+            </button>
             <button
               onClick={() => setCols(cols === 2 ? 3 : 2)}
               title="Cards per row"
@@ -455,7 +468,16 @@ export function CardLibrarySidebar() {
         ) : (
           <div className="space-y-4">
             {displayCategories.map((catId) => {
-              const categoryCards = filteredCards.filter((card) => card.categoryId === catId);
+              const categoryCards = filteredCards
+                .filter((card) => card.categoryId === catId)
+                .sort((a, b) => {
+                  const aPaid = (a as any).isFree !== false ? 0 : 1;
+                  const bPaid = (b as any).isFree !== false ? 0 : 1;
+                  return (
+                    aPaid - bPaid ||
+                    getCardLabel(a, language).localeCompare(getCardLabel(b, language))
+                  );
+                });
               return (
                 <div key={catId}>
                   <h3 className="text-[11px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5">
