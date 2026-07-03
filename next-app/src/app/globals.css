@@ -123,3 +123,8 @@ body {
     background: #FFFFFF !important;
   }
 }
+
+/* Card library panel grows when the expand toggle inside it is on */
+#library-panel:has([data-lib-expanded="true"]) {
+  width: 400px;
+}
