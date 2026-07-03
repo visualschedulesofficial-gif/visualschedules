@@ -89,34 +89,41 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-bg flex flex-col">
-      {/* Simple nav */}
-      <nav className="h-[56px] md:h-[66px] bg-surface border-b border-border flex items-center px-4 md:px-7 shrink-0">
-        <Link href="/schedule" className="font-serif text-base md:text-2xl italic text-ink no-underline leading-none">
-          Visual Schedules
-        </Link>
-      </nav>
+    <div className="min-h-dvh flex bg-surface">
+      {/* Left: brand illustration (desktop) */}
+      <div className="hidden md:block md:w-[55%] lg:w-[60%] relative bg-[#FDF9F4]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/login-hero.jpg"
+          alt="What children can see, they can understand — Visual Schedules"
+          className="absolute inset-0 w-full h-full object-cover object-left"
+          fetchPriority="high"
+          decoding="async"
+        />
+      </div>
 
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="bg-surface w-full max-w-sm p-6 md:p-7 border border-border">
+      {/* Right: sign-in column */}
+      <div className="flex-1 flex flex-col min-h-dvh">
+        {/* Mobile-only slim banner */}
+        <div className="md:hidden h-36 relative bg-[#FDF9F4] shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/login-hero.jpg"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-[18%_40%]"
+            fetchPriority="high"
+            decoding="async"
+          />
+        </div>
 
-          {/* Mode tabs — only on email step */}
-          {step === "email" && (
-            <div className="flex gap-0 mb-5 border border-border">
-              <button
-                onClick={() => { setMode("user"); setError(""); }}
-                className={`flex-1 py-2 text-[11px] tracking-wider uppercase font-medium font-sans transition-colors ${mode === "user" ? "bg-ink text-white" : "text-ink-3 hover:text-ink"}`}
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
-                className={`flex-1 py-2 text-[11px] tracking-wider uppercase font-medium font-sans transition-colors ${mode === "admin" ? "bg-ink text-white" : "text-ink-3 hover:text-ink"}`}
-              >
-                Admin
-              </button>
-            </div>
-          )}
+        <div className="px-6 pt-6 md:px-10 md:pt-8">
+          <Link href="/schedule" className="font-serif text-xl md:text-2xl italic text-ink no-underline leading-none">
+            Visual Schedules
+          </Link>
+        </div>
+
+        <main className="flex-1 flex items-center justify-center px-6 py-10 md:px-10">
+          <div className="w-full max-w-sm">
 
           {/* ── USER FLOW ── */}
           {mode === "user" && (
@@ -228,9 +235,9 @@ export default function LoginPage() {
           {/* ── ADMIN FLOW ── */}
           {mode === "admin" && step === "email" && (
             <>
-              <h1 className="font-serif text-xl italic text-ink mb-1.5">Admin</h1>
+              <h1 className="font-serif text-xl italic text-ink mb-1.5">Admin sign in</h1>
               <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
-                Sign in with admin credentials.
+                For Grow Gently team only.
               </p>
               <form onSubmit={handleAdminLogin}>
                 <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-1.5 block font-medium">Email</label>
@@ -256,10 +263,30 @@ export default function LoginPage() {
                   {loading ? "Signing in..." : "Sign In"}
                 </button>
               </form>
+              <button
+                type="button"
+                onClick={() => { setMode("user"); setError(""); setPassword(""); }}
+                className="w-full text-[11px] text-ink-3 mt-3 py-2 hover:text-ink"
+              >
+                ← Back to sign in
+              </button>
             </>
           )}
+          </div>
+        </main>
+
+        {/* Quiet admin entry — user-centric by default */}
+        <div className="px-6 pb-5 text-center shrink-0">
+          {mode === "user" && step === "email" && (
+            <button
+              onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
+              className="text-[11px] text-ink-3 hover:text-ink underline underline-offset-2"
+            >
+              Login as admin
+            </button>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
