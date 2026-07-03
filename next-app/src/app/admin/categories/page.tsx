@@ -82,10 +82,12 @@ export default function AdminCategoriesPage() {
           <>
             <p className="text-[12px] text-ink-3 mb-4">
               Categories are just labels. Free/Paid is set on each individual card.
+              Use the arrows to set the order categories appear in the card side panel, then click Save.
             </p>
 
             <div className="bg-surface border border-border mb-6">
-              <div className="grid grid-cols-[1fr_60px] gap-2 px-4 py-2 border-b border-border text-[10px] tracking-wider uppercase text-ink-3 font-medium">
+              <div className="grid grid-cols-[36px_1fr_60px] gap-2 px-4 py-2 border-b border-border text-[10px] tracking-wider uppercase text-ink-3 font-medium">
+                <span>Order</span>
                 <span>Name</span>
                 <span></span>
               </div>
@@ -93,7 +95,29 @@ export default function AdminCategoriesPage() {
                 <div className="px-4 py-6 text-[13px] text-ink-3">No categories yet.</div>
               ) : (
                 categories.map((cat, idx) => (
-                  <div key={cat.id} className="grid grid-cols-[1fr_60px] gap-2 px-4 py-3 border-b border-border last:border-b-0 items-center">
+                  <div key={cat.id} className="grid grid-cols-[36px_1fr_60px] gap-2 px-4 py-3 border-b border-border last:border-b-0 items-center">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <button
+                        disabled={idx === 0}
+                        onClick={() => {
+                          const u = [...categories];
+                          [u[idx - 1], u[idx]] = [u[idx], u[idx - 1]];
+                          setCategories(u);
+                        }}
+                        className="text-[11px] leading-none px-1.5 py-0.5 border border-border rounded text-ink-3 hover:bg-surface-hover disabled:opacity-25"
+                        title="Move up"
+                      >▲</button>
+                      <button
+                        disabled={idx === categories.length - 1}
+                        onClick={() => {
+                          const u = [...categories];
+                          [u[idx + 1], u[idx]] = [u[idx], u[idx + 1]];
+                          setCategories(u);
+                        }}
+                        className="text-[11px] leading-none px-1.5 py-0.5 border border-border rounded text-ink-3 hover:bg-surface-hover disabled:opacity-25"
+                        title="Move down"
+                      >▼</button>
+                    </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[11px] text-ink-3 font-mono w-20 shrink-0">{cat.id}</span>
                       <input
