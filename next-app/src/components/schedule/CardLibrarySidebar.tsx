@@ -157,6 +157,9 @@ export function CardLibrarySidebar() {
   const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
+  const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
+  const [cols, setCols] = useState<2 | 3>(2);
+  const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchOrCategory, setSearchOrCategory] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -201,6 +204,9 @@ export function CardLibrarySidebar() {
           const data = await res.json();
           const dbCards = (data.cards || []).map((c: ParsedCard) => ({
             ...c,
+            // Read Free/Paid from the icon prefix BEFORE stripping it —
+            // previously this was discarded, so every card showed "Free".
+            isFree: !(c.icon || "").startsWith("paid:"),
             icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
           }));
           setRuntimeCards(dbCards);
@@ -227,6 +233,7 @@ export function CardLibrarySidebar() {
           (data.categories || []).forEach((c: { id: string; name: string }) => {
             map[c.id] = c.name;
           });
+          setCategoryOrder((data.categories || []).map((c: { id: string }) => c.id));
           setCategoryNames(map);
         }
       } catch {
@@ -245,11 +252,21 @@ export function CardLibrarySidebar() {
     cards.forEach((card) => {
       uniqueCategories.add(card.categoryId);
     });
-    return Array.from(uniqueCategories).sort((a, b) => {
-      if (a === "daily") return -1;
-      if (b === "daily") return 1;
-      return a.localeCompare(b);
+    const orderIndex = (id: string) => {
+      const i = categoryOrder.indexOf(id);
+      return i === -1 ? 999 : i;
+    };
+    return Array.from(uniqueCategories).sort(
+      (a, b) => orderIndex(a) - orderIndex(b) || a.localeCompare(b)
+    );
+  }, [cards, categoryOrder]);
+
+  const categoryCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    cards.forEach((c) => {
+      m[c.categoryId] = (m[c.categoryId] || 0) + 1;
     });
+    return m;
   }, [cards]);
 
   const isCategory = (val: string): boolean => {
@@ -270,12 +287,14 @@ export function CardLibrarySidebar() {
   const displayCategories = useMemo(() => {
     const cats = new Set<string>();
     filteredCards.forEach((card) => cats.add(card.categoryId));
-    return Array.from(cats).sort((a, b) => {
-      if (a === "daily") return -1;
-      if (b === "daily") return 1;
-      return a.localeCompare(b);
-    });
-  }, [filteredCards]);
+    const orderIndex = (id: string) => {
+      const i = categoryOrder.indexOf(id);
+      return i === -1 ? 999 : i;
+    };
+    return Array.from(cats).sort(
+      (a, b) => orderIndex(a) - orderIndex(b) || a.localeCompare(b)
+    );
+  }, [filteredCards, categoryOrder]);
 
   if (loading) {
     return (
@@ -286,10 +305,27 @@ export function CardLibrarySidebar() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0]">
+    <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0]" data-lib-expanded={expanded || undefined}>
       {/* TOP CONTROLS SECTION */}
       <div className="shrink-0 border-b border-[#E0E0E0] bg-white">
         <div className="p-3 space-y-3">
+          {/* Panel controls: cards per row + panel width */}
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={() => setCols(cols === 2 ? 3 : 2)}
+              title="Cards per row"
+              className="text-[10px] px-2 py-1 border border-[#E0E0E0] rounded text-[#666] hover:bg-[#f5f5f5]"
+            >
+              {cols === 2 ? "3 per row" : "2 per row"}
+            </button>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              title="Panel width"
+              className="text-[10px] px-2 py-1 border border-[#E0E0E0] rounded text-[#666] hover:bg-[#f5f5f5]"
+            >
+              {expanded ? "⇤ Narrow" : "⇥ Wide"}
+            </button>
+          </div>
           {/* Row 1: Language & Character SIDE BY SIDE */}
           <div className="grid grid-cols-2 gap-2.5">
             {/* Language */}
@@ -406,7 +442,7 @@ export function CardLibrarySidebar() {
                       setIsDropdownOpen(false);
                     }}
                   >
-                    {catName(catId)}
+                    {catName(catId)} <span className="text-[#B0ACA6]">({categoryCounts[catId] || 0})</span>
                   </div>
                 ))}
               </div>
@@ -431,9 +467,9 @@ export function CardLibrarySidebar() {
               return (
                 <div key={catId}>
                   <h3 className="text-[11px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5">
-                    {catName(catId)}
+                    {catName(catId)} <span className="text-[#B0ACA6] font-medium">({categoryCards.length})</span>
                   </h3>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={`grid gap-2 ${cols === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
                     {categoryCards.map((card) => (
                       <DraggableCardItem
                         key={`${card.id}-${forceUpdate}`}
