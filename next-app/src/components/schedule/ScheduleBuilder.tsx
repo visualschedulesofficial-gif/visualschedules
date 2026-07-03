@@ -136,15 +136,22 @@ export default function ScheduleBuilder() {
     } else {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
       const cols = Object.keys(page.columns || {});
-      // Find first column that has room
+      const max = scheduleType === "weekly" ? 5 : scheduleType === "custom" ? 6 : 1;
+      // Fill ROW BY ROW: each click goes to the leftmost column with the
+      // fewest cards (Mon→Sun across row 1, then row 2, ...). First/Then
+      // naturally becomes First, then Then.
+      let target: string | null = null;
+      let fewest = Infinity;
       for (const col of cols) {
-        const existing = page.columns[col] || [];
-        const max = scheduleType === "weekly" ? 5 : scheduleType === "custom" ? 6 : 1;
-        if (existing.length < max) {
-          placeCard(pageIdx, col, { cardId: card.id, catId: card.categoryId });
-          setJustDroppedSlot(`${pageIdx}-${col}`);
-          break;
+        const len = (page.columns[col] || []).length;
+        if (len < max && len < fewest) {
+          fewest = len;
+          target = col;
         }
+      }
+      if (target) {
+        placeCard(pageIdx, target, { cardId: card.id, catId: card.categoryId });
+        setJustDroppedSlot(`${pageIdx}-${target}`);
       }
     }
     setTimeout(() => setJustDroppedSlot(null), 400);
