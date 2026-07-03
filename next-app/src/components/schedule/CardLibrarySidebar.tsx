@@ -53,7 +53,7 @@ function DraggableCardItem({
       }}
       className={`flex flex-col items-center gap-1.5 p-1.5 rounded transition-all group relative ${
         isLocked
-          ? "cursor-pointer opacity-80"
+          ? "cursor-pointer"
           : isDragging
           ? "opacity-50 scale-95 cursor-grabbing"
           : "cursor-grab hover:bg-[#F5F5F5]"
@@ -95,18 +95,10 @@ function DraggableCardItem({
           ? "bg-[#E6F2E6] text-[#2D6A2D] border border-[#BCE0BC]"
           : "bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]"
       }`}>
-        {isFree ? "Free" : "Paid"}
+        {isFree ? "Free" : isLocked ? "🔒 Paid" : "Paid"}
       </div>
 
-      {/* Lock icon overlay for paid cards without subscription */}
-      {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded pointer-events-none">
-          <svg className="w-6 h-6 stroke-[#9A6B12] stroke-2 fill-none" viewBox="0 0 24 24">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-        </div>
-      )}
+
     </button>
   );
 }
