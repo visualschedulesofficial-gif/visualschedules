@@ -134,10 +134,40 @@ export default function AdminBlogPage() {
             </div>
             <div>
               <label className="text-[11px] text-ink-3 block mb-1">
-                Content — Markdown: ## Heading, **bold**, *italic*, - bullet, [link text](https://url), ![image](https://url)
+                Content — Markdown: ## Heading, **bold**, *italic*, - bullet, [link text](https://url)
               </label>
               <textarea value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })}
                 rows={16} className="w-full px-3 py-2 border border-border text-[13px] font-mono" />
+              <label className="inline-flex items-center gap-2 mt-1.5 text-[11px] text-ink-3 cursor-pointer">
+                <span className="px-2 py-1 border border-border rounded hover:bg-surface-hover">
+                  {busy ? "Uploading…" : "📷 Insert image into post"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !editing) return;
+                    const fd = new FormData();
+                    fd.append("folder", "blog");
+                    fd.append("file", file);
+                    setBusy(true);
+                    const res = await fetch("/api/admin/uploads", { method: "POST", body: fd });
+                    const d = await res.json().catch(() => null);
+                    setBusy(false);
+                    e.target.value = "";
+                    if (res.ok && d?.url) {
+                      setEditing((prev) =>
+                        prev ? { ...prev, content: prev.content + `\n\n![](${d.url})\n\n` } : prev
+                      );
+                    } else {
+                      alert("Image upload failed");
+                    }
+                  }}
+                />
+                <span>Uploads and adds it at the end of your text — cut & paste the ![](…) line wherever it belongs.</span>
+              </label>
             </div>
             <div className="flex gap-2">
               <button disabled={busy} onClick={() => save(false)} className="px-4 py-2 border border-border text-[13px] disabled:opacity-50">Save draft</button>
