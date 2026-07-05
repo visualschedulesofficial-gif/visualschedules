@@ -15,6 +15,8 @@ const navItems = [
   { group: "Business", items: [
     { href: "/admin/orders", label: "Unlock Orders", icon: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 5h6" },
     { href: "/admin/licenses", label: "License Keys", icon: "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zM15.5 7.5l2-2" },
+    { href: "/admin/downloads", label: "Downloads", icon: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" },
+    { href: "/admin/blog", label: "Blog Posts", icon: "M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" },
     { href: "/admin/users", label: "Users", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8" },
     { href: "/admin/analytics", label: "Analytics", icon: "M18 20V10M12 20V4M6 20v-6" },
   ]},
