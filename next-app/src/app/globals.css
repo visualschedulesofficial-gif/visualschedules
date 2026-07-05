@@ -128,3 +128,13 @@ body {
 #library-panel:has([data-lib-expanded="true"]) {
   width: 400px;
 }
+
+/* Blog post typography */
+.blog-content h2 { font-family: var(--font-serif); font-size: 22px; color: #2C2C2C; margin: 1.6em 0 0.5em; }
+.blog-content h3 { font-family: var(--font-serif); font-size: 18px; color: #2C2C2C; margin: 1.4em 0 0.4em; }
+.blog-content p { margin: 0.8em 0; }
+.blog-content ul { margin: 0.8em 0; padding-left: 1.4em; list-style: disc; }
+.blog-content li { margin: 0.3em 0; }
+.blog-content a { color: #4A5A3E; text-decoration: underline; }
+.blog-content img { max-width: 100%; border-radius: 6px; margin: 1em 0; }
+.blog-content strong { color: #2C2C2C; }
