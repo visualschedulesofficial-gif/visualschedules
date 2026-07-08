@@ -152,6 +152,8 @@ export function CardLibrarySidebar() {
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
   const [cols, setCols] = useState<2 | 3>(2);
   const [showFreeOnly, setShowFreeOnly] = useState(false);
+  const [catFilter, setCatFilter] = useState("");
+  const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchOrCategory, setSearchOrCategory] = useState("");
@@ -227,6 +229,11 @@ export function CardLibrarySidebar() {
             map[c.id] = c.name;
           });
           setCategoryOrder((data.categories || []).map((c: { id: string }) => c.id));
+          const flags: Record<string, boolean> = {};
+          (data.categories || []).forEach((c: any) => {
+            flags[c.id] = !!c.hasCharacters;
+          });
+          setCatFlags(flags);
           setCategoryNames(map);
         }
       } catch {
@@ -254,6 +261,13 @@ export function CardLibrarySidebar() {
     );
   }, [cards, categoryOrder]);
 
+  // Character picker is locked to Neutral when the chosen category has no character cards
+  const charactersLocked = !!catFilter && !catFlags[catFilter];
+  useEffect(() => {
+    if (charactersLocked && gender !== "neutral") setGender("neutral");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [charactersLocked]);
+
   const categoryCounts = useMemo(() => {
     const m: Record<string, number> = {};
     cards.forEach((c) => {
@@ -272,11 +286,13 @@ export function CardLibrarySidebar() {
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {
       const matchesSearch = searchText === "" || getCardLabel(card, language).toLowerCase().includes(searchText.toLowerCase());
-      const matchesCategory = !selectedCategory || card.categoryId === selectedCategory;
+      const matchesCategory =
+        (!selectedCategory || card.categoryId === selectedCategory) &&
+        (!catFilter || card.categoryId === catFilter);
       const matchesFree = !showFreeOnly || (card as any).isFree !== false;
       return matchesSearch && matchesCategory && matchesFree;
     });
-  }, [cards, searchText, selectedCategory, language, showFreeOnly]);
+  }, [cards, searchText, selectedCategory, language, showFreeOnly, catFilter]);
 
   const displayCategories = useMemo(() => {
     const cats = new Set<string>();
@@ -331,6 +347,23 @@ export function CardLibrarySidebar() {
               {expanded ? "⇤ Narrow" : "⇥ Wide"}
             </button>
           </div>
+          {/* Category — on top */}
+          <div>
+            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category</label>
+            <select
+              value={catFilter}
+              onChange={(e) => setCatFilter(e.target.value)}
+              className="w-full px-3 py-2.5 text-[13px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+            >
+              <option value="">All categories</option>
+              {categories.map((catId) => (
+                <option key={catId} value={catId}>
+                  {catName(catId)} ({categoryCounts[catId] || 0})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Row 1: Language & Character SIDE BY SIDE */}
           <div className="grid grid-cols-2 gap-2.5">
             {/* Language */}
@@ -360,7 +393,9 @@ export function CardLibrarySidebar() {
             <div>
               <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Character</label>
               <select
-                value={gender}
+                disabled={charactersLocked}
+                title={charactersLocked ? "This category has no character cards" : undefined}
+                value={charactersLocked ? "neutral" : gender}
                 onChange={(e) => {
                   const newGender = e.target.value as Gender;
                   console.log("Character changed to:", newGender);
