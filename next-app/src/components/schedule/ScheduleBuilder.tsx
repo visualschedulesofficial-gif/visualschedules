@@ -133,6 +133,21 @@ export default function ScheduleBuilder() {
       if (emptyIdx === -1) return;
       placeCard(pageIdx, String(emptyIdx), { cardId: card.id, catId: card.categoryId });
       setJustDroppedSlot(`${pageIdx}-${emptyIdx}`);
+    } else if (scheduleType === "firstthen") {
+      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
+      // Fill order: First board, Then board, then the six cut-out slots
+      const order: Array<{ key: string; max: number }> = [
+        { key: "0", max: 1 },
+        { key: "1", max: 1 },
+        { key: "cutout", max: 6 },
+      ];
+      for (const { key, max } of order) {
+        if ((page.columns?.[key] || []).length < max) {
+          placeCard(pageIdx, key, { cardId: card.id, catId: card.categoryId });
+          setJustDroppedSlot(`${pageIdx}-${key}`);
+          break;
+        }
+      }
     } else {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
       const cols = Object.keys(page.columns || {});
