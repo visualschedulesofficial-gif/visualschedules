@@ -82,13 +82,15 @@ export default function AdminCategoriesPage() {
           <>
             <p className="text-[12px] text-ink-3 mb-4">
               Categories are just labels. Free/Paid is set on each individual card.
-              Use the arrows to set the order categories appear in the card side panel, then click Save.
+              Use the arrows to set the order categories appear in the card side panel.
+              Turn "Characters" on for categories whose cards have boy/girl versions — it controls whether the Character picker is available. Click Save when done.
             </p>
 
             <div className="bg-surface border border-border mb-6">
               <div className="grid grid-cols-[36px_1fr_60px] gap-2 px-4 py-2 border-b border-border text-[10px] tracking-wider uppercase text-ink-3 font-medium">
                 <span>Order</span>
                 <span>Name</span>
+                <span>Characters</span>
                 <span></span>
               </div>
               {categories.length === 0 ? (
@@ -130,6 +132,20 @@ export default function AdminCategoriesPage() {
                         className="flex-1 py-1 px-2 border border-border bg-surface-hover text-[13px] text-ink outline-none focus:border-accent"
                       />
                     </div>
+                    <button
+                      onClick={() => {
+                        const updated = [...categories];
+                        (updated[idx] as any).hasCharacters = !(updated[idx] as any).hasCharacters;
+                        setCategories(updated);
+                      }}
+                      className={`text-[11px] px-2 py-1.5 border rounded ${
+                        (cat as any).hasCharacters
+                          ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                          : "border-border text-ink-3"
+                      }`}
+                    >
+                      {(cat as any).hasCharacters ? "✓ Characters" : "No characters"}
+                    </button>
                     <button onClick={() => setCategories(categories.filter((_, i) => i !== idx))}
                       className="text-[11px] text-[#C53030] hover:underline">
                       Remove
