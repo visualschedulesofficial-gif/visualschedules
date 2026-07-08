@@ -300,3 +300,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: err?.message || "Failed to create card" }, { status: 500 });
   }
 }
+
+// PATCH /api/admin/cards — quick toggles. body: { id, isFree }
+export async function PATCH(request: NextRequest) {
+  const env = getEnv();
+  if (!env.DB) return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  const body = await request.json().catch(() => null);
+  if (!body?.id || typeof body.isFree !== "boolean") {
+    return NextResponse.json({ error: "id and isFree required" }, { status: 400 });
+  }
+  const row = await env.DB.prepare("SELECT icon FROM cards WHERE id = ?").bind(body.id).first();
+  if (!row) return NextResponse.json({ error: "Card not found" }, { status: 404 });
+  const bare = (row.icon || "s-star").replace(/^(free|paid):/, "");
+  const newIcon = `${body.isFree ? "free" : "paid"}:${bare}`;
+  await env.DB.prepare("UPDATE cards SET icon = ? WHERE id = ?").bind(newIcon, body.id).run();
+  return NextResponse.json({ ok: true, isFree: body.isFree });
+}
