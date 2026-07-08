@@ -107,7 +107,9 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
           ? MAX_WEEKLY_CARDS
           : scheduleType === "custom"
             ? MAX_CUSTOM_CARDS
-            : MAX_FT_CARDS;
+            : slotKey === "cutout"
+              ? 6
+              : MAX_FT_CARDS;
       if (existing.length < maxCards) {
         columns[slotKey] = [...existing, card];
       }
