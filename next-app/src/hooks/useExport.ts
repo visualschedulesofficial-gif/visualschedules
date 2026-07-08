@@ -179,7 +179,7 @@ async function buildPdfBlob(scheduleType: string) {
   const pages = getPageElements();
   if (!pages.length) throw new Error("NOT_VISIBLE");
 
-  const isLandscape = scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "firstthen";
+  const isLandscape = scheduleType === "weekly" || scheduleType === "custom";
   const orientation = isLandscape ? "landscape" : "portrait";
   const pageWidthMM = isLandscape ? 297 : 210;
   const pageHeightMM = isLandscape ? 210 : 297;
