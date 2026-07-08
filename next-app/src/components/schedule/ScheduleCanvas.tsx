@@ -362,15 +362,15 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
   );
 }
 
-function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: number; colName: string; pageIdx: number; justDroppedSlot: string | null }) {
+function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey: string; colName: string; pageIdx: number; justDroppedSlot: string | null }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
   const gender = useScheduleState((s) => s.gender);
   const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.[String(colIdx)] || [];
+  const cards = page?.columns?.[colKey] || [];
 
-  const droppableId = `${pageIdx}-${colIdx}`;
+  const droppableId = `${pageIdx}-${colKey}`;
   const { setNodeRef, isOver, active } = useDroppable({ id: droppableId });
   const isDragging = !!active;
   const hasCard = cards.length > 0;
@@ -406,7 +406,7 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
                   </span>
                 </div>
                 <button
-                  onClick={() => removeCard(pageIdx, String(colIdx), 0)}
+                  onClick={() => removeCard(pageIdx, colKey, 0)}
                   className="absolute top-2 right-2 w-[30px] h-[30px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[19px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
                 >
                   &times;
@@ -420,9 +420,6 @@ function FirstThenColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            <span className={`text-[19px] font-medium font-sans ${isOver ? "text-weekly-accent" : "text-[#CCC]"}`}>
-              Drop card here
-            </span>
           </div>
         )}
       </div>
@@ -434,25 +431,39 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
   const isPaid = useIsPaid();
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
-  const customColNames = useScheduleState((s) => s.customColNames);
   const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
-  const ftColCount = customColNames.length <= 3 ? Math.max(2, Math.min(3, customColNames.length)) : 2;
-  const ftColNames = ftColCount === 3 ? ["First", "Then", "Now"] : ["First", "Then"];
 
   return (
     <div
       data-a4-page
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
+      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
     >
-      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
+      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-4 shrink-0">
         <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{title || scheduleTypeLabel}</h2>
       </div>
-      <div className="flex-1 min-h-0 grid gap-5" style={{ gridTemplateColumns: `repeat(${ftColNames.length}, 1fr)` }}>
-        {ftColNames.map((name, idx) => (
-          <FirstThenColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-        ))}
+
+      {/* First / Then boards */}
+      <div className="shrink-0 grid grid-cols-2 gap-5" style={{ height: 350 }}>
+        <FirstThenColumn colKey="0" colName="First" pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+        <FirstThenColumn colKey="1" colName="Then" pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
       </div>
+
+      {/* Scissors cut line */}
+      <div className="shrink-0 flex items-center gap-3 my-4">
+        <svg className="w-[22px] h-[22px] stroke-[#8A9B74] stroke-[1.6] fill-none shrink-0" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="6" cy="6" r="3" />
+          <circle cx="6" cy="18" r="3" />
+          <line x1="20" y1="4" x2="8.12" y2="15.88" />
+          <line x1="14.47" y1="14.48" x2="20" y2="20" />
+          <line x1="8.12" y1="8.12" x2="12" y2="12" />
+        </svg>
+        <div className="flex-1 border-t-2 border-dashed border-[#C5D2B8]" />
+      </div>
+
+      {/* Six cut-out card slots */}
+      <CutoutStrip pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+
       {!isPaid && (
       <div className="shrink-0 pt-2 flex justify-between items-end">
         <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
@@ -462,6 +473,73 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
     </div>
   );
 }
+
+function CutoutStrip({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const pages = useScheduleState((s) => s.pages);
+  const removeCard = useScheduleState((s) => s.removeCard);
+  const language = useScheduleState((s) => s.language);
+  const gender = useScheduleState((s) => s.gender);
+  const page = pages[pageIdx] as ColumnPageData;
+  const cards = page?.columns?.["cutout"] || [];
+
+  const droppableId = `${pageIdx}-cutout`;
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
+  const justDropped = justDroppedSlot === droppableId;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex-1 min-h-0 grid grid-cols-3 grid-rows-2 gap-3 transition-colors duration-150 ${isOver ? "bg-[#F4F7EE]" : ""} ${justDropped ? "animate-pulse-once" : ""}`}
+    >
+      {Array.from({ length: 6 }).map((_, i) => {
+        const entry = cards[i];
+        const card = entry ? findCard(entry.cardId) : null;
+        if (!card) {
+          return (
+            <div
+              key={i}
+              className={`border-2 border-dashed rounded-[10px] flex items-center justify-center ${isOver ? "border-[#7A8F5E]" : "border-[#C5D2B8]"}`}
+            >
+              <svg className="w-[26px] h-[26px] stroke-[#D8DFCB] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </div>
+          );
+        }
+        const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
+        return (
+          <div
+            key={i}
+            className="border-2 border-dashed border-[#C5D2B8] rounded-[10px] bg-white flex flex-col overflow-hidden relative group"
+          >
+            <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-1.5">
+              {imageUrl ? (
+                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+              ) : (
+                <svg className="w-[40px] h-[40px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              )}
+            </div>
+            <div className="shrink-0 px-1.5 py-2 border-t border-[#F0F0F0] bg-white text-center">
+              <span className="text-[18px] text-ink-2 font-serif leading-tight">
+                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
+              </span>
+            </div>
+            <button
+              onClick={() => removeCard(pageIdx, "cutout", i)}
+              className="absolute top-1.5 right-1.5 w-[26px] h-[26px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[16px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
+            >
+              &times;
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 
 interface ScheduleCanvasProps {
   justDroppedSlot: string | null;
