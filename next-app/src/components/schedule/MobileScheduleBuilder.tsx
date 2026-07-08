@@ -26,7 +26,6 @@ import {
   getCardLabel,
   getCardImageUrl,
   getCardGender,
-  isCharacterCard,
   type ParsedCard,
 } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
@@ -139,6 +138,7 @@ export function MobileScheduleBuilder({
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
+  const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
 
@@ -154,10 +154,13 @@ export function MobileScheduleBuilder({
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const map: Record<string, string> = {};
-        (data?.categories || []).forEach((c: { id: string; name: string }) => {
+        const flags: Record<string, boolean> = {};
+        (data?.categories || []).forEach((c: any) => {
           map[c.id] = c.name;
+          flags[c.id] = !!c.hasCharacters;
         });
         setAdminCatNames(map);
+        setCatFlags(flags);
       })
       .catch(() => {});
   }, []);
@@ -207,11 +210,13 @@ export function MobileScheduleBuilder({
     });
   }, [cards, category, search, language]);
 
-  // Character row only matters when the current selection includes character cards
-  const showCharacters = useMemo(
-    () => filteredCards.some((c) => isCharacterCard(c)),
-    [filteredCards]
-  );
+  // Character row shows only for categories the admin marked as having characters
+  // (All categories -> visible). Otherwise gender silently resets to Neutral.
+  const showCharacters = !category || !!catFlags[category];
+  useEffect(() => {
+    if (!showCharacters && gender !== "neutral") setGender("neutral");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCharacters]);
 
   // How many cards are placed (for the picker counter)
   const { placedCount, totalSlots } = useMemo(() => {
