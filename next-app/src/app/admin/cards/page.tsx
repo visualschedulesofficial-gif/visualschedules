@@ -15,7 +15,22 @@ interface ParsedCard {
   translations: Record<string, string>;
 }
 
-function FreePaidBadge({ isFree }: { isFree: boolean }) {
+function FreePaidBadge({ isFree, onToggle }: { isFree: boolean; onToggle?: () => void }) {
+  if (onToggle) {
+    return (
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        title="Tap to switch Free/Paid"
+        className={`text-[10px] px-2 py-1 font-semibold tracking-wider rounded-sm border ${
+          isFree
+            ? "bg-badge-free-bg text-badge-free-text border-transparent"
+            : "bg-badge-paid-bg text-badge-paid-text border-transparent"
+        }`}
+      >
+        {isFree ? "Free ⇄" : "Paid ⇄"}
+      </button>
+    );
+  }
   return isFree ? (
     <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 bg-[#E6F2E6] text-[#2D6A2D] border border-[#BCE0BC] rounded-full">
       Free
@@ -75,10 +90,11 @@ function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: {
   );
 }
 
-function CardItem({ card, onEdit, onDelete }: {
+function CardItem({ card, onEdit, onDelete, onToggleAccess }: {
   card: ParsedCard;
   onEdit: (card: ParsedCard) => void;
   onDelete: (cardId: string) => void;
+  onToggleAccess: (card: ParsedCard & { isFree: boolean }) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [images, setImages] = useState<Record<string, string>>({});
@@ -119,7 +135,7 @@ function CardItem({ card, onEdit, onDelete }: {
         </div>
         {/* Free/Paid badge overlay */}
         <div className="absolute top-1.5 left-1.5">
-          <FreePaidBadge isFree={card.isFree} />
+          <FreePaidBadge isFree={card.isFree} onToggle={() => onToggleAccess(card)} />
         </div>
       </div>
       <div className="px-3 py-2">
@@ -256,6 +272,19 @@ export default function AdminCardsPage() {
           <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
             {filtered.map(card => (
               <CardItem key={card.id} card={card}
+                onToggleAccess={async (c) => {
+                  const next = !c.isFree;
+                  // Optimistic flip, revert on failure
+                  setCards((prev: any[]) => prev.map((x) => (x.id === c.id ? { ...x, isFree: next } : x)));
+                  const res = await fetch("/api/admin/cards", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: c.id, isFree: next }),
+                  });
+                  if (!res.ok) {
+                    setCards((prev: any[]) => prev.map((x) => (x.id === c.id ? { ...x, isFree: !next } : x)));
+                  }
+                }}
                 onEdit={c => setEditingCard(c)}
                 onDelete={async id => {
                   try {
