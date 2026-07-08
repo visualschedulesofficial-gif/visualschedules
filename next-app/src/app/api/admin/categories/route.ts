@@ -36,12 +36,13 @@ export async function GET() {
     }
     await seedIfEmpty(env.DB);
     const result = await env.DB.prepare(
-      `SELECT id, name, enabled, sort_order FROM categories WHERE enabled = 1 ORDER BY sort_order ASC`
+      `SELECT id, name, enabled, sort_order, has_characters FROM categories WHERE enabled = 1 ORDER BY sort_order ASC`
     ).all();
     const categories = (result.results || []).map((c: any) => ({
       id: c.id,
       name: c.name,
       sortOrder: c.sort_order ?? 0,
+      hasCharacters: !!c.has_characters,
     }));
     return NextResponse.json({ categories, source: "database" }, { status: 200 });
   } catch (err: any) {
@@ -85,8 +86,8 @@ export async function PUT(request: NextRequest) {
     for (const c of categories) {
       if (!c?.id || !c?.name) continue;
       await env.DB.prepare(
-        `INSERT INTO categories (id, name, enabled, sort_order) VALUES (?, ?, 1, ?)`
-      ).bind(c.id, c.name, c.sortOrder ?? order).run();
+        `INSERT INTO categories (id, name, enabled, sort_order, has_characters) VALUES (?, ?, 1, ?, ?)`
+      ).bind(c.id, c.name, c.sortOrder ?? order, c.hasCharacters ? 1 : 0).run();
       order++;
     }
     return NextResponse.json({ success: true, updated: categories.length }, { status: 200 });
