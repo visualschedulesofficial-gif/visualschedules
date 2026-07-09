@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { useScheduleState } from "@/hooks/useScheduleState";
 
 const NAV_LINKS = [
   { href: "/schedule", label: "Create Schedule" },
@@ -86,16 +87,19 @@ export function TopNav({
         </button>
       )}
 
-      {/* Logo */}
+      {/* Logo — desktop only; mobile gets the app icon bar instead */}
       <Link
         href="/schedule"
-        className="font-serif text-base md:text-2xl text-ink no-underline whitespace-nowrap shrink-0 leading-none"
+        className="hidden md:block font-serif text-2xl text-ink no-underline whitespace-nowrap shrink-0 leading-none"
       >
         Visual Schedules
       </Link>
 
-      {/* Right — site nav + auth area */}
-      <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">
+      {/* Mobile app-style icon bar */}
+      <MobileIconBar user={user} />
+
+      {/* Right — site nav + auth area (desktop only) */}
+      <div className="hidden md:flex items-center gap-4 shrink-0 min-w-0">
         <SiteNavLinks />
         {!user ? (
           // Not logged in — single Sign In button
@@ -215,7 +219,7 @@ export function TopNav({
 function SiteNavLinks() {
   const pathname = usePathname();
   return (
-    <div className="flex items-center gap-1 md:gap-3 overflow-x-auto min-w-0">
+    <div className="flex items-center gap-3 min-w-0">
       {NAV_LINKS.map((link) => {
         const active =
           pathname === link.href || (link.href !== "/schedule" && pathname?.startsWith(link.href));
@@ -233,6 +237,96 @@ function SiteNavLinks() {
           </Link>
         );
       })}
+    </div>
+  );
+}
+
+
+// App-style mobile header: icon nav + expanding search + user icon.
+// Search only appears on the builder and feeds the card search directly.
+function MobileIconBar({ user }: { user: User | null }) {
+  const pathname = usePathname();
+  const uiSearch = useScheduleState((s) => s.uiSearch);
+  const setUiSearch = useScheduleState((s) => s.setUiSearch);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const onBuilder = pathname === "/schedule";
+
+  const iconCls = (active: boolean) =>
+    `flex flex-col items-center justify-center gap-0.5 px-2 py-1 no-underline ${
+      active ? "text-[#4A5A3E]" : "text-[#77716B]"
+    }`;
+  const labelCls = "text-[8px] tracking-wide uppercase font-sans font-semibold leading-none";
+
+  if (searchOpen) {
+    return (
+      <div className="flex md:hidden items-center gap-2 flex-1 min-w-0">
+        <input
+          autoFocus
+          type="search"
+          value={uiSearch}
+          onChange={(e) => setUiSearch(e.target.value)}
+          placeholder="Search cards…"
+          className="flex-1 min-w-0 py-1.5 px-3 border border-border bg-white font-sans text-[14px] text-ink rounded-full"
+        />
+        <button
+          onClick={() => {
+            setSearchOpen(false);
+            setUiSearch("");
+          }}
+          className="shrink-0 w-8 h-8 flex items-center justify-center text-[18px] text-[#77716B]"
+          aria-label="Close search"
+        >
+          ✕
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex md:hidden items-center justify-between flex-1 min-w-0">
+      <div className="flex items-center gap-1">
+        <Link href="/schedule" className={iconCls(pathname === "/schedule")}>
+          <svg className="w-[22px] h-[22px] stroke-current stroke-[1.8] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="17" rx="2" />
+            <line x1="12" y1="10" x2="12" y2="16" />
+            <line x1="9" y1="13" x2="15" y2="13" />
+          </svg>
+          <span className={labelCls}>Create</span>
+        </Link>
+        <Link href="/downloads" className={iconCls(pathname?.startsWith("/downloads") || false)}>
+          <svg className="w-[22px] h-[22px] stroke-current stroke-[1.8] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span className={labelCls}>Schedules</span>
+        </Link>
+        <Link href="/blog" className={iconCls(pathname?.startsWith("/blog") || false)}>
+          <svg className="w-[22px] h-[22px] stroke-current stroke-[1.8] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+          <span className={labelCls}>Blog</span>
+        </Link>
+      </div>
+      <div className="flex items-center gap-1">
+        {onBuilder && (
+          <button onClick={() => setSearchOpen(true)} className={iconCls(false)} aria-label="Search cards">
+            <svg className="w-[22px] h-[22px] stroke-current stroke-[1.8] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span className={labelCls}>Search</span>
+          </button>
+        )}
+        <Link href={user ? "/schedules" : "/login"} className={iconCls(pathname === "/schedules" || pathname === "/login")}>
+          <svg className="w-[22px] h-[22px] stroke-current stroke-[1.8] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span className={labelCls}>{user ? "My Space" : "Sign in"}</span>
+        </Link>
+      </div>
     </div>
   );
 }
