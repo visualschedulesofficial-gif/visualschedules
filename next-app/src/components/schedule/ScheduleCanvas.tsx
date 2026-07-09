@@ -71,7 +71,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
               )}
             </div>
             <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white`}>
-              <span className="text-[18px] text-center leading-tight font-serif text-[#2C2C2C]">
+              <span className="text-[18px] text-center leading-tight font-serif text-[#2C2C2C] break-words line-clamp-2">
                 {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </span>
             </div>
@@ -136,7 +136,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
                 {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </div>
               <button
@@ -298,7 +298,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0">
+              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
                 {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </div>
               <button
@@ -401,7 +401,7 @@ function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey
                   )}
                 </div>
                 <div className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
-                  <span className="text-[18px] text-ink-2 font-serif leading-tight">
+                  <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
                     {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
                   </span>
                 </div>
@@ -531,7 +531,7 @@ function CutoutStrip({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppe
               )}
             </div>
             <div className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
-              <span className="text-[18px] text-ink-2 font-serif leading-tight">
+              <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
                 {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
               </span>
             </div>
