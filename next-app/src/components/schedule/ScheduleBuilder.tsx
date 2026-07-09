@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { DAY_KEYS } from "@/lib/constants";
 import {
   DndContext,
   DragOverlay,
@@ -150,7 +151,13 @@ export default function ScheduleBuilder() {
       }
     } else {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
-      const cols = Object.keys(page.columns || {});
+      // Derive the full set of columns from the schedule setup — a fresh page
+      // has no columns created yet, so Object.keys() alone finds nothing.
+      const { weekMode, customColNames } = useScheduleState.getState();
+      const cols =
+        scheduleType === "weekly"
+          ? (weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS])
+          : customColNames.map((_, i) => String(i));
       const max = scheduleType === "weekly" ? 5 : scheduleType === "custom" ? 6 : 1;
       // Fill ROW BY ROW: each click goes to the leftmost column with the
       // fewest cards (Mon→Sun across row 1, then row 2, ...). First/Then
