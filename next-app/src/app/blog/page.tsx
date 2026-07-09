@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TopNav } from "@/components/layout/TopNav";
 import { getEnv } from "@/lib/admin-auth";
+import { BlogListClient } from "@/components/blog/BlogListClient";
 
 export const metadata: Metadata = {
   title: "Blog — Visual Schedules for Neurodiverse Children | Visual Schedules",
@@ -35,33 +36,7 @@ export default async function BlogIndexPage() {
           <p className="text-[14px] text-ink-2 mb-8">
             Guides and honest notes on visual schedules, routines and everyday life with neurodiverse children.
           </p>
-          {posts.length === 0 && (
-            <p className="text-[13px] text-ink-3">First posts coming soon.</p>
-          )}
-          <div className="space-y-6">
-            {posts.map((p) => (
-              <Link
-                key={p.slug}
-                href={`/blog/${p.slug}`}
-                className="block bg-white border border-border rounded overflow-hidden hover:shadow-sm transition-shadow no-underline"
-              >
-                {p.cover_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.cover_url} alt="" className="w-full max-h-[260px] object-cover" loading="lazy" />
-                )}
-                <div className="p-4">
-                  <h2 className="font-serif text-[20px] text-ink leading-snug mb-1">{p.title}</h2>
-                  {p.meta_description && (
-                    <p className="text-[13px] text-ink-2 leading-relaxed">{p.meta_description}</p>
-                  )}
-                  <p className="text-[11px] text-ink-3 mt-2">
-                    {(p.published_at || "").slice(0, 10)}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+          <BlogListClient posts={posts as any} />        </div>
       </main>
     </div>
   );
