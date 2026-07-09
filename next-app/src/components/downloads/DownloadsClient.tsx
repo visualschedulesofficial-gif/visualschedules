@@ -12,6 +12,7 @@ export function DownloadsClient() {
   const [loading, setLoading] = useState(true);
   const [activeBundle, setActiveBundle] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<string | null>(null);
+  const [itemSearch, setItemSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/downloads")
@@ -37,7 +38,31 @@ export function DownloadsClient() {
           <p className="px-4 pb-3 text-[12px] text-ink-3 font-sans">
             Ready-to-print visual schedule bundles. Pick a bundle, choose an activity, download the version that fits your child.
           </p>
-          <nav className="flex md:block overflow-x-auto md:overflow-visible px-2 pb-2 md:pb-4 gap-1">
+          {/* Mobile: bundle dropdown + item search */}
+          <div className="md:hidden px-4 pb-3 space-y-2">
+            <select
+              value={activeBundle || ""}
+              onChange={(e) => {
+                setActiveBundle(e.target.value || null);
+                setActiveItem(null);
+              }}
+              className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[14px] text-ink rounded"
+            >
+              {bundles.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.title} ({b.items.length})
+                </option>
+              ))}
+            </select>
+            <input
+              type="search"
+              value={itemSearch}
+              onChange={(e) => setItemSearch(e.target.value)}
+              placeholder="Search downloads…"
+              className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[14px] text-ink rounded"
+            />
+          </div>
+          <nav className="hidden md:block px-2 pb-4 gap-1">
             {bundles.map((b) => (
               <button
                 key={b.id}
@@ -72,7 +97,9 @@ export function DownloadsClient() {
                 <p className="text-[13px] text-ink-2 mb-4 max-w-[560px]">{bundle.description}</p>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {bundle.items.map((i) => {
+                {bundle.items
+                  .filter((i) => !itemSearch.trim() || i.title.toLowerCase().includes(itemSearch.trim().toLowerCase()))
+                  .map((i) => {
                   const preview = i.files.find((f) => f.preview_url)?.preview_url;
                   return (
                     <button
