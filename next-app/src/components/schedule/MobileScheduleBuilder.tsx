@@ -75,6 +75,7 @@ function CardTile({
 }) {
   const variant = getCardGender(card, gender);
   const img = getCardImageUrl(card.id, variant) || getCardImageUrl(card.id, "neutral");
+  const [justAdded, setJustAdded] = useState(false);
   return (
     <button
       onClick={() => {
@@ -83,12 +84,23 @@ function CardTile({
           return;
         }
         onAdd(card.id);
+        setJustAdded(true);
+        setTimeout(() => setJustAdded(false), 900);
       }}
       className="relative bg-white border border-[#C7D7B8] rounded active:scale-95 transition-transform overflow-hidden"
     >
       {isLocked && (
         <span className="absolute top-0.5 left-0.5 z-10 text-[8px] font-bold tracking-wide px-1 py-[1px] rounded-sm leading-tight bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]">
           🔒
+        </span>
+      )}
+      {justAdded && (
+        <span className="absolute inset-0 z-20 flex items-center justify-center bg-white/70">
+          <span className="w-7 h-7 rounded-full bg-[#4A8A4A] flex items-center justify-center">
+            <svg className="w-4 h-4 stroke-white stroke-[3] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </span>
         </span>
       )}
       <div className="w-full aspect-square flex items-center justify-center overflow-hidden">
@@ -139,6 +151,7 @@ export function MobileScheduleBuilder({
   const [search, setSearch] = useState("");
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
 
@@ -161,6 +174,7 @@ export function MobileScheduleBuilder({
         });
         setAdminCatNames(map);
         setCatFlags(flags);
+        setFlagsLoaded(true);
       })
       .catch(() => {});
   }, []);
@@ -212,7 +226,7 @@ export function MobileScheduleBuilder({
 
   // Character row shows only for categories the admin marked as having characters
   // (All categories -> visible). Otherwise gender silently resets to Neutral.
-  const showCharacters = !category || !!catFlags[category];
+  const showCharacters = !flagsLoaded || !category || !!catFlags[category];
   useEffect(() => {
     if (!showCharacters && gender !== "neutral") setGender("neutral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -338,16 +352,6 @@ export function MobileScheduleBuilder({
         </div>
       </section>
 
-      {/* Canvas preview */}
-      <section>
-        <SectionLabel>Your schedule</SectionLabel>
-        <div className={exporting ? "w-full" : "w-full overflow-hidden rounded border border-border bg-white"}>
-          <div style={{ zoom: exporting ? 1 : zoom }}>
-            <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
-          </div>
-        </div>
-      </section>
-
       {/* Row 3: Character (only when relevant) */}
       {showCharacters && (
         <section>
@@ -372,6 +376,16 @@ export function MobileScheduleBuilder({
           </div>
         </section>
       )}
+
+      {/* Canvas preview */}
+      <section>
+        <SectionLabel>Your schedule</SectionLabel>
+        <div className={exporting ? "w-full" : "w-full overflow-hidden rounded border border-border bg-white"}>
+          <div style={{ zoom: exporting ? 1 : zoom }}>
+            <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+          </div>
+        </div>
+      </section>
 
       {/* Cards: 5 × 2 quick grid + View all */}
       <section>
