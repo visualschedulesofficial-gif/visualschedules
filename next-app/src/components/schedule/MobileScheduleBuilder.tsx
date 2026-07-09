@@ -65,6 +65,7 @@ function CardTile({
   isLocked,
   onAdd,
   size,
+  placed,
 }: {
   card: ParsedCard;
   language: Language;
@@ -72,6 +73,7 @@ function CardTile({
   isLocked: boolean;
   onAdd: (cardId: string) => void;
   size: "small" | "large";
+  placed?: boolean;
 }) {
   const variant = getCardGender(card, gender);
   const img = getCardImageUrl(card.id, variant) || getCardImageUrl(card.id, "neutral");
@@ -85,13 +87,20 @@ function CardTile({
         }
         onAdd(card.id);
         setJustAdded(true);
-        setTimeout(() => setJustAdded(false), 900);
+        setTimeout(() => setJustAdded(false), 1200);
       }}
       className="relative bg-white border border-[#C7D7B8] rounded active:scale-95 transition-transform overflow-hidden"
     >
       {isLocked && (
         <span className="absolute top-0.5 left-0.5 z-10 text-[8px] font-bold tracking-wide px-1 py-[1px] rounded-sm leading-tight bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]">
           🔒
+        </span>
+      )}
+      {placed && !justAdded && (
+        <span className="absolute top-0.5 right-0.5 z-10 w-4 h-4 rounded-full bg-[#4A8A4A] flex items-center justify-center">
+          <svg className="w-2.5 h-2.5 stroke-white stroke-[3] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
         </span>
       )}
       {justAdded && (
@@ -148,7 +157,7 @@ export function MobileScheduleBuilder({
   const { exportPDF, exportJPEG, exporting } = useExport();
 
   const [category, setCategory] = useState("");
-  const [search, setSearch] = useState("");
+  const search = useScheduleState((s) => s.uiSearch);
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [flagsLoaded, setFlagsLoaded] = useState(false);
@@ -259,6 +268,18 @@ export function MobileScheduleBuilder({
   const isLockedCard = (card: ParsedCard) =>
     (card as any).isFree === false && !hasSubscription;
 
+  // Cards currently placed anywhere in the schedule (for the ✓ badge)
+  const placedIds = useMemo(() => {
+    const ids = new Set<string>();
+    pages.forEach((p: any) => {
+      (p.slots || []).forEach((s: any) => s?.cardId && ids.add(s.cardId));
+      Object.values(p.columns || {}).forEach((col: any) =>
+        (col || []).forEach((e: any) => e?.cardId && ids.add(e.cardId))
+      );
+    });
+    return ids;
+  }, [pages]);
+
   // Canvas preview zoom (zoom must be 1 while exporting — the capture engine
   // mis-renders fonts inside CSS zoom)
   const baseW =
@@ -300,13 +321,7 @@ export function MobileScheduleBuilder({
             </select>
           </div>
         </div>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search cards…"
-          className={`${inputCls} mt-2`}
-        />
+
       </section>
 
       {/* Row 2: Schedule type + contextual grid */}
@@ -352,31 +367,6 @@ export function MobileScheduleBuilder({
         </div>
       </section>
 
-      {/* Row 3: Character (only when relevant) */}
-      {showCharacters && (
-        <section>
-          <SectionLabel>Character</SectionLabel>
-          <div className="flex gap-1.5">
-            {CHARACTER_OPTIONS.map((o) => {
-              const active = gender === o.value;
-              return (
-                <button
-                  key={o.value}
-                  onClick={() => setGender(o.value)}
-                  className={`flex-1 py-1.5 rounded border text-[12px] font-sans transition-colors ${
-                    active
-                      ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                      : "border-border bg-white text-ink"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       {/* Canvas preview */}
       <section>
         <SectionLabel>Your schedule</SectionLabel>
@@ -389,9 +379,31 @@ export function MobileScheduleBuilder({
 
       {/* Cards: 5 × 2 quick grid + View all */}
       <section>
-        <SectionLabel>
-          Cards <span className="normal-case tracking-normal">(tap to add)</span>
-        </SectionLabel>
+        <div className="flex items-end justify-between mb-1 gap-2">
+          <div className="text-[10px] tracking-widest uppercase text-[#8A8480] font-medium">
+            Cards <span className="normal-case tracking-normal">(tap to add)</span>
+          </div>
+          {showCharacters && (
+            <div className="flex gap-1">
+              {CHARACTER_OPTIONS.map((o) => {
+                const active = gender === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    onClick={() => setGender(o.value)}
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full border font-sans leading-tight ${
+                      active
+                        ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                        : "border-border bg-white text-ink-3"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         {filteredCards.length === 0 ? (
           <div className="text-[12px] text-[#8A8480] font-sans py-3">
             No cards match — try another category or search.
@@ -406,6 +418,7 @@ export function MobileScheduleBuilder({
                   language={language}
                   gender={gender}
                   isLocked={isLockedCard(card)}
+                  placed={placedIds.has(card.id)}
                   onAdd={onAddCard}
                   size="small"
                 />
