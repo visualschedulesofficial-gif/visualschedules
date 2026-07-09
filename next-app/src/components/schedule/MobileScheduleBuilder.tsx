@@ -26,6 +26,7 @@ import {
   getCardLabel,
   getCardImageUrl,
   getCardGender,
+  isCharacterCard,
   type ParsedCard,
 } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
@@ -162,6 +163,7 @@ export function MobileScheduleBuilder({
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [freeOnly, setFreeOnly] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
@@ -269,6 +271,9 @@ export function MobileScheduleBuilder({
     (card as any).isFree === false && !hasSubscription;
 
   // Cards currently placed anywhere in the schedule (for the ✓ badge)
+  // A character card whose variant images serve as the face avatars
+  const faceCard = useMemo(() => cards.find((c) => isCharacterCard(c)) || null, [cards]);
+
   const placedIds = useMemo(() => {
     const ids = new Set<string>();
     pages.forEach((p: any) => {
@@ -384,20 +389,34 @@ export function MobileScheduleBuilder({
             Cards <span className="normal-case tracking-normal">(tap to add)</span>
           </div>
           {showCharacters && (
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               {CHARACTER_OPTIONS.map((o) => {
                 const active = gender === o.value;
+                const faceImg = faceCard
+                  ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
+                  : null;
                 return (
                   <button
                     key={o.value}
                     onClick={() => setGender(o.value)}
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full border font-sans leading-tight ${
+                    aria-label={o.label}
+                    title={o.label}
+                    className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
                       active
-                        ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                        : "border-border bg-white text-ink-3"
+                        ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
+                        : "border-[#D8D4CC] opacity-75"
                     }`}
                   >
-                    {o.label}
+                    {faceImg ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={faceImg}
+                        alt={o.label}
+                        className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4"
+                      />
+                    ) : (
+                      <span className="text-[10px] font-sans text-ink-3">{o.label[0]}</span>
+                    )}
                   </button>
                 );
               })}
@@ -464,18 +483,34 @@ export function MobileScheduleBuilder({
                 ? `${placedCount}/${totalSlots} added`
                 : `${placedCount} added`}
             </span>
-            <button
-              onClick={() => setShowAll(false)}
-              className="px-4 py-1.5 rounded bg-[#4A5A3E] text-white text-[13px] font-semibold"
-            >
-              Done
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setFreeOnly(!freeOnly)}
+                className={`px-3 py-1.5 rounded-full border text-[12px] font-sans ${
+                  freeOnly
+                    ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                    : "border-border bg-white text-ink-3"
+                }`}
+              >
+                {freeOnly ? "Free only" : "All cards"}
+              </button>
+              <button
+                onClick={() => setShowAll(false)}
+                className="px-4 py-1.5 rounded bg-[#4A5A3E] text-white text-[13px] font-semibold"
+              >
+                Done
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
             {categoryOptions
               .filter((c) => !category || c.id === category)
               .map((c) => {
-                const catCards = filteredCards.filter((card) => card.categoryId === c.id);
+                const catCards = filteredCards.filter(
+                  (card) =>
+                    card.categoryId === c.id &&
+                    (!freeOnly || (card as any).isFree !== false)
+                );
                 if (catCards.length === 0) return null;
                 return (
                   <div key={c.id}>
@@ -490,6 +525,7 @@ export function MobileScheduleBuilder({
                           language={language}
                           gender={gender}
                           isLocked={isLockedCard(card)}
+                          placed={placedIds.has(card.id)}
                           onAdd={onAddCard}
                           size="large"
                         />
