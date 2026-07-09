@@ -10,6 +10,9 @@ import type { CardRef, PageData, DailyPageData, ColumnPageData } from "@/types/s
 import { GRID_SPECS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS, MAX_FT_CARDS } from "@/lib/constants";
 
 interface ScheduleState {
+  /** Card search typed in the mobile app header */
+  uiSearch: string;
+  setUiSearch: (s: string) => void;
   id: string | null;
   title: string;
   scheduleType: ScheduleType;
@@ -51,6 +54,8 @@ function createEmptyColumnPage(): ColumnPageData {
 }
 
 export const useScheduleState = create<ScheduleState>((set, get) => ({
+  uiSearch: "",
+  setUiSearch: (s: string) => set({ uiSearch: s }),
   id: null,
   title: "Daily Schedule",
   scheduleType: "daily",
