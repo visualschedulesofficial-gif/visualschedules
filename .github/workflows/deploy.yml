@@ -42,8 +42,16 @@ jobs:
           else
             echo "No ANTHROPIC_API_KEY secret set - skipping (translations use fallback)"
           fi
+          if [ -n "$RAZORPAY_KEY_ID" ]; then
+            echo "$RAZORPAY_KEY_ID" | npx wrangler secret put RAZORPAY_KEY_ID
+            echo "$RAZORPAY_KEY_SECRET" | npx wrangler secret put RAZORPAY_KEY_SECRET
+          else
+            echo "No RAZORPAY keys set - skipping (payments disabled)"
+          fi
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+          RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
