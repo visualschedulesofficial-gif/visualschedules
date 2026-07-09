@@ -261,7 +261,7 @@ function MobileIconBar({ user }: { user: User | null }) {
   ];
 
   return (
-    <div className="flex md:hidden flex-col w-full">
+    <div className="flex md:hidden flex-col w-full bg-[#E9EFDF]">
       {/* Level 1 — brand + search */}
       <div className="flex items-center justify-between h-[46px] px-4">
         {searchOpen ? (
@@ -311,10 +311,10 @@ function MobileIconBar({ user }: { user: User | null }) {
           <Link
             key={t.href}
             href={t.href}
-            className={`px-3 pt-1 pb-2 text-[14px] font-sans font-semibold no-underline whitespace-nowrap border-b-2 ${
+            className={`px-3 pt-1 pb-2 text-[15px] font-sans font-medium no-underline whitespace-nowrap border-b-2 ${
               t.active
                 ? "text-ink border-[#7A8F5E]"
-                : "text-[#8A8480] border-transparent"
+                : "text-[#7C766F] border-transparent"
             }`}
           >
             {t.label}
