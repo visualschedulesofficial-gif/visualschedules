@@ -89,8 +89,27 @@ const PLANS = [
   },
 ];
 
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function PlansPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [paying, setPaying] = useState<string | null>(null);
+  const [payMessage, setPayMessage] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/session")
@@ -99,14 +118,71 @@ export default function PlansPage() {
       .catch(() => setUser(null));
   }, []);
 
-  function handleSubscribeClick(planId: string) {
+  async function handleSubscribeClick(planId: string) {
     if (!user) {
-      // Prompt sign-in first
       window.location.href = `/login?next=/plans`;
       return;
     }
-    // TODO: Open Razorpay checkout for selected plan
-    alert(`Razorpay checkout for ${planId} — wiring up soon.`);
+    if (planId === "free") {
+      window.location.href = "/schedule";
+      return;
+    }
+    setPaying(planId);
+    setPayMessage("");
+    try {
+      const scriptOk = await loadRazorpayScript();
+      if (!scriptOk) throw new Error("network");
+
+      const res = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const order = await res.json();
+      if (!res.ok) throw new Error(order?.error || "order");
+
+      const rzp = new window.Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: "Visual Schedules",
+        description: `${order.planLabel} plan`,
+        prefill: { email: user.email || "" },
+        theme: { color: "#4A5A3E" },
+        handler: async (response: any) => {
+          // Payment done — verify on the server, then unlock
+          const v = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(response),
+          });
+          const result = await v.json();
+          if (v.ok && result.ok) {
+            setPayMessage("✓ Payment successful! Your plan is active. Taking you to the builder…");
+            setTimeout(() => {
+              window.location.href = "/schedule";
+            }, 1800);
+          } else {
+            setPayMessage(
+              "Payment received but confirmation hit a snag — don't worry, your money is safe. Refresh in a minute or email us and we'll sort it immediately."
+            );
+          }
+          setPaying(null);
+        },
+        modal: {
+          ondismiss: () => setPaying(null),
+        },
+      });
+      rzp.on("payment.failed", () => {
+        setPayMessage("Payment didn't go through — nothing was charged. You can try again.");
+        setPaying(null);
+      });
+      rzp.open();
+    } catch {
+      setPayMessage("Could not start the payment. Please check your connection and try again.");
+      setPaying(null);
+    }
   }
 
   return (
@@ -143,6 +219,12 @@ export default function PlansPage() {
             The daily category is always free. Subscribe to unlock every category — no auto-renewal, ever.
           </p>
         </div>
+
+        {payMessage && (
+          <div className="max-w-[560px] mx-auto mb-6 px-4 py-3 rounded bg-[#E8EDE0] text-[#4A5A3E] text-[14px] text-center font-sans">
+            {payMessage}
+          </div>
+        )}
 
         {/* Plans grid */}
         <div id="compare" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
@@ -218,6 +300,7 @@ export default function PlansPage() {
                   </Link>
                 ) : (
                   <button
+                    disabled={paying !== null}
                     onClick={() => handleSubscribeClick(plan.id)}
                     className={`w-full text-[11px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all ${
                       plan.highlight
