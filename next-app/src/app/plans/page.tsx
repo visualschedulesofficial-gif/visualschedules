@@ -186,7 +186,7 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-bg flex flex-col">
+    <div className="h-dvh bg-bg flex flex-col overflow-hidden">
       {/* Nav */}
       <nav className="h-[56px] md:h-[66px] bg-surface border-b border-border flex items-center justify-between px-4 md:px-7 shrink-0">
         <Link href="/schedule" className="font-serif text-base md:text-2xl italic text-ink no-underline leading-none">
@@ -209,7 +209,7 @@ export default function PlansPage() {
         )}
       </nav>
 
-      <main className="flex-1 px-4 py-12 max-w-5xl mx-auto w-full">
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 py-12 w-full"><div className="max-w-5xl mx-auto w-full">
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="font-serif text-3xl italic text-ink mb-3">
@@ -323,7 +323,7 @@ export default function PlansPage() {
             All plans are one-time payments with no auto-renewal. When your plan expires, your free daily cards still work. UPI, debit cards, and credit cards accepted.
           </p>
         </div>
-      </main>
+      </div></main>
 
       {/* Footer */}
       <footer className="bg-ink text-[#9A9690] px-7 py-4 flex items-center justify-between gap-4 flex-wrap text-xs max-md:px-4">
