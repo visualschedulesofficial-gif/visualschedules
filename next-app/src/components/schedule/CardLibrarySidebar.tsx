@@ -154,6 +154,7 @@ export function CardLibrarySidebar() {
   const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [catFilter, setCatFilter] = useState("");
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchOrCategory, setSearchOrCategory] = useState("");
@@ -234,6 +235,7 @@ export function CardLibrarySidebar() {
             flags[c.id] = !!c.hasCharacters;
           });
           setCatFlags(flags);
+          setFlagsLoaded(true);
           setCategoryNames(map);
         }
       } catch {
@@ -262,7 +264,7 @@ export function CardLibrarySidebar() {
   }, [cards, categoryOrder]);
 
   // Character picker is locked to Neutral when the chosen category has no character cards
-  const charactersLocked = !!catFilter && !catFlags[catFilter];
+  const charactersLocked = flagsLoaded && !!catFilter && !catFlags[catFilter];
   useEffect(() => {
     if (charactersLocked && gender !== "neutral") setGender("neutral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -394,15 +396,15 @@ export function CardLibrarySidebar() {
               <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Character</label>
               <select
                 disabled={charactersLocked}
-                title={charactersLocked ? "This category has no character cards" : undefined}
-                value={charactersLocked ? "neutral" : gender}
+                title={charactersLocked ? "This category has no character variants" : undefined}
+                value={charactersLocked ? "all-variants" : gender}
                 onChange={(e) => {
                   const newGender = e.target.value as Gender;
                   console.log("Character changed to:", newGender);
                   setGender(newGender);
                   setForceUpdate((prev) => prev + 1);
                 }}
-                className="w-full px-3 py-2.5 text-[13px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans appearance-none pr-8 bg-no-repeat bg-right"
+                className={`w-full px-3 py-2.5 text-[13px] font-medium border-2 rounded font-sans appearance-none pr-8 bg-no-repeat bg-right ${charactersLocked ? "border-[#CCC] bg-[#F5F4F0] text-[#999] cursor-not-allowed" : "border-[#333] bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E]"}`}
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                   backgroundPosition: "right 8px center",
@@ -411,6 +413,7 @@ export function CardLibrarySidebar() {
                   paddingRight: "32px",
                 }}
               >
+                {charactersLocked && <option value="all-variants">All Variants</option>}
                 {[
                   { value: "neutral", label: GENDER_LABELS.neutral },
                   { value: "boy", label: GENDER_LABELS.boy },
