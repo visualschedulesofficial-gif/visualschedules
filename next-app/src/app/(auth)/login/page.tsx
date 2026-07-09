@@ -105,7 +105,7 @@ export default function LoginPage() {
       {/* Right: sign-in column */}
       <div className="flex-1 flex flex-col min-h-dvh">
         {/* Mobile-only slim banner */}
-        <div className="md:hidden h-36 relative bg-[#FDF9F4] shrink-0">
+        <div className="md:hidden h-24 relative bg-[#FDF9F4] shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/login-hero.jpg"
@@ -116,13 +116,13 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="px-6 pt-6 md:px-10 md:pt-8">
+        <div className="px-6 pt-4 md:px-10 md:pt-8">
           <Link href="/schedule" className="font-serif text-xl md:text-2xl italic text-ink no-underline leading-none">
             Visual Schedules
           </Link>
         </div>
 
-        <main className="flex-1 flex items-center justify-center px-6 py-10 md:px-10">
+        <main className="flex-1 min-h-0 overflow-y-auto flex md:items-center justify-center px-6 pt-4 pb-8 md:px-10 md:py-10">
           <div className="w-full max-w-sm">
 
           {/* ── USER FLOW ── */}
