@@ -151,6 +151,8 @@ export function MobileScheduleBuilder({
   const setScheduleType = useScheduleState((s) => s.setScheduleType);
   const gridCols = useScheduleState((s) => s.gridCols);
   const setGridCols = useScheduleState((s) => s.setGridCols);
+  const weekMode = useScheduleState((s) => s.weekMode);
+  const setWeekMode = useScheduleState((s) => s.setWeekMode);
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
   const pages = useScheduleState((s) => s.pages);
@@ -331,7 +333,7 @@ export function MobileScheduleBuilder({
 
       {/* Row 2: Schedule type + contextual grid */}
       <section>
-        <div className={`grid gap-2 ${scheduleType === "daily" ? "grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`grid gap-2 ${scheduleType === "daily" || scheduleType === "weekly" ? "grid-cols-2" : "grid-cols-1"}`}>
           <div>
             <SectionLabel>Schedule type</SectionLabel>
             <select
@@ -363,6 +365,32 @@ export function MobileScheduleBuilder({
                       }`}
                     >
                       {spec.cols}×{spec.rows}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {scheduleType === "weekly" && (
+            <div>
+              <SectionLabel>Days</SectionLabel>
+              <div className="flex gap-1">
+                {[
+                  { value: "week", label: "Full week" },
+                  { value: "weekdays", label: "Weekdays" },
+                ].map((o) => {
+                  const active = weekMode === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      onClick={() => setWeekMode(o.value as "week" | "weekdays")}
+                      className={`flex-1 py-2 rounded border text-[12px] font-sans transition-colors ${
+                        active
+                          ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                          : "border-border bg-white text-ink"
+                      }`}
+                    >
+                      {o.label}
                     </button>
                   );
                 })}
