@@ -13,6 +13,9 @@ interface ScheduleState {
   /** Card search typed in the mobile app header */
   uiSearch: string;
   setUiSearch: (s: string) => void;
+  /** Card proportions: image-led, balanced, or text-led (canvas behavior TBD) */
+  cardType: "visual" | "equal" | "text";
+  setCardType: (t: "visual" | "equal" | "text") => void;
   /** Card text: with text (single/multi language) or images only */
   labelMode: "single" | "multi" | "none";
   setLabelMode: (m: "single" | "multi" | "none") => void;
@@ -61,6 +64,8 @@ function createEmptyColumnPage(): ColumnPageData {
 export const useScheduleState = create<ScheduleState>((set, get) => ({
   uiSearch: "",
   setUiSearch: (s: string) => set({ uiSearch: s }),
+  cardType: "visual",
+  setCardType: (cardType) => set({ cardType, isDirty: true }),
   labelMode: "single",
   setLabelMode: (labelMode) => set({ labelMode, isDirty: true }),
   secondLanguage: "hi",
