@@ -148,6 +148,8 @@ export function CardLibrarySidebar() {
 
   const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const cardType = useScheduleState((s) => s.cardType);
+  const setCardType = useScheduleState((s) => s.setCardType);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const setScheduleType = useScheduleState((s) => s.setScheduleType);
   const gridCols = useScheduleState((s) => s.gridCols);
@@ -447,17 +449,15 @@ export function CardLibrarySidebar() {
           {/* Row B: Language + Category/Search side by side */}
           <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Language</label>
+            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Card Type</label>
             <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
+              value={cardType}
+              onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
               className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
             >
-              {Object.entries(LANGUAGES).map(([code, name]) => (
-                <option key={code} value={code}>
-                  {name}
-                </option>
-              ))}
+              <option value="visual">Visual Focus</option>
+              <option value="equal">Equal Focus</option>
+              <option value="text">Text Focus</option>
             </select>
           </div>
 
