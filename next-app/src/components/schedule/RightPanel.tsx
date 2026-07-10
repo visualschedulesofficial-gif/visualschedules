@@ -234,7 +234,7 @@ export function RightPanel() {
             💬 WhatsApp
           </a>
           <a
-            href="https://instagram.com/growgently_co"
+            href="https://www.instagram.com/visual_schedule_official/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 text-center py-1.5 px-2 rounded border border-[#E5E5E5] hover:bg-[#F5F5F5] transition-all text-[11px] font-sans text-[#1C1B19] no-underline"
@@ -242,6 +242,14 @@ export function RightPanel() {
             ♡ Follow
           </a>
         </div>
+        <a
+          href="https://dataorc.in"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center mt-3 text-[12px] font-sans text-[#8A8480] no-underline hover:text-ink transition-colors"
+        >
+          With thanks to DataOrc <span className="underline">DataOrc</span>
+        </a>
       </section>
     </div>
   );
