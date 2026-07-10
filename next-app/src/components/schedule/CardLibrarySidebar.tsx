@@ -310,7 +310,20 @@ export function CardLibrarySidebar() {
   const selectedCategory = isCategory(searchOrCategory) ? searchOrCategory : null;
 
   // Character picker is locked to Neutral when the chosen category has no character cards
-  const charactersLocked = flagsLoaded && !!selectedCategory && !catFlags[selectedCategory];
+  // Locked when: admin explicitly marked the category as no-characters, OR the
+  // category is unknown to admin AND its cards contain no character variants.
+  const categoryHasCharacterCards = useMemo(() => {
+    const m: Record<string, boolean> = {};
+    cards.forEach((c) => {
+      if (isCharacterCard(c)) m[c.categoryId] = true;
+    });
+    return m;
+  }, [cards]);
+  const charactersLocked =
+    !!selectedCategory &&
+    (flagsLoaded && selectedCategory in catFlags
+      ? !catFlags[selectedCategory]
+      : !categoryHasCharacterCards[selectedCategory]);
   useEffect(() => {
     if (charactersLocked && gender !== "neutral") setGender("neutral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -359,8 +372,9 @@ export function CardLibrarySidebar() {
         title="Drag to resize"
         className="absolute right-0 top-0 bottom-0 w-[6px] cursor-col-resize z-20 hover:bg-[#C5D2B8]/50"
       />
-      {/* TOP CONTROLS SECTION */}
-      <div className="shrink-0 border-b border-[#E0E0E0] bg-white">
+      {/* Everything scrolls; the toggle row below sticks to the top */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="border-b border-[#E0E0E0] bg-white">
         <div className="p-3 space-y-3">
           {/* Row A: Schedule type + contextual options */}
           <div className={`grid gap-2 ${scheduleType === "daily" || scheduleType === "weekly" ? "grid-cols-2" : "grid-cols-1"}`}>
@@ -430,7 +444,8 @@ export function CardLibrarySidebar() {
             )}
           </div>
 
-          {/* Row B: Language (Category/Search sits just below) */}
+          {/* Row B: Language + Category/Search side by side */}
+          <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Language</label>
             <select
@@ -448,7 +463,7 @@ export function CardLibrarySidebar() {
 
           {/* Row 2: Category/Search */}
           <div className="relative">
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category / Search Card</label>
+            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category / Search</label>
             <div className="relative flex items-center">
               {/* Search Icon */}
               <svg className="absolute left-3 w-4 h-4 stroke-[#333] fill-none pointer-events-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round">
@@ -509,62 +524,67 @@ export function CardLibrarySidebar() {
             )}
           </div>
 
-          {/* Row C: access filter + character faces */}
-          <div className="flex items-end justify-between gap-2">
-            <div className="w-[140px]">
-              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Cards</label>
-              <select
-                value={accessFilter}
-                onChange={(e) => setAccessFilter(e.target.value as "" | "free" | "paid")}
-                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
-              >
-                <option value="">All cards</option>
-                <option value="free">Free</option>
-                <option value="paid">Paid</option>
-              </select>
-            </div>
-            {!charactersLocked && (
-              <div>
-                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1 text-right">Character</label>
-                <div className="flex gap-1.5 justify-end">
-                  {(["neutral", "boy", "girl", "brown"] as Gender[]).map((g) => {
-                    const active = gender === g;
-                    const faceImg = faceCard
-                      ? getCardImageUrl(faceCard.id, g) || getCardImageUrl(faceCard.id, "neutral")
-                      : null;
-                    return (
-                      <button
-                        key={g}
-                        onClick={() => {
-                          setGender(g);
-                          setForceUpdate((prev) => prev + 1);
-                        }}
-                        aria-label={g}
-                        title={g}
-                        className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
-                          active
-                            ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
-                            : "border-[#D8D4CC] opacity-70 hover:opacity-100"
-                        }`}
-                      >
-                        {faceImg ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={faceImg} alt={g} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
-                        ) : (
-                          <span className="text-[10px] font-sans text-ink-3 uppercase">{g[0]}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
+      {/* STICKY: free/paid + characters stay visible while browsing */}
+      <div className="sticky top-0 z-20 bg-white border-b border-[#E0E0E0] px-3 py-2 flex items-center justify-between gap-2">
+        <div className="flex gap-1.5">
+          {(["free", "paid"] as const).map((v) => {
+            const active = accessFilter === v;
+            return (
+              <button
+                key={v}
+                onClick={() => setAccessFilter(active ? "" : v)}
+                className={`h-9 px-3.5 rounded-full border text-[12px] font-sans capitalize transition-colors ${
+                  active
+                    ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                    : "border-[#C9C4BB] bg-white text-[#666]"
+                }`}
+              >
+                {v}
+              </button>
+            );
+          })}
+        </div>
+        {!charactersLocked && (
+          <div className="flex gap-1.5">
+            {(["neutral", "boy", "girl", "brown"] as Gender[]).map((g) => {
+              const active = gender === g;
+              const faceImg = faceCard
+                ? getCardImageUrl(faceCard.id, g) || getCardImageUrl(faceCard.id, "neutral")
+                : null;
+              return (
+                <button
+                  key={g}
+                  onClick={() => {
+                    setGender(g);
+                    setForceUpdate((prev) => prev + 1);
+                  }}
+                  aria-label={g}
+                  title={g}
+                  className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                    active
+                      ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
+                      : "border-[#D8D4CC] opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  {faceImg ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={faceImg} alt={g} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                  ) : (
+                    <span className="text-[10px] font-sans text-ink-3 uppercase">{g[0]}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* CARDS SECTION */}
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      <div className="px-3 py-4">
         {filteredCards.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center">
             <div>
@@ -607,7 +627,7 @@ export function CardLibrarySidebar() {
                     </svg>
                   </button>
                   {!collapsedCats.has(catId) && (
-                  <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(108px,1fr))]">
+                  <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(104px,116px))] justify-start">
                     {categoryCards.map((card) => (
                       <DraggableCardItem
                         key={`${card.id}-${forceUpdate}`}
@@ -630,16 +650,17 @@ export function CardLibrarySidebar() {
         )}
       </div>
 
-      {/* UNLOCK ALL CARDS SECTION — hidden once subscribed */}
+      </div>
+
+      {/* Floating unlock button — hidden once subscribed */}
       {!hasSubscription && (
-      <div className="shrink-0 border-t border-[#E0E0E0] bg-white p-3">
         <button
           onClick={() => { window.location.href = "/plans"; }}
-          className="w-full py-2.5 px-3 bg-[#7A8F5E] text-white border-2 border-[#7A8F5E] text-[13px] font-bold uppercase tracking-wider rounded font-sans hover:bg-[#6A7F4E] transition-all"
+          title="Unlock all cards"
+          className="absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-[#7A8F5E] text-white text-[18px] shadow-lg hover:bg-[#6A7F4E] transition-all flex items-center justify-center"
         >
-          🔓 Unlock All Cards
+          🔓
         </button>
-      </div>
       )}
     </div>
   );
