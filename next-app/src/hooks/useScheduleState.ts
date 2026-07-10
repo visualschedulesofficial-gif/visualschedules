@@ -13,6 +13,11 @@ interface ScheduleState {
   /** Card search typed in the mobile app header */
   uiSearch: string;
   setUiSearch: (s: string) => void;
+  /** Card text: with text (single/multi language) or images only */
+  labelMode: "single" | "multi" | "none";
+  setLabelMode: (m: "single" | "multi" | "none") => void;
+  secondLanguage: Language;
+  setSecondLanguage: (l: Language) => void;
   id: string | null;
   title: string;
   scheduleType: ScheduleType;
@@ -56,6 +61,10 @@ function createEmptyColumnPage(): ColumnPageData {
 export const useScheduleState = create<ScheduleState>((set, get) => ({
   uiSearch: "",
   setUiSearch: (s: string) => set({ uiSearch: s }),
+  labelMode: "single",
+  setLabelMode: (labelMode) => set({ labelMode, isDirty: true }),
+  secondLanguage: "hi",
+  setSecondLanguage: (secondLanguage) => set({ secondLanguage, isDirty: true }),
   id: null,
   title: "Daily Schedule",
   scheduleType: "daily",
