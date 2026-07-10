@@ -89,17 +89,18 @@ export function RightPanel() {
         </div>
       </section>
 
-      {/* Card Layout */}
+      {/* Language */}
       <section className="p-4 border-b border-border shrink-0 space-y-3">
-        <label className={sectionLabel}>Card Layout</label>
+        <label className={sectionLabel}>Language</label>
         <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 text-[13px] font-sans text-ink cursor-pointer">
             <input
               type="radio"
               name="labelMode"
-              checked={labelMode !== "none"}
+              value="text"
+              checked={(labelMode || "single") !== "none"}
               onChange={() => setLabelMode("single")}
-              className="accent-[#7A8F5E]"
+              className="accent-[#7A8F5E] w-4 h-4"
             />
             Text
           </label>
@@ -107,9 +108,10 @@ export function RightPanel() {
             <input
               type="radio"
               name="labelMode"
-              checked={labelMode === "none"}
+              value="none"
+              checked={(labelMode || "single") === "none"}
               onChange={() => setLabelMode("none")}
-              className="accent-[#7A8F5E]"
+              className="accent-[#7A8F5E] w-4 h-4"
             />
             No Text
           </label>
@@ -118,7 +120,7 @@ export function RightPanel() {
           <>
             <div className="flex gap-2">
               <button onClick={() => setLabelMode("single")} className={segBtn(labelMode === "single")}>
-                Single Lang
+                Primary Language
               </button>
               <button onClick={() => setLabelMode("multi")} className={segBtn(labelMode === "multi")}>
                 Bilingual
@@ -201,7 +203,7 @@ export function RightPanel() {
       </section>
 
       {/* Download */}
-      <section className="p-4 border-b border-border shrink-0">
+      <section className="p-4 shrink-0">
         <label className={`${sectionLabel} mb-2.5`}>Download</label>
         <button
           onClick={exportPDF}
@@ -260,7 +262,7 @@ export function RightPanel() {
             <Icon.WhatsApp /> WhatsApp
           </a>
           <a
-            href="https://instagram.com/growgently_co"
+            href="https://www.instagram.com/visual_schedule_official/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[11px] font-sans font-medium text-[#2D5A2D] no-underline"
@@ -269,7 +271,15 @@ export function RightPanel() {
           </a>
         </div>
         <p className="text-center mt-3 text-[12px] font-sans text-[#8A8480]">
-          With thanks to DataOrc
+          With thanks to{" "}
+          <a
+            href="https://dataorc.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-[#8A8480] hover:text-ink"
+          >
+            DataOrc
+          </a>
         </p>
       </section>
     </div>
