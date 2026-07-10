@@ -239,7 +239,18 @@ export function MobileScheduleBuilder({
 
   // Character row shows only for categories the admin marked as having characters
   // (All categories -> visible). Otherwise gender silently resets to Neutral.
-  const showCharacters = !flagsLoaded || !category || !!catFlags[category];
+  const categoryHasCharacterCards = useMemo(() => {
+    const m: Record<string, boolean> = {};
+    cards.forEach((c) => {
+      if (isCharacterCard(c)) m[c.categoryId] = true;
+    });
+    return m;
+  }, [cards]);
+  const showCharacters =
+    !category ||
+    (flagsLoaded && category in catFlags
+      ? !!catFlags[category]
+      : !!categoryHasCharacterCards[category]);
   useEffect(() => {
     if (!showCharacters && gender !== "neutral") setGender("neutral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
