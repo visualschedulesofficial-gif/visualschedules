@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, setRuntimeCards, type ParsedCard } from "@/lib/card-data";
-import { LANGUAGES, type Language, type Gender } from "@/lib/constants";
+import { LANGUAGES, GRID_SPECS, type Language, type Gender, type ScheduleType, type GridCols } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
@@ -148,14 +148,19 @@ export function CardLibrarySidebar() {
 
   const [cards, setCards] = useState<ParsedCard[]>(ALL_CARDS);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
+  const setScheduleType = useScheduleState((s) => s.setScheduleType);
+  const gridCols = useScheduleState((s) => s.gridCols);
+  const setGridCols = useScheduleState((s) => s.setGridCols);
+  const weekMode = useScheduleState((s) => s.weekMode);
+  const setWeekMode = useScheduleState((s) => s.setWeekMode);
+  const [panelWidth, setPanelWidth] = useState(400);
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
-  const [cols, setCols] = useState<2 | 3>(2);
-  const [showFreeOnly, setShowFreeOnly] = useState(false);
-  const [catFilter, setCatFilter] = useState("");
+  const [accessFilter, setAccessFilter] = useState<"" | "free" | "paid">("");
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [flagsLoaded, setFlagsLoaded] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchOrCategory, setSearchOrCategory] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -263,12 +268,32 @@ export function CardLibrarySidebar() {
     );
   }, [cards, categoryOrder]);
 
-  // Character picker is locked to Neutral when the chosen category has no character cards
-  const charactersLocked = flagsLoaded && !!catFilter && !catFlags[catFilter];
+  // Apply the chosen width to the panel and support drag-to-resize on its edge
   useEffect(() => {
-    if (charactersLocked && gender !== "neutral") setGender("neutral");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [charactersLocked]);
+    const aside = document.getElementById("library-panel");
+    if (aside) aside.style.width = `${panelWidth}px`;
+  }, [panelWidth]);
+
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const aside = document.getElementById("library-panel");
+    if (!aside) return;
+    const left = aside.getBoundingClientRect().left;
+    const maxW = 118 * 5 + 8 * 4 + 26; // five cards + gaps + padding
+    const onMove = (ev: MouseEvent) => {
+      setPanelWidth(Math.min(maxW, Math.max(320, ev.clientX - left)));
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+    };
+    document.body.style.cursor = "col-resize";
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  const faceCard = useMemo(() => cards.find((c) => isCharacterCard(c)) || null, [cards]);
 
   const categoryCounts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -283,18 +308,28 @@ export function CardLibrarySidebar() {
   };
 
   const selectedCategory = isCategory(searchOrCategory) ? searchOrCategory : null;
+
+  // Character picker is locked to Neutral when the chosen category has no character cards
+  const charactersLocked = flagsLoaded && !!selectedCategory && !catFlags[selectedCategory];
+  useEffect(() => {
+    if (charactersLocked && gender !== "neutral") setGender("neutral");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [charactersLocked]);
+
   const searchText = !isCategory(searchOrCategory) ? searchOrCategory : "";
 
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {
       const matchesSearch = searchText === "" || getCardLabel(card, language).toLowerCase().includes(searchText.toLowerCase());
-      const matchesCategory =
-        (!selectedCategory || card.categoryId === selectedCategory) &&
-        (!catFilter || card.categoryId === catFilter);
-      const matchesFree = !showFreeOnly || (card as any).isFree !== false;
-      return matchesSearch && matchesCategory && matchesFree;
+      const matchesCategory = !selectedCategory || card.categoryId === selectedCategory;
+      const matchesAccess =
+        accessFilter === "" ||
+        (accessFilter === "free"
+          ? (card as any).isFree !== false
+          : (card as any).isFree === false);
+      return matchesSearch && matchesCategory && matchesAccess;
     });
-  }, [cards, searchText, selectedCategory, language, showFreeOnly, catFilter]);
+  }, [cards, searchText, selectedCategory, language, accessFilter]);
 
   const displayCategories = useMemo(() => {
     const cats = new Set<string>();
@@ -317,116 +352,98 @@ export function CardLibrarySidebar() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0]" data-lib-expanded={expanded || undefined}>
+    <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0] relative">
+      {/* Drag the panel edge to resize (max = five cards per row) */}
+      <div
+        onMouseDown={startResize}
+        title="Drag to resize"
+        className="absolute right-0 top-0 bottom-0 w-[6px] cursor-col-resize z-20 hover:bg-[#C5D2B8]/50"
+      />
       {/* TOP CONTROLS SECTION */}
       <div className="shrink-0 border-b border-[#E0E0E0] bg-white">
         <div className="p-3 space-y-3">
-          {/* Panel controls: cards per row + panel width */}
-          <div className="flex items-center justify-end gap-1.5">
-            <button
-              onClick={() => setShowFreeOnly(!showFreeOnly)}
-              title="Show only free cards"
-              className={`text-[10px] px-2 py-1 border rounded ${
-                showFreeOnly
-                  ? "border-[#BCE0BC] bg-[#E6F2E6] text-[#2D6A2D] font-semibold"
-                  : "border-[#E0E0E0] text-[#666] hover:bg-[#f5f5f5]"
-              }`}
-            >
-              {showFreeOnly ? "Free only" : "All cards"}
-            </button>
-            <button
-              onClick={() => setCols(cols === 2 ? 3 : 2)}
-              title="Cards per row"
-              className="text-[10px] px-2 py-1 border border-[#E0E0E0] rounded text-[#666] hover:bg-[#f5f5f5]"
-            >
-              {cols === 2 ? "3 per row" : "2 per row"}
-            </button>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              title="Panel width"
-              className="text-[10px] px-2 py-1 border border-[#E0E0E0] rounded text-[#666] hover:bg-[#f5f5f5]"
-            >
-              {expanded ? "⇤ Narrow" : "⇥ Wide"}
-            </button>
+          {/* Row A: Schedule type + contextual options */}
+          <div className={`grid gap-2 ${scheduleType === "daily" || scheduleType === "weekly" ? "grid-cols-2" : "grid-cols-1"}`}>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Schedule type</label>
+              <select
+                value={scheduleType}
+                onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
+                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+              >
+                <option value="daily">Daily Schedule</option>
+                <option value="weekly">Weekly Schedule</option>
+                <option value="custom">Custom Schedule</option>
+                <option value="firstthen">First/Then Board</option>
+              </select>
+            </div>
+            {scheduleType === "daily" && (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Grid</label>
+                <div className="flex gap-1">
+                  {(Object.keys(GRID_SPECS) as unknown as GridCols[]).map((colsKey) => {
+                    const c = Number(colsKey) as GridCols;
+                    const spec = GRID_SPECS[c as 2 | 3 | 4];
+                    const active = gridCols === c;
+                    return (
+                      <button
+                        key={c}
+                        onClick={() => setGridCols(c)}
+                        className={`flex-1 h-[38px] rounded border text-[12px] font-sans transition-colors ${
+                          active
+                            ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                            : "border-[#C9C4BB] bg-white text-[#1C1B19]"
+                        }`}
+                      >
+                        {spec.cols}×{spec.rows}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {scheduleType === "weekly" && (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Days</label>
+                <div className="flex gap-1">
+                  {[
+                    { value: "week", label: "Full week" },
+                    { value: "weekdays", label: "Weekdays" },
+                  ].map((o) => {
+                    const active = weekMode === o.value;
+                    return (
+                      <button
+                        key={o.value}
+                        onClick={() => setWeekMode(o.value as "week" | "weekdays")}
+                        className={`flex-1 h-[38px] rounded border text-[12px] font-sans transition-colors ${
+                          active
+                            ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                            : "border-[#C9C4BB] bg-white text-[#1C1B19]"
+                        }`}
+                      >
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-          {/* Category — on top */}
+
+          {/* Row B: Language (Category/Search sits just below) */}
           <div>
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category</label>
+            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Language</label>
             <select
-              value={catFilter}
-              onChange={(e) => setCatFilter(e.target.value)}
-              className="w-full px-3 py-2.5 text-[13px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as Language)}
+              className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
             >
-              <option value="">All categories</option>
-              {categories.map((catId) => (
-                <option key={catId} value={catId}>
-                  {catName(catId)} ({categoryCounts[catId] || 0})
+              {Object.entries(LANGUAGES).map(([code, name]) => (
+                <option key={code} value={code}>
+                  {name}
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Row 1: Language & Character SIDE BY SIDE */}
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Language */}
-            <div>
-              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Language</label>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as Language)}
-                className="w-full px-3 py-2.5 text-[13px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans appearance-none pr-8 bg-no-repeat bg-right"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundPosition: "right 8px center",
-                  backgroundSize: "18px",
-                  backgroundRepeat: "no-repeat",
-                  paddingRight: "32px",
-                }}
-              >
-                {Object.entries(LANGUAGES).map(([code, name]) => (
-                  <option key={code} value={code}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Character */}
-            <div>
-              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Character</label>
-              <select
-                disabled={charactersLocked}
-                title={charactersLocked ? "This category has no character variants" : undefined}
-                value={charactersLocked ? "all-variants" : gender}
-                onChange={(e) => {
-                  const newGender = e.target.value as Gender;
-                  console.log("Character changed to:", newGender);
-                  setGender(newGender);
-                  setForceUpdate((prev) => prev + 1);
-                }}
-                className={`w-full px-3 py-2.5 text-[13px] font-medium border-2 rounded font-sans appearance-none pr-8 bg-no-repeat bg-right ${charactersLocked ? "border-[#CCC] bg-[#F5F4F0] text-[#999] cursor-not-allowed" : "border-[#333] bg-white text-[#1C1B19] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E]"}`}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundPosition: "right 8px center",
-                  backgroundSize: "18px",
-                  backgroundRepeat: "no-repeat",
-                  paddingRight: "32px",
-                }}
-              >
-                {charactersLocked && <option value="all-variants">All Variants</option>}
-                {[
-                  { value: "neutral", label: GENDER_LABELS.neutral },
-                  { value: "boy", label: GENDER_LABELS.boy },
-                  { value: "girl", label: GENDER_LABELS.girl },
-                  { value: "brown", label: GENDER_LABELS.brown },
-                  { value: "all", label: GENDER_LABELS.all },
-                ].map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           {/* Row 2: Category/Search */}
@@ -449,7 +466,7 @@ export function CardLibrarySidebar() {
                   setIsDropdownOpen(true);
                 }}
                 onFocus={() => setIsDropdownOpen(true)}
-                className="w-full pl-10 pr-10 py-2.5 text-[13px] font-medium border-2 border-[#333] rounded bg-white text-[#1C1B19] placeholder-[#666] hover:border-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                className="w-full pl-10 pr-10 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
               />
 
               {/* Dropdown Icon */}
@@ -491,6 +508,58 @@ export function CardLibrarySidebar() {
               </div>
             )}
           </div>
+
+          {/* Row C: access filter + character faces */}
+          <div className="flex items-end justify-between gap-2">
+            <div className="w-[140px]">
+              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Cards</label>
+              <select
+                value={accessFilter}
+                onChange={(e) => setAccessFilter(e.target.value as "" | "free" | "paid")}
+                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+              >
+                <option value="">All cards</option>
+                <option value="free">Free</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            {!charactersLocked && (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1 text-right">Character</label>
+                <div className="flex gap-1.5 justify-end">
+                  {(["neutral", "boy", "girl", "brown"] as Gender[]).map((g) => {
+                    const active = gender === g;
+                    const faceImg = faceCard
+                      ? getCardImageUrl(faceCard.id, g) || getCardImageUrl(faceCard.id, "neutral")
+                      : null;
+                    return (
+                      <button
+                        key={g}
+                        onClick={() => {
+                          setGender(g);
+                          setForceUpdate((prev) => prev + 1);
+                        }}
+                        aria-label={g}
+                        title={g}
+                        className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                          active
+                            ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
+                            : "border-[#D8D4CC] opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        {faceImg ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={faceImg} alt={g} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                        ) : (
+                          <span className="text-[10px] font-sans text-ink-3 uppercase">{g[0]}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -518,10 +587,27 @@ export function CardLibrarySidebar() {
                 });
               return (
                 <div key={catId}>
-                  <h3 className="text-[11px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5">
-                    {catName(catId)} <span className="text-[#B0ACA6] font-medium">({categoryCards.length})</span>
-                  </h3>
-                  <div className={`grid gap-2 ${cols === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+                  <button
+                    onClick={() => {
+                      const next = new Set(collapsedCats);
+                      if (next.has(catId)) next.delete(catId);
+                      else next.add(catId);
+                      setCollapsedCats(next);
+                    }}
+                    className="w-full flex items-center justify-between text-[11px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5"
+                  >
+                    <span>
+                      {catName(catId)} <span className="text-[#B0ACA6] font-medium">({categoryCards.length})</span>
+                    </span>
+                    <svg
+                      className={`w-3.5 h-3.5 stroke-[#B0ACA6] stroke-2 fill-none transition-transform ${collapsedCats.has(catId) ? "-rotate-90" : ""}`}
+                      viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  {!collapsedCats.has(catId) && (
+                  <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(108px,1fr))]">
                     {categoryCards.map((card) => (
                       <DraggableCardItem
                         key={`${card.id}-${forceUpdate}`}
@@ -536,6 +622,7 @@ export function CardLibrarySidebar() {
                       />
                     ))}
                   </div>
+                  )}
                 </div>
               );
             })}
@@ -543,7 +630,8 @@ export function CardLibrarySidebar() {
         )}
       </div>
 
-      {/* UNLOCK ALL CARDS SECTION */}
+      {/* UNLOCK ALL CARDS SECTION — hidden once subscribed */}
+      {!hasSubscription && (
       <div className="shrink-0 border-t border-[#E0E0E0] bg-white p-3">
         <button
           onClick={() => { window.location.href = "/plans"; }}
@@ -552,6 +640,7 @@ export function CardLibrarySidebar() {
           🔓 Unlock All Cards
         </button>
       </div>
+      )}
     </div>
   );
 
