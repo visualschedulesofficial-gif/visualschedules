@@ -60,7 +60,7 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   title: "Daily Schedule",
   scheduleType: "daily",
   language: "en",
-  gender: "neutral",
+  gender: "boy",
   gridCols: 3,
   cardStyle: "white",
   customColNames: ["Column 1", "Column 2", "Column 3", "Column 4"],
