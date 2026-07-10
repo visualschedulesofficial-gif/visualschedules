@@ -124,10 +124,6 @@ body {
   }
 }
 
-/* Card library panel grows when the expand toggle inside it is on */
-#library-panel:has([data-lib-expanded="true"]) {
-  width: 400px;
-}
 
 /* Blog post typography */
 .blog-content h2 { font-family: var(--font-serif); font-size: 22px; color: #2C2C2C; margin: 1.6em 0 0.5em; }
