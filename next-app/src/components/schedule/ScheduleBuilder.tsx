@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { DAY_KEYS } from "@/lib/constants";
+import { DAY_KEYS, getDailySpec } from "@/lib/constants";
 import {
   DndContext,
   DragOverlay,
@@ -130,7 +130,15 @@ export default function ScheduleBuilder() {
 
     if (scheduleType === "daily") {
       const page = pages[pageIdx] as import("@/types/schedule").DailyPageData;
-      const emptyIdx = page.slots.findIndex((s) => s === null);
+      const { cardType, gridCols } = useScheduleState.getState();
+      const spec = getDailySpec(cardType, gridCols);
+      let emptyIdx = -1;
+      for (let i = 0; i < spec.slots; i++) {
+        if (page.slots[i] == null) {
+          emptyIdx = i;
+          break;
+        }
+      }
       if (emptyIdx === -1) return;
       placeCard(pageIdx, String(emptyIdx), { cardId: card.id, catId: card.categoryId });
       setJustDroppedSlot(`${pageIdx}-${emptyIdx}`);
