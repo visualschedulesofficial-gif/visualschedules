@@ -65,3 +65,20 @@ export type ScheduleType = "daily" | "weekly" | "custom" | "firstthen";
 export type Gender = "neutral" | "boy" | "girl" | "brown" | "all";
 export type CardStyle = "white" | "black";
 export type GridCols = 2 | 3 | 4;
+
+export type CardType = "visual" | "equal" | "text";
+
+// Equal Focus: image-left cards, 2 x 5 per page. Text Focus: slim strips, 2 x 8.
+export const CARD_TYPE_GRIDS = {
+  equal: { cols: 2, rows: 5, slots: 10 },
+  text: { cols: 2, rows: 8, slots: 16 },
+} as const;
+
+export function getDailySpec(
+  cardType: CardType,
+  gridCols: GridCols
+): { cols: number; rows: number; slots: number } {
+  if (cardType === "equal") return CARD_TYPE_GRIDS.equal;
+  if (cardType === "text") return CARD_TYPE_GRIDS.text;
+  return GRID_SPECS[gridCols as 2 | 3 | 4];
+}
