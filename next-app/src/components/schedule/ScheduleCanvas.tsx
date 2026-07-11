@@ -14,7 +14,7 @@ import type { DailyPageData, ColumnPageData } from "@/types/schedule";
 // two languages stacked, or (via LabelStrip) nothing at all.
 function CardLabelText({
   card,
-  secondaryClassName = "block text-[13px] text-[#7A8F5E] leading-tight",
+  secondaryClassName = "block text-[15px] text-[#7A8F5E] leading-tight mt-1",
 }: {
   card: any;
   secondaryClassName?: string;
@@ -43,6 +43,30 @@ function LabelStrip({ className, children }: { className: string; children: Reac
   const labelMode = useScheduleState((s) => s.labelMode);
   if (labelMode === "none") return null;
   return <div className={className}>{children}</div>;
+}
+
+// Free-tier footer, matching the printable references: two-line credit + QR
+// that sends anyone holding the paper to the builder. Paid users get none.
+function CanvasFooter() {
+  return (
+    <div className="shrink-0 py-2 pb-3 border-t border-bg-muted flex items-end justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-[10.5px] text-[#8A8480] leading-snug">
+          Create Personalized A4 Visual Schedules in Just 2 Minutes • https://visualschedule.app/schedule
+        </p>
+        <p className="text-[10.5px] text-[#8A8480] leading-snug">
+          Visual Schedule by Grow Gently • © 2026 Grow Gently. All Rights Reserved.
+        </p>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/qr-schedule.png"
+        alt="Scan to create your own visual schedule"
+        crossOrigin="anonymous"
+        className="w-[46px] h-[46px] shrink-0"
+      />
+    </div>
+  );
 }
 
 function useIsPaid() {
@@ -99,9 +123,9 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
         <>
           {/* Equal / Text focus: image left, words right (image untouched, just placed) */}
           <div className="absolute inset-0 flex items-stretch">
-            <div className={`${cardType === "equal" ? "w-[38%] p-1.5" : "w-[76px] p-1"} shrink-0 flex items-center justify-center overflow-hidden bg-white`}>
+            <div className={`${cardType === "equal" ? "w-[38%]" : "w-[76px]"} p-[4px] shrink-0 flex items-center justify-center overflow-hidden bg-white`}>
               {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
+                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-cover" />
               ) : (
                 <svg className="w-8 h-8 stroke-[1.4] fill-none stroke-[#DDD]" viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -112,7 +136,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
               <span className={`${cardType === "equal" ? "text-[24px]" : "text-[20px]"} font-serif text-[#2C2C2C] leading-tight break-words line-clamp-2 text-left`}>
                 <CardLabelText
                   card={card}
-                  secondaryClassName={`block ${cardType === "equal" ? "text-[18px]" : "text-[15px]"} text-[#7A8F5E] leading-tight mt-0.5`}
+                  secondaryClassName={`block ${cardType === "equal" ? "text-[20px]" : "text-[17px]"} text-[#7A8F5E] leading-tight mt-1.5`}
                 />
               </span>
             </LabelStrip>
@@ -127,9 +151,9 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
       ) : cardRef && card ? (
         <>
           <div className="absolute inset-0 flex flex-col">
-            <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden bg-white`}>
+            <div className={`flex-[0_0_70%] p-[4px] flex items-center justify-center overflow-hidden bg-white`}>
               {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
+                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-cover" />
               ) : (
                 <svg className={`w-10 h-10 stroke-[1.4] fill-none stroke-[#DDD]`} viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -193,9 +217,9 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
             <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
-              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
+              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
-                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
                 ) : (
                   <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -264,15 +288,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
           ))}
         </div>
       </div>
-      {!isPaid && (
-      <div className="shrink-0 py-1.5 pb-4 border-t border-bg-muted flex justify-between items-end">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
-          <span className="text-[10px] text-[#C0C0C0]">in collab with <a href="https://dataorc.in" className="text-[#AAA] underline">DataOrc</a></span>
-        </div>
-        <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
-      </div>
-      )}
+      {!isPaid && <CanvasFooter />}
     </div>
   );
 }
@@ -306,12 +322,7 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
-      {!isPaid && (
-      <div className="shrink-0 pt-2 flex justify-between items-end">
-        <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
-        <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
-      </div>
-      )}
+      {!isPaid && <CanvasFooter />}
     </div>
   );
 }
@@ -356,9 +367,9 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
             <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
-              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0">
+              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
-                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
                 ) : (
                   <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -419,12 +430,7 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
-      {!isPaid && (
-      <div className="shrink-0 pt-2 flex justify-between items-end">
-        <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
-        <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
-      </div>
-      )}
+      {!isPaid && <CanvasFooter />}
     </div>
   );
 }
@@ -458,9 +464,9 @@ function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey
             const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
             return (
               <div style={{ width: FT_CARD_W, height: FT_CARD_H }} className="bg-white border-2 border-dashed border-[#C5D2B8] rounded-[10px] flex flex-col overflow-hidden relative group">
-                <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white">
+                <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white p-[4px]">
                   {imageUrl ? (
-                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
                   ) : (
                     <svg className="w-[90px] h-[90px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -536,12 +542,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       {/* Six cut-out card slots */}
       <CutoutStrip pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
 
-      {!isPaid && (
-      <div className="shrink-0 pt-2 flex justify-between items-end">
-        <span className="font-serif text-[13px] text-[#AAA]">Grow Gently</span>
-        <span className="text-xs text-[#AAA] tracking-wider">visualschedule.app</span>
-      </div>
-      )}
+      {!isPaid && <CanvasFooter />}
     </div>
   );
 }
@@ -588,9 +589,9 @@ function CutoutStrip({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppe
             style={{ width: FT_CARD_W, height: FT_CARD_H }}
             className="border-2 border-dashed border-[#C5D2B8] rounded-[10px] bg-white flex flex-col overflow-hidden relative group"
           >
-            <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-1.5">
+            <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-[4px]">
               {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
               ) : (
                 <svg className="w-[40px] h-[40px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
