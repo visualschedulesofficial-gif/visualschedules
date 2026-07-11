@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv, requireAdmin } from "@/lib/admin-auth";
 
+// Google Drive share links open a viewer; convert them to direct-download form
+function normalizeFileUrl(url: string): string {
+  const m = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
+  if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+  return url;
+}
+
 // GET — full tree incl. disabled
 export async function GET() {
   const env = getEnv();
@@ -43,11 +50,12 @@ export async function POST(request: NextRequest) {
       "INSERT INTO download_items (id, bundle_id, title, description, sort_order) VALUES (?, ?, ?, ?, ?)"
     ).bind(id, body.bundleId, body.title, body.description || null, body.sortOrder ?? 0).run();
   } else if (body.kind === "file") {
-    if (!body.itemId || !body.variant || !body.fileUrl)
-      return NextResponse.json({ error: "itemId, variant, fileUrl required" }, { status: 400 });
+    if (!body.itemId || !body.fileUrl)
+      return NextResponse.json({ error: "itemId and fileUrl required" }, { status: 400 });
+    const variant = body.variant || [body.character, body.language].filter(Boolean).join(" · ") || "default";
     await env.DB.prepare(
-      "INSERT INTO download_files (id, item_id, variant, label, file_url, preview_url, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)"
-    ).bind(id, body.itemId, body.variant, body.label || null, body.fileUrl, body.previewUrl || null, body.sortOrder ?? 0).run();
+      "INSERT INTO download_files (id, item_id, variant, label, file_url, preview_url, sort_order, character, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(id, body.itemId, variant, body.label || null, normalizeFileUrl(body.fileUrl), body.previewUrl || null, body.sortOrder ?? 0, body.character || null, body.language || null).run();
   } else {
     return NextResponse.json({ error: "unknown kind" }, { status: 400 });
   }
@@ -72,8 +80,8 @@ export async function PUT(request: NextRequest) {
     ).bind(body.title, body.description || null, body.sortOrder ?? 0, body.enabled ? 1 : 0, body.id).run();
   } else if (body.kind === "file") {
     await env.DB.prepare(
-      "UPDATE download_files SET variant = ?, label = ?, sort_order = ? WHERE id = ?"
-    ).bind(body.variant, body.label || null, body.sortOrder ?? 0, body.id).run();
+      "UPDATE download_files SET variant = ?, label = ?, sort_order = ?, character = ?, language = ? WHERE id = ?"
+    ).bind(body.variant, body.label || null, body.sortOrder ?? 0, body.character || null, body.language || null, body.id).run();
   }
   return NextResponse.json({ ok: true });
 }
