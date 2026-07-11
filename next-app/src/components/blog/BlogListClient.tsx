@@ -8,7 +8,7 @@ type PostRow = {
   slug: string;
   title: string;
   meta_description: string | null;
-  cover_url: string | null;
+  thumb: string | null;
   published_at: string | null;
 };
 
@@ -41,18 +41,20 @@ export function BlogListClient({ posts }: { posts: PostRow[] }) {
           <Link
             key={p.slug}
             href={`/blog/${p.slug}`}
-            className="block bg-white border border-border rounded overflow-hidden hover:shadow-sm transition-shadow no-underline"
+            className="flex gap-4 bg-white border border-border rounded overflow-hidden hover:shadow-sm transition-shadow no-underline p-3"
           >
-            {p.cover_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.cover_url} alt="" className="w-full max-h-[260px] object-cover" loading="lazy" />
+            {p.thumb && (
+              <div className="w-[96px] h-[96px] shrink-0 rounded overflow-hidden bg-[#FBFAF7] border border-[#F0F0F0]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
+              </div>
             )}
-            <div className="p-4">
-              <h2 className="font-serif text-[20px] text-ink leading-snug mb-1">{p.title}</h2>
+            <div className="min-w-0">
+              <h2 className="font-serif text-[19px] text-ink leading-snug mb-1">{p.title}</h2>
               {p.meta_description && (
-                <p className="text-[13px] text-ink-2 leading-relaxed">{p.meta_description}</p>
+                <p className="text-[13px] text-ink-2 leading-relaxed line-clamp-2">{p.meta_description}</p>
               )}
-              <p className="text-[11px] text-ink-3 mt-2">{(p.published_at || "").slice(0, 10)}</p>
+              <p className="text-[11px] text-ink-3 mt-1.5">{(p.published_at || "").slice(0, 10)}</p>
             </div>
           </Link>
         ))}
