@@ -11,6 +11,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   GRID_SPECS,
+  getDailySpec,
   A4_PORTRAIT,
   A4_LANDSCAPE,
   LANGUAGES,
@@ -153,6 +154,8 @@ export function MobileScheduleBuilder({
   const setGridCols = useScheduleState((s) => s.setGridCols);
   const weekMode = useScheduleState((s) => s.weekMode);
   const setWeekMode = useScheduleState((s) => s.setWeekMode);
+  const cardType = useScheduleState((s) => s.cardType);
+  const setCardType = useScheduleState((s) => s.setCardType);
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
   const pages = useScheduleState((s) => s.pages);
@@ -261,8 +264,8 @@ export function MobileScheduleBuilder({
     if (scheduleType === "daily") {
       let placed = 0;
       let total = 0;
-      const spec = GRID_SPECS[gridCols as 2 | 3 | 4];
-      const perPage = spec ? spec.cols * spec.rows : 12;
+      const spec = getDailySpec(cardType, gridCols);
+      const perPage = spec.slots;
       pages.forEach((p: any) => {
         total += perPage;
         (p.slots || []).forEach((s: any) => {
@@ -278,7 +281,7 @@ export function MobileScheduleBuilder({
       });
     });
     return { placedCount: placed, totalSlots: 0 };
-  }, [pages, scheduleType, gridCols]);
+  }, [pages, scheduleType, gridCols, cardType]);
 
   const isLockedCard = (card: ParsedCard) =>
     (card as any).isFree === false && !hasSubscription;
@@ -344,7 +347,7 @@ export function MobileScheduleBuilder({
 
       {/* Row 2: Schedule type + contextual grid */}
       <section>
-        <div className={`grid gap-2 ${scheduleType === "daily" || scheduleType === "weekly" ? "grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`grid gap-2 ${scheduleType === "daily" ? "grid-cols-2" : "grid-cols-1"}`}>
           <div>
             <SectionLabel>Schedule type</SectionLabel>
             <select
@@ -359,6 +362,21 @@ export function MobileScheduleBuilder({
           </div>
           {scheduleType === "daily" && (
             <div>
+              <SectionLabel>Card Type</SectionLabel>
+              <select
+                value={cardType}
+                onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
+                className={inputCls}
+              >
+                <option value="visual">Visual Focus</option>
+                <option value="equal">Equal Focus</option>
+                <option value="text">Text Focus</option>
+              </select>
+            </div>
+          )}
+        </div>
+        {scheduleType === "daily" && cardType === "visual" && (
+          <div className="mt-2">
               <SectionLabel>Grid</SectionLabel>
               <div className="flex gap-1">
                 {(Object.keys(GRID_SPECS) as unknown as GridCols[]).map((colsKey) => {
@@ -382,8 +400,8 @@ export function MobileScheduleBuilder({
               </div>
             </div>
           )}
-          {scheduleType === "weekly" && (
-            <div>
+        {scheduleType === "weekly" && (
+          <div className="mt-2">
               <SectionLabel>Days</SectionLabel>
               <div className="flex gap-1">
                 {[
@@ -406,9 +424,8 @@ export function MobileScheduleBuilder({
                   );
                 })}
               </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       {/* Canvas preview */}
