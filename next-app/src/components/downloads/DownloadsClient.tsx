@@ -1,176 +1,204 @@
 "use client";
 
-import { useState, useEffect } from "react";
+// Free downloads with top-level filters: Category (bundle), Subcategory (item),
+// Character, and Language. Files can live on our CDN or Google Drive.
+import { useState, useEffect, useMemo } from "react";
 import { TopNav } from "@/components/layout/TopNav";
 
-type DFile = { id: string; variant: string; label: string | null; file_url: string; preview_url: string | null };
+type DFile = {
+  id: string;
+  variant: string;
+  label: string | null;
+  file_url: string;
+  preview_url: string | null;
+  character: string | null;
+  language: string | null;
+};
 type DItem = { id: string; title: string; description: string | null; files: DFile[] };
 type DBundle = { id: string; title: string; description: string | null; items: DItem[] };
+
+const CHARACTERS = ["neutral", "boy", "girl", "brown"] as const;
+
+const selectCls =
+  "px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans";
 
 export function DownloadsClient() {
   const [bundles, setBundles] = useState<DBundle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeBundle, setActiveBundle] = useState<string | null>(null);
-  const [activeItem, setActiveItem] = useState<string | null>(null);
-  const [itemSearch, setItemSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
+  const [character, setCharacter] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("");
 
   useEffect(() => {
     fetch("/api/downloads")
       .then((r) => (r.ok ? r.json() : { bundles: [] }))
-      .then((d) => {
-        setBundles(d.bundles || []);
-        if (d.bundles?.length) setActiveBundle(d.bundles[0].id);
-      })
+      .then((d) => setBundles(d.bundles || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const bundle = bundles.find((b) => b.id === activeBundle) || null;
-  const item = bundle?.items.find((i) => i.id === activeItem) || null;
+  const activeBundle = bundles.find((b) => b.id === category) || null;
+  const languages = useMemo(() => {
+    const set = new Set<string>();
+    bundles.forEach((b) =>
+      b.items.forEach((i) => i.files.forEach((f) => f.language && set.add(f.language)))
+    );
+    return Array.from(set).sort();
+  }, [bundles]);
+
+  // Flatten to file rows carrying their item + bundle, then filter
+  const results = useMemo(() => {
+    const rows: { bundle: DBundle; item: DItem; file: DFile }[] = [];
+    bundles.forEach((bundle) => {
+      if (category && bundle.id !== category) return;
+      bundle.items.forEach((item) => {
+        if (subcategory && item.id !== subcategory) return;
+        item.files.forEach((file) => {
+          if (character && (file.character || "") !== character) return;
+          if (languageFilter && (file.language || "") !== languageFilter) return;
+          rows.push({ bundle, item, file });
+        });
+      });
+    });
+    return rows;
+  }, [bundles, category, subcategory, character, languageFilter]);
 
   return (
     <div className="h-full flex flex-col bg-bg">
       <TopNav />
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-        {/* Left panel — bundles */}
-        <aside className="md:w-[260px] shrink-0 bg-white border-b md:border-b-0 md:border-r border-border md:overflow-y-auto">
-          <h1 className="font-serif text-[20px] text-ink px-4 pt-4 pb-2">Free Downloads</h1>
-          <p className="px-4 pb-3 text-[12px] text-ink-3 font-sans">
-            Ready-to-print visual schedule bundles. Pick a bundle, choose an activity, download the version that fits your child.
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        <div className="max-w-[1100px] mx-auto px-4 py-6">
+          <h1 className="font-serif text-[26px] text-ink mb-1">Free Downloads</h1>
+          <p className="text-[13px] text-ink-3 font-sans mb-4 max-w-[640px]">
+            Ready-to-print visual schedules. Filter by category, character and language,
+            then download the version that fits your child.
           </p>
-          {/* Mobile: bundle dropdown + item search */}
-          <div className="md:hidden px-4 pb-3 space-y-2">
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2 mb-5">
             <select
-              value={activeBundle || ""}
+              value={category}
               onChange={(e) => {
-                setActiveBundle(e.target.value || null);
-                setActiveItem(null);
+                setCategory(e.target.value);
+                setSubcategory("");
               }}
-              className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[14px] text-ink rounded"
+              className={selectCls}
             >
+              <option value="">All categories</option>
               {bundles.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.title} ({b.items.length})
-                </option>
+                <option key={b.id} value={b.id}>{b.title}</option>
               ))}
             </select>
-            <input
-              type="search"
-              value={itemSearch}
-              onChange={(e) => setItemSearch(e.target.value)}
-              placeholder="Search downloads…"
-              className="w-full py-2 px-2.5 border border-border bg-white font-sans text-[14px] text-ink rounded"
-            />
-          </div>
-          <nav className="hidden md:block px-2 pb-4 gap-1">
-            {bundles.map((b) => (
+            <select
+              value={subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              disabled={!activeBundle}
+              className={`${selectCls} disabled:opacity-50`}
+            >
+              <option value="">All subcategories</option>
+              {(activeBundle?.items || []).map((i) => (
+                <option key={i.id} value={i.id}>{i.title}</option>
+              ))}
+            </select>
+            {languages.length > 0 && (
+              <select
+                value={languageFilter}
+                onChange={(e) => setLanguageFilter(e.target.value)}
+                className={selectCls}
+              >
+                <option value="">All languages</option>
+                {languages.map((l) => (
+                  <option key={l} value={l} className="capitalize">{l}</option>
+                ))}
+              </select>
+            )}
+            <div className="flex gap-1.5">
               <button
-                key={b.id}
-                onClick={() => {
-                  setActiveBundle(b.id);
-                  setActiveItem(null);
-                }}
-                className={`shrink-0 md:w-full text-left px-3 py-2.5 rounded text-[14px] font-sans transition-colors ${
-                  activeBundle === b.id
-                    ? "bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                    : "text-ink hover:bg-surface-hover"
+                onClick={() => setCharacter("")}
+                className={`h-[38px] px-3 rounded-full border text-[12px] font-sans capitalize transition-colors ${
+                  character === ""
+                    ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                    : "border-[#C9C4BB] bg-white text-[#666]"
                 }`}
               >
-                {b.title}
-                <span className="text-[11px] text-ink-3 font-normal"> ({b.items.length})</span>
+                All
               </button>
-            ))}
-            {!loading && bundles.length === 0 && (
-              <p className="px-3 py-2 text-[12px] text-ink-3">No downloads yet — check back soon!</p>
-            )}
-          </nav>
-        </aside>
+              {CHARACTERS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCharacter(character === c ? "" : c)}
+                  className={`h-[38px] px-3 rounded-full border text-[12px] font-sans capitalize transition-colors ${
+                    character === c
+                      ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                      : "border-[#C9C4BB] bg-white text-[#666]"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        {/* Right — items and variants */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          {/* Results */}
           {loading && <p className="text-[13px] text-ink-3">Loading…</p>}
-
-          {bundle && !item && (
-            <>
-              <h2 className="font-serif text-[24px] text-ink mb-1">{bundle.title}</h2>
-              {bundle.description && (
-                <p className="text-[13px] text-ink-2 mb-4 max-w-[560px]">{bundle.description}</p>
-              )}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {bundle.items
-                  .filter((i) => !itemSearch.trim() || i.title.toLowerCase().includes(itemSearch.trim().toLowerCase()))
-                  .map((i) => {
-                  const preview = i.files.find((f) => f.preview_url)?.preview_url;
-                  return (
-                    <button
-                      key={i.id}
-                      onClick={() => setActiveItem(i.id)}
-                      className="bg-white border border-[#C7D7B8] rounded text-left hover:shadow-sm transition-shadow"
-                    >
-                      <div className="aspect-square bg-[#FBFAF7] rounded-t overflow-hidden flex items-center justify-center">
-                        {preview ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={preview} alt={i.title} className="w-full h-full object-contain" loading="lazy" />
-                        ) : (
-                          <span className="text-[11px] text-ink-3 px-2 text-center">{i.title}</span>
-                        )}
-                      </div>
-                      <div className="px-2 py-2 border-t border-[#F0F0F0]">
-                        <div className="text-[13px] font-serif text-ink leading-tight">{i.title}</div>
-                        <div className="text-[11px] text-ink-3">{i.files.length} version{i.files.length !== 1 ? "s" : ""}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
+          {!loading && results.length === 0 && (
+            <p className="text-[13px] text-ink-3">
+              {bundles.length === 0
+                ? "No downloads yet — check back soon!"
+                : "Nothing matches these filters — try clearing one."}
+            </p>
           )}
-
-          {bundle && item && (
-            <>
-              <button onClick={() => setActiveItem(null)} className="text-[12px] text-[#4A5A3E] mb-3 hover:underline">
-                ← {bundle.title}
-              </button>
-              <h2 className="font-serif text-[24px] text-ink mb-1">{item.title}</h2>
-              {item.description && (
-                <p className="text-[13px] text-ink-2 mb-4 max-w-[560px]">{item.description}</p>
-              )}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {item.files.map((f) => (
-                  <div key={f.id} className="bg-white border border-[#C7D7B8] rounded overflow-hidden">
-                    <div className="aspect-square bg-[#FBFAF7] flex items-center justify-center overflow-hidden">
-                      {f.preview_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={f.preview_url} alt={`${item.title} — ${f.variant}`} className="w-full h-full object-contain" loading="lazy" />
-                      ) : (
-                        <span className="text-[12px] text-ink-3 capitalize">{f.variant}</span>
-                      )}
-                    </div>
-                    <div className="p-2 border-t border-[#F0F0F0]">
-                      <div className="text-[12px] font-sans text-ink capitalize mb-1.5">
-                        {f.label || f.variant}
-                      </div>
-                      <a
-                        href={f.file_url}
-                        download
-                        target="_blank"
-                        rel="noopener"
-                        className="block text-center text-[12px] font-semibold bg-[#4A5A3E] text-white rounded py-1.5 hover:opacity-90"
-                      >
-                        Download
-                      </a>
-                    </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {results.map(({ bundle, item, file }) => (
+              <div key={file.id} className="bg-white border border-[#C7D7B8] rounded overflow-hidden flex flex-col">
+                <div className="aspect-square bg-[#FBFAF7] flex items-center justify-center overflow-hidden">
+                  {file.preview_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={file.preview_url}
+                      alt={`${item.title} — ${file.variant}`}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-[12px] text-ink-3 px-2 text-center">{item.title}</span>
+                  )}
+                </div>
+                <div className="p-2 border-t border-[#F0F0F0] flex-1 flex flex-col">
+                  <div className="text-[13px] font-serif text-ink leading-tight">{item.title}</div>
+                  <div className="text-[10px] text-ink-3 mb-1.5">{bundle.title}</div>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {file.character && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#E8EDE0] text-[#4A5A3E] capitalize">{file.character}</span>
+                    )}
+                    {file.language && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#FBF0DD] text-[#9A6B12] capitalize">{file.language}</span>
+                    )}
+                    {file.label && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#F0F0F0] text-[#666]">{file.label}</span>
+                    )}
                   </div>
-                ))}
+                  <a
+                    href={file.file_url}
+                    download
+                    target="_blank"
+                    rel="noopener"
+                    className="mt-auto block text-center text-[12px] font-semibold bg-[#4A5A3E] text-white rounded py-1.5 hover:opacity-90 no-underline"
+                  >
+                    Download
+                  </a>
+                </div>
               </div>
-              <p className="mt-6 text-[13px] text-ink-2">
-                Want to customize this schedule — different cards, your language, your child's routine?{" "}
-                <a href="/schedule" className="text-[#4A5A3E] font-semibold underline">Build your own free →</a>
-              </p>
-            </>
-          )}
-        </main>
-      </div>
+            ))}
+          </div>
+
+          <p className="mt-8 text-[13px] text-ink-2">
+            Want to customize — different cards, your language, your child's routine?{" "}
+            <a href="/schedule" className="text-[#4A5A3E] font-semibold underline">Build your own free →</a>
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
