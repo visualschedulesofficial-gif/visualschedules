@@ -13,7 +13,7 @@ export async function GET() {
     "SELECT id, bundle_id, title, description FROM download_items WHERE enabled = 1 ORDER BY sort_order, title"
   ).all();
   const files = await env.DB.prepare(
-    "SELECT id, item_id, variant, label, file_url, preview_url FROM download_files ORDER BY sort_order, variant"
+    "SELECT id, item_id, variant, label, file_url, preview_url, character, language FROM download_files ORDER BY sort_order, variant"
   ).all();
 
   return NextResponse.json({
