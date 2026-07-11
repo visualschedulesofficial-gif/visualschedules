@@ -2,13 +2,49 @@
 
 import { useState, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { GRID_SPECS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
+import { GRID_SPECS,
+  getDailySpec, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
 import { findCard, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
 
 // Paid users get branding-free schedules: check once, hide the footer if active.
 // If the check fails (offline, logged out), branding stays — the safe default.
+// Renders the card's label per the Card Text setting: single language,
+// two languages stacked, or (via LabelStrip) nothing at all.
+function CardLabelText({
+  card,
+  secondaryClassName = "block text-[13px] text-[#7A8F5E] leading-tight",
+}: {
+  card: any;
+  secondaryClassName?: string;
+}) {
+  const language = useScheduleState((s) => s.language);
+  const secondLanguage = useScheduleState((s) => s.secondLanguage);
+  const labelMode = useScheduleState((s) => s.labelMode);
+  const primary =
+    card.translations?.[language] || card.translations?.en || getCardLabel(card, language);
+  if (labelMode === "multi") {
+    const secondary =
+      card.translations?.[secondLanguage] ||
+      card.translations?.en ||
+      getCardLabel(card, secondLanguage);
+    return (
+      <>
+        {primary}
+        <span className={secondaryClassName}>{secondary}</span>
+      </>
+    );
+  }
+  return <>{primary}</>;
+}
+
+function LabelStrip({ className, children }: { className: string; children: React.ReactNode }) {
+  const labelMode = useScheduleState((s) => s.labelMode);
+  if (labelMode === "none") return null;
+  return <div className={className}>{children}</div>;
+}
+
 function useIsPaid() {
   const [isPaid, setIsPaid] = useState(false);
   useEffect(() => {
@@ -32,6 +68,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const cardStyle = useScheduleState((s) => s.cardStyle);
+  const cardType = useScheduleState((s) => s.cardType);
   const language = useScheduleState((s) => s.language);
   const gender = useScheduleState((s) => s.gender);
   const page = pages[pageIdx] as DailyPageData;
@@ -49,7 +86,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white border-[1.5px] border-solid
+      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white border-[1.5px] border-solid ${cardType !== "visual" ? "rounded-[12px]" : ""}
         ${!cardRef
           ? `transition-[border-color,background-color,transform] duration-200 ease-out
              ${isOver ? "border-[#7A8F5E] bg-[#F0F8F0] scale-[1.03]" : isDragging ? "border-[#7A8F5E] bg-white" : "border-[#C7D7B8] bg-white"}`
@@ -58,7 +95,36 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
         ${justDropped ? "animate-[cardLand_350ms_cubic-bezier(0.34,1.56,0.64,1)]" : ""}
       `}
     >
-      {cardRef && card ? (
+      {cardRef && card && cardType !== "visual" ? (
+        <>
+          {/* Equal / Text focus: image left, words right (image untouched, just placed) */}
+          <div className="absolute inset-0 flex items-stretch">
+            <div className={`${cardType === "equal" ? "w-[38%] p-1.5" : "w-[76px] p-1"} shrink-0 flex items-center justify-center overflow-hidden bg-white`}>
+              {imageUrl ? (
+                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
+              ) : (
+                <svg className="w-8 h-8 stroke-[1.4] fill-none stroke-[#DDD]" viewBox="0 0 24 24" strokeLinecap="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              )}
+            </div>
+            <LabelStrip className="flex-1 min-w-0 flex items-center px-2.5">
+              <span className={`${cardType === "equal" ? "text-[24px]" : "text-[20px]"} font-serif text-[#2C2C2C] leading-tight break-words line-clamp-2 text-left`}>
+                <CardLabelText
+                  card={card}
+                  secondaryClassName={`block ${cardType === "equal" ? "text-[18px]" : "text-[15px]"} text-[#7A8F5E] leading-tight mt-0.5`}
+                />
+              </span>
+            </LabelStrip>
+          </div>
+          <button
+            onClick={() => removeCard(pageIdx, String(slotIdx))}
+            className="absolute top-[5px] right-[5px] w-[18px] h-[18px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[13px] text-[#666] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink transition-colors"
+          >
+            &times;
+          </button>
+        </>
+      ) : cardRef && card ? (
         <>
           <div className="absolute inset-0 flex flex-col">
             <div className={`flex-[0_0_70%] flex items-center justify-center overflow-hidden bg-white`}>
@@ -70,11 +136,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
                 </svg>
               )}
             </div>
-            <div className={`flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white`}>
+            <LabelStrip className="flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white">
               <span className="text-[18px] text-center leading-tight font-serif text-[#2C2C2C] break-words line-clamp-2">
-                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
+                <CardLabelText card={card} />
               </span>
-            </div>
+            </LabelStrip>
           </div>
           <button
             onClick={() => removeCard(pageIdx, String(slotIdx))}
@@ -136,9 +202,9 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
-                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
-              </div>
+              <LabelStrip className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
+                <CardLabelText card={card} />
+              </LabelStrip>
               <button
                 onClick={() => removeCard(pageIdx, dayKey, idx)}
                 className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[11px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
@@ -166,10 +232,11 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
 function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const isPaid = useIsPaid();
   const gridCols = useScheduleState((s) => s.gridCols);
+  const cardType = useScheduleState((s) => s.cardType);
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const language = useScheduleState((s) => s.language);
-  const spec = GRID_SPECS[gridCols];
+  const spec = getDailySpec(cardType, gridCols);
   const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
 
   return (
@@ -298,9 +365,9 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
                   </svg>
                 )}
               </div>
-              <div className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
-                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
-              </div>
+              <LabelStrip className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
+                <CardLabelText card={card} />
+              </LabelStrip>
               <button
                 onClick={() => removeCard(pageIdx, String(colIdx), idx)}
                 className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[11px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
@@ -400,11 +467,11 @@ function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey
                     </svg>
                   )}
                 </div>
-                <div className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
+                <LabelStrip className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
                   <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
-                    {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
+                    <CardLabelText card={card} />
                   </span>
-                </div>
+                </LabelStrip>
                 <button
                   onClick={() => removeCard(pageIdx, colKey, 0)}
                   className="absolute top-2 right-2 w-[30px] h-[30px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[19px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
