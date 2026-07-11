@@ -19,9 +19,19 @@ export default async function BlogIndexPage() {
   if (env.DB) {
     try {
       const { results } = await env.DB.prepare(
-        "SELECT slug, title, meta_description, cover_url, published_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC"
+        "SELECT slug, title, meta_description, cover_url, content, published_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC"
       ).all();
-      posts = results || [];
+      posts = (results || []).map((p: any) => {
+        // Thumbnail: the cover if set, otherwise the first image inside the post
+        const firstImg = (p.content || "").match(/!\[[^\]]*\]\(([^)\s]+)\)/);
+        return {
+          slug: p.slug,
+          title: p.title,
+          meta_description: p.meta_description,
+          published_at: p.published_at,
+          thumb: p.cover_url || (firstImg ? firstImg[1] : null),
+        };
+      });
     } catch {
       posts = [];
     }
