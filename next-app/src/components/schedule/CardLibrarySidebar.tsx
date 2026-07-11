@@ -379,7 +379,7 @@ export function CardLibrarySidebar() {
       <div className="border-b border-[#E0E0E0] bg-white">
         <div className="p-3 space-y-3">
           {/* Row A: Schedule type + contextual options */}
-          <div className={`grid gap-2 ${scheduleType === "daily" || scheduleType === "weekly" ? "grid-cols-2" : "grid-cols-1"}`}>
+          <div className={`grid gap-2 ${(scheduleType === "daily" && cardType === "visual") || scheduleType === "weekly" ? "grid-cols-2" : "grid-cols-1"}`}>
             <div>
               <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Schedule type</label>
               <select
@@ -393,7 +393,7 @@ export function CardLibrarySidebar() {
                 <option value="firstthen">First/Then Board</option>
               </select>
             </div>
-            {scheduleType === "daily" && (
+            {scheduleType === "daily" && cardType === "visual" && (
               <div>
                 <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Grid</label>
                 <div className="flex gap-1">
