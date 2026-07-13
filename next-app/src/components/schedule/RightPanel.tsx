@@ -53,25 +53,12 @@ const Icon = {
 };
 
 export function RightPanel() {
-  const scheduleType = useScheduleState((s) => s.scheduleType);
   const title = useScheduleState((s) => s.title);
   const pages = useScheduleState((s) => s.pages);
   const setTitle = useScheduleState((s) => s.setTitle);
   const addPage = useScheduleState((s) => s.addPage);
-  const language = useScheduleState((s) => s.language);
-  const setLanguage = useScheduleState((s) => s.setLanguage);
-  const labelMode = useScheduleState((s) => s.labelMode);
-  const setLabelMode = useScheduleState((s) => s.setLabelMode);
-  const secondLanguage = useScheduleState((s) => s.secondLanguage);
-  const setSecondLanguage = useScheduleState((s) => s.setSecondLanguage);
   const { exportPDF, exportJPEG, exporting } = useExport();
 
-  const segBtn = (active: boolean) =>
-    `flex-1 h-[36px] rounded border text-[13px] font-sans font-medium transition-colors ${
-      active
-        ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-        : "border-[#C9C4BB] bg-white text-[#666] hover:border-[#7A8F5E]"
-    }`;
 
   return (
     <div className="flex flex-col overflow-y-auto h-full">
@@ -88,108 +75,6 @@ export function RightPanel() {
           </button>
         </div>
       </section>
-
-      {/* Language */}
-      <section className="p-4 border-b border-border shrink-0 space-y-3">
-        <label className={sectionLabel}>Language</label>
-        <div className="flex items-center gap-6">
-          <label className="flex items-center gap-2 text-[13px] font-sans text-ink cursor-pointer">
-            <input
-              type="radio"
-              name="labelMode"
-              value="text"
-              checked={(labelMode || "single") !== "none"}
-              onChange={() => setLabelMode("single")}
-              className="accent-[#7A8F5E] w-4 h-4"
-            />
-            Text
-          </label>
-          <label className="flex items-center gap-2 text-[13px] font-sans text-ink cursor-pointer">
-            <input
-              type="radio"
-              name="labelMode"
-              value="none"
-              checked={(labelMode || "single") === "none"}
-              onChange={() => setLabelMode("none")}
-              className="accent-[#7A8F5E] w-4 h-4"
-            />
-            No Text
-          </label>
-        </div>
-        {labelMode !== "none" && (
-          <>
-            <div className="flex gap-2">
-              <button onClick={() => setLabelMode("single")} className={segBtn(labelMode === "single")}>
-                Primary Language
-              </button>
-              <button onClick={() => setLabelMode("multi")} className={segBtn(labelMode === "multi")}>
-                Bilingual
-              </button>
-            </div>
-            {labelMode === "single" ? (
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as Language)}
-                className={selectCls}
-              >
-                {Object.entries(LANGUAGES).map(([code, name]) => (
-                  <option key={code} value={code}>{name}</option>
-                ))}
-              </select>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value as Language)}
-                  className={selectCls}
-                >
-                  {Object.entries(LANGUAGES).map(([code, name]) => (
-                    <option key={code} value={code}>{name}</option>
-                  ))}
-                </select>
-                <select
-                  value={secondLanguage}
-                  onChange={(e) => setSecondLanguage(e.target.value as Language)}
-                  className={selectCls}
-                >
-                  {Object.entries(LANGUAGES).map(([code, name]) => (
-                    <option key={code} value={code}>{name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </>
-        )}
-      </section>
-
-      {/* Custom layout (custom schedules only) */}
-      {scheduleType === "custom" && (
-        <section className="p-4 border-b border-border shrink-0">
-          <label className={`${sectionLabel} mb-2.5`}>Columns</label>
-          <div className="flex gap-[3px]">
-            {[2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                onClick={() => {
-                  const names = useScheduleState.getState().customColNames;
-                  const newNames = Array.from(
-                    { length: n },
-                    (_, i) => names[i] || `Column ${i + 1}`
-                  );
-                  useScheduleState.getState().setCustomColNames(newNames);
-                }}
-                className={`flex-1 py-[7px] text-[12px] border font-sans text-center transition-all ${
-                  useScheduleState.getState().customColNames.length === n
-                    ? "bg-ink text-white border-ink"
-                    : "border-border text-ink-3 hover:bg-ink hover:text-white hover:border-ink"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Schedule name */}
       <section className="p-4 border-b border-border shrink-0">
