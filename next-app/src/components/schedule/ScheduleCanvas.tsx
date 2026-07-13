@@ -127,7 +127,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
         <>
           {/* Equal / Text focus: image left, words right (image untouched, just placed) */}
           <div className="absolute inset-0 flex items-stretch">
-            <div className={`${cardType === "equal" ? "w-[38%]" : "w-[76px]"} p-[4px] shrink-0 flex items-center justify-center overflow-hidden bg-white`}>
+            <div className="h-full aspect-square p-[4px] shrink-0 flex items-center justify-center overflow-hidden bg-white">
               {imageUrl ? (
                 <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
               ) : (
@@ -292,7 +292,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
           ))}
         </div>
       </div>
-      <CanvasFooter show={!isPaid} />
+      <CanvasFooter show />
     </div>
   );
 }
@@ -326,7 +326,7 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
-      <CanvasFooter show={!isPaid} />
+      <CanvasFooter show />
     </div>
   );
 }
@@ -434,7 +434,7 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
-      <CanvasFooter show={!isPaid} />
+      <CanvasFooter show />
     </div>
   );
 }
@@ -572,7 +572,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       {/* Six cut-out card slots */}
       <CutoutStrip pageIdx={pageIdx} dims={dims} justDroppedSlot={justDroppedSlot} />
 
-      <CanvasFooter show={!isPaid} />
+      <CanvasFooter show />
     </div>
   );
 }
