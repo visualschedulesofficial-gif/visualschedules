@@ -57,6 +57,10 @@ export function RightPanel() {
   const pages = useScheduleState((s) => s.pages);
   const setTitle = useScheduleState((s) => s.setTitle);
   const addPage = useScheduleState((s) => s.addPage);
+  const language = useScheduleState((s) => s.language);
+  const setLanguage = useScheduleState((s) => s.setLanguage);
+  const labelMode = useScheduleState((s) => s.labelMode);
+  const setLabelMode = useScheduleState((s) => s.setLabelMode);
   const { exportPDF, exportJPEG, exporting } = useExport();
 
 
@@ -74,6 +78,46 @@ export function RightPanel() {
             <Icon.Plus /> Add
           </button>
         </div>
+      </section>
+
+      {/* Language */}
+      <section className="p-4 border-b border-border shrink-0 space-y-3">
+        <label className={sectionLabel}>Language</label>
+        <div className="flex items-center gap-6">
+          <label className="flex items-center gap-2 text-[13px] font-sans text-ink cursor-pointer">
+            <input
+              type="radio"
+              name="labelMode"
+              value="text"
+              checked={(labelMode || "single") !== "none"}
+              onChange={() => setLabelMode("single")}
+              className="accent-[#7A8F5E] w-4 h-4"
+            />
+            Text
+          </label>
+          <label className="flex items-center gap-2 text-[13px] font-sans text-ink cursor-pointer">
+            <input
+              type="radio"
+              name="labelMode"
+              value="none"
+              checked={(labelMode || "single") === "none"}
+              onChange={() => setLabelMode("none")}
+              className="accent-[#7A8F5E] w-4 h-4"
+            />
+            No Text
+          </label>
+        </div>
+        {(labelMode || "single") !== "none" && (
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className={selectCls}
+          >
+            {Object.entries(LANGUAGES).map(([code, name]) => (
+              <option key={code} value={code}>{name}</option>
+            ))}
+          </select>
+        )}
       </section>
 
       {/* Schedule name */}
