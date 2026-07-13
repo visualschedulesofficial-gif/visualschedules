@@ -47,9 +47,12 @@ function LabelStrip({ className, children }: { className: string; children: Reac
 
 // Free-tier footer, matching the printable references: two-line credit + QR
 // that sends anyone holding the paper to the builder. Paid users get none.
-function CanvasFooter() {
+function CanvasFooter({ show }: { show: boolean }) {
+  // The footer band always occupies the same height so pages stay balanced;
+  // paid accounts simply get it empty.
+  if (!show) return <div className="shrink-0 h-[62px]" />;
   return (
-    <div className="shrink-0 py-2 pb-3 border-t border-bg-muted flex items-end justify-between gap-3">
+    <div className="shrink-0 h-[62px] py-2 pb-3 border-t border-bg-muted flex items-end justify-between gap-3">
       <div className="min-w-0">
         <p className="text-[10.5px] text-[#8A8480] leading-snug">
           Create Personalized A4 Visual Schedules in Just 2 Minutes • https://visualschedule.app/schedule
@@ -93,6 +96,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
   const removeCard = useScheduleState((s) => s.removeCard);
   const cardStyle = useScheduleState((s) => s.cardStyle);
   const cardType = useScheduleState((s) => s.cardType);
+  const labelMode = useScheduleState((s) => s.labelMode);
   const language = useScheduleState((s) => s.language);
   const gender = useScheduleState((s) => s.gender);
   const page = pages[pageIdx] as DailyPageData;
@@ -125,7 +129,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
           <div className="absolute inset-0 flex items-stretch">
             <div className={`${cardType === "equal" ? "w-[38%]" : "w-[76px]"} p-[4px] shrink-0 flex items-center justify-center overflow-hidden bg-white`}>
               {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-cover" />
+                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
               ) : (
                 <svg className="w-8 h-8 stroke-[1.4] fill-none stroke-[#DDD]" viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -151,9 +155,9 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
       ) : cardRef && card ? (
         <>
           <div className="absolute inset-0 flex flex-col">
-            <div className={`flex-[0_0_70%] p-[4px] flex items-center justify-center overflow-hidden bg-white`}>
+            <div className={`${labelMode === "none" ? "flex-1" : "flex-[0_0_70%]"} p-[4px] flex items-center justify-center overflow-hidden bg-white`}>
               {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-cover" />
+                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
               ) : (
                 <svg className={`w-10 h-10 stroke-[1.4] fill-none stroke-[#DDD]`} viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -288,7 +292,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
           ))}
         </div>
       </div>
-      {!isPaid && <CanvasFooter />}
+      <CanvasFooter show={!isPaid} />
     </div>
   );
 }
@@ -322,7 +326,7 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
-      {!isPaid && <CanvasFooter />}
+      <CanvasFooter show={!isPaid} />
     </div>
   );
 }
@@ -430,12 +434,12 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
           <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
       </div>
-      {!isPaid && <CanvasFooter />}
+      <CanvasFooter show={!isPaid} />
     </div>
   );
 }
 
-function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey: string; colName: string; pageIdx: number; justDroppedSlot: string | null }) {
+function FirstThenColumn({ colKey, colName, dims, pageIdx, justDroppedSlot }: { colKey: string; colName: string; dims: { w: number; h: number }; pageIdx: number; justDroppedSlot: string | null }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
@@ -463,10 +467,10 @@ function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey
             if (!card) return null;
             const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
             return (
-              <div style={{ width: FT_CARD_W, height: FT_CARD_H }} className="bg-white border-2 border-dashed border-[#C5D2B8] rounded-[10px] flex flex-col overflow-hidden relative group">
+              <div style={{ width: dims.w, height: dims.h }} className="bg-white border-2 border-dashed border-[#C5D2B8] rounded-[10px] flex flex-col overflow-hidden relative group">
                 <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white p-[4px]">
                   {imageUrl ? (
-                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
+                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
                   ) : (
                     <svg className="w-[90px] h-[90px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -488,7 +492,7 @@ function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey
             );
           })()
         ) : (
-          <div style={{ width: FT_CARD_W, height: FT_CARD_H }} className={`border-2 border-dashed rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-80 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-[#C5D2B8]"}`}>
+          <div style={{ width: dims.w, height: dims.h }} className={`border-2 border-dashed rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-80 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-[#C5D2B8]"}`}>
             <svg className={`w-[52px] h-[52px] stroke-[1.4] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -502,13 +506,25 @@ function FirstThenColumn({ colKey, colName, pageIdx, justDroppedSlot }: { colKey
 
 // Cut-out cards and the board drop areas share EXACTLY these dimensions,
 // so a printed cut-out fits the board perfectly when pasted/velcroed.
-const FT_CARD_W = 226;
-const FT_CARD_H = 268;
+// Sizes shrink as the number of boards grows.
+const FT_DIMS: Record<number, { w: number; h: number }> = {
+  2: { w: 226, h: 268 },
+  3: { w: 200, h: 236 },
+  4: { w: 160, h: 200 },
+};
+const FT_LABELS: Record<string, string[]> = {
+  "first-then": ["First", "Then"],
+  "first-then-now": ["First", "Then", "Now"],
+  sequencing: ["First", "Next", "Then", "Last"],
+};
 
 function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
   const isPaid = useIsPaid();
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
+  const ftStyle = useScheduleState((s) => s.ftStyle);
+  const labels = FT_LABELS[ftStyle] || FT_LABELS["first-then"];
+  const dims = FT_DIMS[labels.length] || FT_DIMS[2];
   const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
 
   return (
@@ -521,10 +537,24 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
         <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{title || scheduleTypeLabel}</h2>
       </div>
 
-      {/* First / Then boards */}
-      <div className="shrink-0 grid grid-cols-2 gap-5" style={{ height: FT_CARD_H + 48 + 28 }}>
-        <FirstThenColumn colKey="0" colName="First" pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-        <FirstThenColumn colKey="1" colName="Then" pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+      {/* Boards — 2, 3, or 4 depending on the chosen style */}
+      <div
+        className="shrink-0 grid gap-4"
+        style={{
+          height: dims.h + 48 + 28,
+          gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))`,
+        }}
+      >
+        {labels.map((name, i) => (
+          <FirstThenColumn
+            key={i}
+            colKey={String(i)}
+            colName={name}
+            dims={dims}
+            pageIdx={pageIdx}
+            justDroppedSlot={justDroppedSlot}
+          />
+        ))}
       </div>
 
       {/* Scissors cut line */}
@@ -540,14 +570,14 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       </div>
 
       {/* Six cut-out card slots */}
-      <CutoutStrip pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+      <CutoutStrip pageIdx={pageIdx} dims={dims} justDroppedSlot={justDroppedSlot} />
 
-      {!isPaid && <CanvasFooter />}
+      <CanvasFooter show={!isPaid} />
     </div>
   );
 }
 
-function CutoutStrip({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+function CutoutStrip({ pageIdx, dims, justDroppedSlot }: { pageIdx: number; dims: { w: number; h: number }; justDroppedSlot: string | null }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
@@ -562,7 +592,7 @@ function CutoutStrip({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppe
   return (
     <div
       ref={setNodeRef}
-      style={{ height: FT_CARD_H * 2 + 12 }}
+      style={{ height: dims.h * 2 + 12 }}
       className={`shrink-0 grid grid-cols-3 grid-rows-2 gap-3 justify-items-center transition-colors duration-150 ${isOver ? "bg-[#F4F7EE]" : ""} ${justDropped ? "animate-pulse-once" : ""}`}
     >
       {Array.from({ length: 6 }).map((_, i) => {
@@ -572,7 +602,7 @@ function CutoutStrip({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppe
           return (
             <div
               key={i}
-              style={{ width: FT_CARD_W, height: FT_CARD_H }}
+              style={{ width: dims.w, height: dims.h }}
               className={`border-2 border-dashed rounded-[10px] flex items-center justify-center ${isOver ? "border-[#7A8F5E]" : "border-[#C5D2B8]"}`}
             >
               <svg className="w-[26px] h-[26px] stroke-[#D8DFCB] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
@@ -586,12 +616,12 @@ function CutoutStrip({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppe
         return (
           <div
             key={i}
-            style={{ width: FT_CARD_W, height: FT_CARD_H }}
+            style={{ width: dims.w, height: dims.h }}
             className="border-2 border-dashed border-[#C5D2B8] rounded-[10px] bg-white flex flex-col overflow-hidden relative group"
           >
             <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-[4px]">
               {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
+                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
               ) : (
                 <svg className="w-[40px] h-[40px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
