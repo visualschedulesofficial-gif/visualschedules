@@ -458,20 +458,8 @@ export function CardLibrarySidebar() {
             )}
           </div>
 
-          {/* Row B: Language + Category/Search side by side */}
-          <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Language</label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-              className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
-            >
-              {Object.entries(LANGUAGES).map(([code, name]) => (
-                <option key={code} value={code}>{name}</option>
-              ))}
-            </select>
-          </div>
+          {/* Row B: Category/Search (language lives in the right panel) */}
+          <div className="grid grid-cols-1 gap-2">
 
           {/* Row 2: Category/Search */}
           <div className="relative">
