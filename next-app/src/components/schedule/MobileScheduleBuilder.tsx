@@ -35,10 +35,10 @@ import { useExport } from "@/hooks/useExport";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import type { CardImageMap } from "@/lib/card-data";
 
+// Landscape schedules (weekly/custom) don't suit phone screens — mobile
+// offers the two portrait types only.
 const SCHEDULE_TYPE_OPTIONS: { value: ScheduleType; label: string }[] = [
   { value: "daily", label: "Daily Schedule" },
-  { value: "weekly", label: "Weekly Schedule" },
-  { value: "custom", label: "Custom Schedule" },
   { value: "firstthen", label: "First/Then Board" },
 ];
 
@@ -156,6 +156,11 @@ export function MobileScheduleBuilder({
   const setWeekMode = useScheduleState((s) => s.setWeekMode);
   const cardType = useScheduleState((s) => s.cardType);
   const setCardType = useScheduleState((s) => s.setCardType);
+  // A weekly/custom schedule opened on mobile falls back to daily
+  useEffect(() => {
+    if (scheduleType === "weekly" || scheduleType === "custom") setScheduleType("daily");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleType]);
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
   const pages = useScheduleState((s) => s.pages);
@@ -375,33 +380,46 @@ export function MobileScheduleBuilder({
             </div>
           )}
         </div>
-        {scheduleType === "weekly" && (
-          <div className="mt-2">
-              <SectionLabel>Days</SectionLabel>
-              <div className="flex gap-1">
-                {[
-                  { value: "week", label: "Full week" },
-                  { value: "weekdays", label: "Weekdays" },
-                ].map((o) => {
-                  const active = weekMode === o.value;
-                  return (
-                    <button
-                      key={o.value}
-                      onClick={() => setWeekMode(o.value as "week" | "weekdays")}
-                      className={`flex-1 py-2 rounded border text-[12px] font-sans transition-colors ${
-                        active
-                          ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                          : "border-border bg-white text-ink"
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  );
-                })}
-              </div>
-          </div>
-        )}
       </section>
+
+      {/* Character — above the canvas */}
+      {showCharacters && (
+        <section>
+          <SectionLabel>Character</SectionLabel>
+          <div className="flex gap-2">
+            {CHARACTER_OPTIONS.map((o) => {
+              const active = gender === o.value;
+              const faceImg = faceCard
+                ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
+                : null;
+              return (
+                <button
+                  key={o.value}
+                  onClick={() => setGender(o.value)}
+                  aria-label={o.label}
+                  title={o.label}
+                  className={`w-10 h-10 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                    active
+                      ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
+                      : "border-[#D8D4CC] opacity-75"
+                  }`}
+                >
+                  {faceImg ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={faceImg}
+                      alt={o.label}
+                      className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4"
+                    />
+                  ) : (
+                    <span className="text-[10px] font-sans text-ink-3">{o.label[0]}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Canvas preview */}
       <section>
@@ -415,45 +433,9 @@ export function MobileScheduleBuilder({
 
       {/* Cards: 5 × 2 quick grid + View all */}
       <section>
-        <div className="flex items-end justify-between mb-1 gap-2">
-          <div className="text-[10px] tracking-widest uppercase text-[#8A8480] font-medium">
-            Cards <span className="normal-case tracking-normal">(tap to add)</span>
-          </div>
-          {showCharacters && (
-            <div className="flex gap-1.5">
-              {CHARACTER_OPTIONS.map((o) => {
-                const active = gender === o.value;
-                const faceImg = faceCard
-                  ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
-                  : null;
-                return (
-                  <button
-                    key={o.value}
-                    onClick={() => setGender(o.value)}
-                    aria-label={o.label}
-                    title={o.label}
-                    className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
-                      active
-                        ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
-                        : "border-[#D8D4CC] opacity-75"
-                    }`}
-                  >
-                    {faceImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={faceImg}
-                        alt={o.label}
-                        className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4"
-                      />
-                    ) : (
-                      <span className="text-[10px] font-sans text-ink-3">{o.label[0]}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <SectionLabel>
+          Cards <span className="normal-case tracking-normal">(tap to add)</span>
+        </SectionLabel>
         {filteredCards.length === 0 ? (
           <div className="text-[12px] text-[#8A8480] font-sans py-3">
             No cards match — try another category or search.
@@ -508,7 +490,35 @@ export function MobileScheduleBuilder({
       {/* Full-page card picker */}
       {showAll && (
         <div className="fixed inset-0 z-50 bg-bg flex flex-col">
-          <div className="shrink-0 flex items-center justify-between px-3 py-2.5 bg-white border-b border-border">
+          <div className="shrink-0 bg-white border-b border-border">
+          {showCharacters && (
+            <div className="flex gap-2 px-3 pt-2.5">
+              {CHARACTER_OPTIONS.map((o) => {
+                const active = gender === o.value;
+                const faceImg = faceCard
+                  ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
+                  : null;
+                return (
+                  <button
+                    key={o.value}
+                    onClick={() => setGender(o.value)}
+                    aria-label={o.label}
+                    className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 ${
+                      active ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
+                    }`}
+                  >
+                    {faceImg ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                    ) : (
+                      <span className="text-[10px] font-sans text-ink-3">{o.label[0]}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="flex items-center justify-between px-3 py-2.5">
             <span className="text-[13px] font-sans text-ink-2">
               {scheduleType === "daily"
                 ? `${placedCount}/${totalSlots} added`
@@ -532,6 +542,7 @@ export function MobileScheduleBuilder({
                 Done
               </button>
             </div>
+          </div>
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
             {categoryOptions
