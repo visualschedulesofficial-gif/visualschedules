@@ -67,6 +67,25 @@ export default function ScheduleBuilder() {
   const [activeCard, setActiveCard] = useState<{ id: string; label: string } | null>(null);
   const [justDroppedSlot, setJustDroppedSlot] = useState<string | null>(null);
   const [fullNotice, setFullNotice] = useState<string | null>(null);
+  // Landscape pages (1123px) are wider than the center column — scale to fit.
+  const canvasBoxRef = useRef<HTMLDivElement | null>(null);
+  const [fitZoom, setFitZoom] = useState(1);
+  const scheduleTypeForFit = useScheduleState((s) => s.scheduleType);
+  const exportingNow = useScheduleState((s) => s.exporting);
+  useEffect(() => {
+    const el = canvasBoxRef.current;
+    if (!el) return;
+    const canvasW =
+      scheduleTypeForFit === "daily" || scheduleTypeForFit === "firstthen" ? 794 : 1123;
+    const update = () => {
+      const avail = el.clientWidth;
+      setFitZoom(Math.min(1, (avail - 24) / canvasW));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [scheduleTypeForFit]);
   const [cardImages, setLocalCardImages] = useState<CardImageMap>({});
   const [cardsLoaded, setCardsLoaded] = useState(false);
   // Mobile gets its own linear layout; desktop keeps the three-panel one.
@@ -258,7 +277,11 @@ export default function ScheduleBuilder() {
          sidebar={<CardLibrarySidebar />}
          rightPanel={<RightPanel />}
        >
-         <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+         <div ref={canvasBoxRef} className="w-full">
+           <div style={{ zoom: exportingNow ? 1 : fitZoom }}>
+             <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+           </div>
+         </div>
        </AppShell>
      )}
 
