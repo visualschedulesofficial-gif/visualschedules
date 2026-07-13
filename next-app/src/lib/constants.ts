@@ -8,7 +8,7 @@ export const GRID_SPECS = {
 } as const;
 
 export const MAX_WEEKLY_CARDS = 5;
-export const MAX_CUSTOM_CARDS = 6;
+export const MAX_CUSTOM_CARDS = 5;
 export const MAX_FT_CARDS = 1;
 export const FREE_SCHEDULE_LIMIT = 3;
 
