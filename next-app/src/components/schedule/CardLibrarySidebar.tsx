@@ -150,6 +150,10 @@ export function CardLibrarySidebar() {
   const [hasSubscription, setHasSubscription] = useState(false);
   const cardType = useScheduleState((s) => s.cardType);
   const setCardType = useScheduleState((s) => s.setCardType);
+  const ftStyle = useScheduleState((s) => s.ftStyle);
+  const setFtStyle = useScheduleState((s) => s.setFtStyle);
+  const customColNames = useScheduleState((s) => s.customColNames);
+  const setCustomColNames = useScheduleState((s) => s.setCustomColNames);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const setScheduleType = useScheduleState((s) => s.setScheduleType);
   const gridCols = useScheduleState((s) => s.gridCols);
@@ -378,8 +382,8 @@ export function CardLibrarySidebar() {
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="border-b border-[#E0E0E0] bg-white">
         <div className="p-3 space-y-3">
-          {/* Row A: Schedule type + contextual options */}
-          <div className={`grid gap-2 ${(scheduleType === "daily" && cardType === "visual") || scheduleType === "weekly" ? "grid-cols-2" : "grid-cols-1"}`}>
+          {/* Row A: Schedule type + contextual dropdown */}
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Schedule type</label>
               <select
@@ -393,55 +397,63 @@ export function CardLibrarySidebar() {
                 <option value="firstthen">First/Then Board</option>
               </select>
             </div>
-            {scheduleType === "daily" && cardType === "visual" && (
+            {scheduleType === "daily" && (
               <div>
-                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Grid</label>
-                <div className="flex gap-1">
-                  {(Object.keys(GRID_SPECS) as unknown as GridCols[]).map((colsKey) => {
-                    const c = Number(colsKey) as GridCols;
-                    const spec = GRID_SPECS[c as 2 | 3 | 4];
-                    const active = gridCols === c;
-                    return (
-                      <button
-                        key={c}
-                        onClick={() => setGridCols(c)}
-                        className={`flex-1 h-[38px] rounded border text-[12px] font-sans transition-colors ${
-                          active
-                            ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                            : "border-[#C9C4BB] bg-white text-[#1C1B19]"
-                        }`}
-                      >
-                        {spec.cols}×{spec.rows}
-                      </button>
-                    );
-                  })}
-                </div>
+                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Card Type</label>
+                <select
+                  value={cardType}
+                  onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                >
+                  <option value="visual">Visual Focus</option>
+                  <option value="equal">Equal Focus</option>
+                  <option value="text">Text Focus</option>
+                </select>
               </div>
             )}
             {scheduleType === "weekly" && (
               <div>
                 <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Days</label>
-                <div className="flex gap-1">
-                  {[
-                    { value: "week", label: "Full week" },
-                    { value: "weekdays", label: "Weekdays" },
-                  ].map((o) => {
-                    const active = weekMode === o.value;
-                    return (
-                      <button
-                        key={o.value}
-                        onClick={() => setWeekMode(o.value as "week" | "weekdays")}
-                        className={`flex-1 h-[38px] rounded border text-[12px] font-sans transition-colors ${
-                          active
-                            ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                            : "border-[#C9C4BB] bg-white text-[#1C1B19]"
-                        }`}
-                      >
-                        {o.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <select
+                  value={weekMode}
+                  onChange={(e) => setWeekMode(e.target.value as "week" | "weekdays")}
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                >
+                  <option value="week">Weekly</option>
+                  <option value="weekdays">Weekdays</option>
+                </select>
+              </div>
+            )}
+            {scheduleType === "custom" && (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Columns</label>
+                <select
+                  value={customColNames.length}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    const names = Array.from({ length: n }, (_, i) => customColNames[i] || `Column ${i + 1}`);
+                    setCustomColNames(names);
+                  }}
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                >
+                  {[2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>{n} columns</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {scheduleType === "firstthen" && (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Board style</label>
+                <select
+                  value={ftStyle}
+                  onChange={(e) => setFtStyle(e.target.value as "first-then" | "first-then-now" | "sequencing")}
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                >
+                  <option value="first-then">First, Then</option>
+                  <option value="first-then-now">First, Then, Now</option>
+                  <option value="sequencing">Sequencing</option>
+                </select>
               </div>
             )}
           </div>
@@ -449,15 +461,15 @@ export function CardLibrarySidebar() {
           {/* Row B: Language + Category/Search side by side */}
           <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Card Type</label>
+            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Language</label>
             <select
-              value={cardType}
-              onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as Language)}
               className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
             >
-              <option value="visual">Visual Focus</option>
-              <option value="equal">Equal Focus</option>
-              <option value="text">Text Focus</option>
+              {Object.entries(LANGUAGES).map(([code, name]) => (
+                <option key={code} value={code}>{name}</option>
+              ))}
             </select>
           </div>
 
