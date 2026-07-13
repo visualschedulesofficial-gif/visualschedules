@@ -375,31 +375,6 @@ export function MobileScheduleBuilder({
             </div>
           )}
         </div>
-        {scheduleType === "daily" && cardType === "visual" && (
-          <div className="mt-2">
-              <SectionLabel>Grid</SectionLabel>
-              <div className="flex gap-1">
-                {(Object.keys(GRID_SPECS) as unknown as GridCols[]).map((colsKey) => {
-                  const cols = Number(colsKey) as GridCols;
-                  const spec = GRID_SPECS[cols as 2 | 3 | 4];
-                  const active = gridCols === cols;
-                  return (
-                    <button
-                      key={cols}
-                      onClick={() => setGridCols(cols)}
-                      className={`flex-1 py-2 rounded border text-[12px] font-sans transition-colors ${
-                        active
-                          ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                          : "border-border bg-white text-ink"
-                      }`}
-                    >
-                      {spec.cols}×{spec.rows}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         {scheduleType === "weekly" && (
           <div className="mt-2">
               <SectionLabel>Days</SectionLabel>
