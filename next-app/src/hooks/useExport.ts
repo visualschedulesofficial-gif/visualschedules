@@ -455,6 +455,7 @@ export function useExport() {
     }
 
     setExporting(true);
+    useScheduleState.getState().setExporting(true);
     showStatus("Preparing your PDF…");
 
     const hideStyle = injectExportHideStyle();
@@ -471,6 +472,7 @@ export function useExport() {
     } finally {
       hideStyle.remove();
       setExporting(false);
+      useScheduleState.getState().setExporting(false);
       hideStatus();
     }
   }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
@@ -482,6 +484,7 @@ export function useExport() {
     }
 
     setExporting(true);
+    useScheduleState.getState().setExporting(true);
     showStatus("Preparing your images…");
 
     const hideStyle = injectExportHideStyle();
@@ -506,6 +509,7 @@ export function useExport() {
     } finally {
       hideStyle.remove();
       setExporting(false);
+      useScheduleState.getState().setExporting(false);
       hideStatus();
     }
   }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
