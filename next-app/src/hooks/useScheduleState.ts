@@ -13,6 +13,9 @@ interface ScheduleState {
   /** Card search typed in the mobile app header */
   uiSearch: string;
   setUiSearch: (s: string) => void;
+  /** True while a PDF/JPEG capture runs — canvas zoom snaps to 100% */
+  exporting: boolean;
+  setExporting: (v: boolean) => void;
   /** First/Then board style: 2 boards, 3 boards, or a 4-step sequence */
   ftStyle: "first-then" | "first-then-now" | "sequencing";
   setFtStyle: (v: "first-then" | "first-then-now" | "sequencing") => void;
@@ -67,6 +70,8 @@ function createEmptyColumnPage(): ColumnPageData {
 export const useScheduleState = create<ScheduleState>((set, get) => ({
   uiSearch: "",
   setUiSearch: (s: string) => set({ uiSearch: s }),
+  exporting: false,
+  setExporting: (exporting) => set({ exporting }),
   ftStyle: "first-then",
   setFtStyle: (ftStyle) => set({ ftStyle, isDirty: true }),
   cardType: "visual",
