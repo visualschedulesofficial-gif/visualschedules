@@ -105,7 +105,7 @@ export default function LoginPage() {
       {/* Right: sign-in column */}
       <div className="flex-1 flex flex-col min-h-dvh">
         {/* Mobile-only slim banner */}
-        <div className="md:hidden h-24 relative bg-[#FDF9F4] shrink-0">
+        <div className="hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/login-hero.jpg"
