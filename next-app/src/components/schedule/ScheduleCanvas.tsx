@@ -207,7 +207,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 flex flex-col gap-1 p-1 justify-center transition-colors duration-150
+        className={`flex-1 flex flex-col gap-1 p-1 justify-start transition-colors duration-150
           ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
         `}
       >
@@ -216,10 +216,10 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
+            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group h-[106px] shrink-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
-                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
+                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
                 ) : (
                   <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -357,7 +357,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 flex flex-col gap-1 p-1 justify-center transition-colors duration-150
+        className={`flex-1 flex flex-col gap-1 p-1 justify-start transition-colors duration-150
           ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
         `}
       >
@@ -366,10 +366,10 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group flex-1 min-h-0 overflow-hidden">
+            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group h-[88px] shrink-0 overflow-hidden">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
-                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-cover" />
+                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
                 ) : (
                   <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
