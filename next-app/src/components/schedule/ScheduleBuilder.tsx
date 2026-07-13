@@ -164,19 +164,21 @@ export default function ScheduleBuilder() {
       setJustDroppedSlot(`${pageIdx}-${emptyIdx}`);
     } else if (scheduleType === "firstthen") {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
-      // Fill order: each board once, then the six cut-out slots
-      const { ftStyle } = useScheduleState.getState();
-      const boardCount = ftStyle === "sequencing" ? 4 : ftStyle === "first-then-now" ? 3 : 2;
-      const order: Array<{ key: string; max: number }> = [
-        ...Array.from({ length: boardCount }, (_, i) => ({ key: String(i), max: 1 })),
-        { key: "cutout", max: 6 },
-      ];
+      // Cards go to the cut-out placeholders only — the boards above stay
+      // empty; the child physically places cut cards onto them after printing.
+      const order: Array<{ key: string; max: number }> = [{ key: "cutout", max: 6 }];
+      let ftPlaced = false;
       for (const { key, max } of order) {
         if ((page.columns?.[key] || []).length < max) {
           placeCard(pageIdx, key, { cardId: card.id, catId: card.categoryId });
           setJustDroppedSlot(`${pageIdx}-${key}`);
+          ftPlaced = true;
           break;
         }
+      }
+      if (!ftPlaced) {
+        setFullNotice("All six cut-out slots are full.");
+        setTimeout(() => setFullNotice(null), 2600);
       }
     } else {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
