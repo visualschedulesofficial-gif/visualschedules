@@ -72,7 +72,7 @@ export function TopNav({
   const initial = user?.email?.[0]?.toUpperCase() || "?";
 
   return (
-    <nav className="bg-surface border-b border-border flex shrink-0 relative z-50 max-md:flex-col max-md:items-stretch max-md:gap-0 max-md:px-0 md:h-[66px] md:px-7 md:gap-5 md:items-center md:justify-between">
+    <nav className="bg-[#3E4A32] border-b border-[#33402A] flex shrink-0 relative z-50 max-md:flex-col max-md:items-stretch max-md:gap-0 max-md:px-0 md:h-[66px] md:px-7 md:gap-5 md:items-center md:justify-between">
 
       {/* Left — mobile sidebar toggle (builder only) */}
       {showBuilderControls && (
@@ -90,7 +90,7 @@ export function TopNav({
       {/* Logo — desktop only; mobile gets the app icon bar instead */}
       <Link
         href="/schedule"
-        className="hidden md:block font-serif text-2xl text-ink no-underline whitespace-nowrap shrink-0 leading-none"
+        className="hidden md:block font-serif text-2xl text-[#EAF1E2] no-underline whitespace-nowrap shrink-0 leading-none"
       >
         Visual Schedules
       </Link>
@@ -105,7 +105,7 @@ export function TopNav({
           // Not logged in — single Sign In button
           <Link
             href="/login"
-            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all whitespace-nowrap"
+            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-[#8FA378] text-[#EAF1E2] no-underline font-medium font-sans hover:bg-[#EAF1E2] hover:text-[#3E4A32] transition-all whitespace-nowrap"
           >
             Sign In
           </Link>
@@ -114,7 +114,7 @@ export function TopNav({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen((v) => !v)}
-              className="flex items-center gap-2 px-2 py-1.5 hover:bg-surface-hover transition-colors rounded-sm"
+              className="flex items-center gap-2 px-2 py-1.5 hover:bg-[#4A5A3E] transition-colors rounded-sm"
               aria-label="Account menu"
             >
               {/* Avatar circle */}
@@ -122,7 +122,7 @@ export function TopNav({
                 {initial}
               </div>
               {/* Email (desktop only) */}
-              <span className="hidden md:block text-[12px] text-ink-2 font-sans max-w-[140px] truncate">
+              <span className="hidden md:block text-[12px] text-[#D8E3C8] font-sans max-w-[140px] truncate">
                 {user.email}
               </span>
               {/* Chevron */}
@@ -229,8 +229,8 @@ function SiteNavLinks() {
             href={link.href}
             className={`text-[10px] md:text-[11px] tracking-wider uppercase px-1.5 md:px-2 py-1 no-underline font-medium font-sans whitespace-nowrap transition-colors ${
               active
-                ? "text-ink border-b-2 border-[#7A8F5E]"
-                : "text-[#77716B] hover:text-ink border-b-2 border-transparent"
+                ? "text-[#EAF1E2] border-b-2 border-[#B7CE9E]"
+                : "text-[#A9B896] hover:text-[#EAF1E2] border-b-2 border-transparent"
             }`}
           >
             {link.label}
@@ -261,7 +261,7 @@ function MobileIconBar({ user }: { user: User | null }) {
   ];
 
   return (
-    <div className="flex md:hidden flex-col w-full bg-[#E9EFDF]">
+    <div className="flex md:hidden flex-col w-full bg-[#3E4A32]">
       {/* Level 1 — brand + search */}
       <div className="flex items-center justify-between h-[46px] px-4">
         {searchOpen ? (
@@ -279,7 +279,7 @@ function MobileIconBar({ user }: { user: User | null }) {
                 setSearchOpen(false);
                 setUiSearch("");
               }}
-              className="shrink-0 w-9 h-9 flex items-center justify-center text-[18px] text-[#77716B]"
+              className="shrink-0 w-9 h-9 flex items-center justify-center text-[18px] text-[#D8E3C8]"
               aria-label="Close search"
             >
               ✕
@@ -287,13 +287,13 @@ function MobileIconBar({ user }: { user: User | null }) {
           </div>
         ) : (
           <>
-            <Link href="/schedule" className="font-serif text-[18px] text-ink no-underline leading-none">
+            <Link href="/schedule" className="font-serif text-[18px] text-[#EAF1E2] no-underline leading-none">
               Visual Schedules
             </Link>
             {onBuilder && (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="w-10 h-10 -mr-2 flex items-center justify-center text-ink"
+                className="w-10 h-10 -mr-2 flex items-center justify-center text-[#EAF1E2]"
                 aria-label="Search cards"
               >
                 <svg className="w-[21px] h-[21px] stroke-current stroke-[2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
@@ -313,8 +313,8 @@ function MobileIconBar({ user }: { user: User | null }) {
             href={t.href}
             className={`px-3 pt-1 pb-2 text-[15px] font-sans font-medium no-underline whitespace-nowrap border-b-2 ${
               t.active
-                ? "text-ink border-[#7A8F5E]"
-                : "text-[#7C766F] border-transparent"
+                ? "text-[#EAF1E2] border-[#B7CE9E]"
+                : "text-[#A9B896] border-transparent"
             }`}
           >
             {t.label}
