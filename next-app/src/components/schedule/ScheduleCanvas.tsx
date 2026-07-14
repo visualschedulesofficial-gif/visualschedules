@@ -90,6 +90,7 @@ const SCHEDULE_TYPE_LABELS = {
   weekly: "Weekly Schedule",
   custom: "Custom Schedule",
   firstthen: "First/Then Board",
+  iwant: "I want",
 } as const;
 
 // Title/labels in the schedule's language. A user-typed custom title always
@@ -537,11 +538,15 @@ function FirstThenColumn({ colKey, colName, dims, pageIdx, justDroppedSlot }: { 
 // Cut-out cards and the board drop areas share EXACTLY these dimensions,
 // so a printed cut-out fits the board perfectly when pasted/velcroed.
 // Sizes shrink as the number of boards grows.
+// Board card == cut-out card, and the cut-out grid is N×N — so all sizes
+// shrink together as boards grow: 2→2×2, 3→3×3, 4→4×4.
 const FT_DIMS: Record<number, { w: number; h: number }> = {
-  2: { w: 226, h: 268 },
-  3: { w: 200, h: 236 },
-  4: { w: 160, h: 200 },
+  2: { w: 226, h: 250 },
+  3: { w: 200, h: 182 },
+  4: { w: 162, h: 140 },
 };
+// The I-want communication board: one target slot + a 3×3 cut-out grid.
+const IW_DIM = { w: 226, h: 210 };
 const FT_LABELS: Record<string, string[]> = {
   "first-then": ["First", "Then"],
   "first-then-now": ["First", "Then", "Now"],
@@ -607,14 +612,94 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       </div>
 
       {/* Six cut-out card slots */}
-      <CutoutStrip pageIdx={pageIdx} dims={dims} justDroppedSlot={justDroppedSlot} />
+      <CutoutStrip
+        pageIdx={pageIdx}
+        dims={dims}
+        count={labels.length * labels.length}
+        cols={labels.length}
+        justDroppedSlot={justDroppedSlot}
+      />
 
       <CanvasFooter show />
     </div>
   );
 }
 
-function CutoutStrip({ pageIdx, dims, justDroppedSlot }: { pageIdx: number; dims: { w: number; h: number }; justDroppedSlot: string | null }) {
+// "I want" communication board: big editable phrase on the left, one target
+// slot on the right (same size as the cut cards, so a cut card fits it), and
+// a 3×3 grid of cut-out cards below. Used for pointing/handing, not scheduling.
+function IWantPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const isPaid = useIsPaid();
+  const shownTitle = useLocalizedTitle();
+  const pages = useScheduleState((s) => s.pages);
+  const page = pages[pageIdx] as ColumnPageData;
+  const targetCards = page?.columns?.["target"] || [];
+  const targetEntry = targetCards[0];
+  const targetCard = targetEntry ? findCard(targetEntry.cardId) : null;
+  const gender = useScheduleState((s) => s.gender);
+  const language = useScheduleState((s) => s.language);
+  const removeCard = useScheduleState((s) => s.removeCard);
+
+  const droppableId = `${pageIdx}-target`;
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
+
+  return (
+    <div
+      data-a4-page
+      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
+      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
+    >
+      {/* Phrase + target slot */}
+      <div className="shrink-0 flex items-start justify-between gap-6 mb-6">
+        <h2 className="font-serif text-[46px] text-[#5A8A3C] leading-tight pt-4 min-w-0 break-words">
+          {shownTitle}
+        </h2>
+        <div
+          ref={setNodeRef}
+          style={{ width: IW_DIM.w, height: IW_DIM.h }}
+          className={`shrink-0 border-2 border-dashed rounded-[10px] bg-white flex flex-col overflow-hidden relative group ${
+            isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : "border-[#C5D2B8]"
+          }`}
+        >
+          {targetCard ? (
+            <>
+              <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-[4px]">
+                {getCardImageUrl(targetCard.id, isCharacterCard(targetCard) ? gender : "neutral") ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={getCardImageUrl(targetCard.id, isCharacterCard(targetCard) ? gender : "neutral")!}
+                    alt={getCardLabel(targetCard, language)}
+                    crossOrigin="anonymous"
+                    className="w-full h-full object-contain"
+                  />
+                ) : null}
+              </div>
+              <LabelStrip className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
+                <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
+                  <CardLabelText card={targetCard} />
+                </span>
+              </LabelStrip>
+              <button
+                onClick={() => removeCard(pageIdx, "target", 0)}
+                className="absolute top-1.5 right-1.5 w-[26px] h-[26px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[16px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
+              >
+                &times;
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Cut-out cards — 3×3 */}
+      <CutoutStrip pageIdx={pageIdx} dims={IW_DIM} count={9} cols={3} justDroppedSlot={justDroppedSlot} />
+
+      <div className="flex-1" />
+      <CanvasFooter show />
+    </div>
+  );
+}
+
+function CutoutStrip({ pageIdx, dims, count, cols, justDroppedSlot }: { pageIdx: number; dims: { w: number; h: number }; count: number; cols: number; justDroppedSlot: string | null }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
@@ -629,10 +714,13 @@ function CutoutStrip({ pageIdx, dims, justDroppedSlot }: { pageIdx: number; dims
   return (
     <div
       ref={setNodeRef}
-      style={{ height: dims.h * 2 + 12 }}
-      className={`shrink-0 grid grid-cols-3 grid-rows-2 gap-3 justify-items-center transition-colors duration-150 ${isOver ? "bg-[#F4F7EE]" : ""} ${justDropped ? "animate-pulse-once" : ""}`}
+      style={{
+        height: (count / cols) * dims.h + (count / cols - 1) * 12,
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+      }}
+      className={`shrink-0 grid gap-3 justify-items-center transition-colors duration-150 ${isOver ? "bg-[#F4F7EE]" : ""} ${justDropped ? "animate-pulse-once" : ""}`}
     >
-      {Array.from({ length: 6 }).map((_, i) => {
+      {Array.from({ length: count }).map((_, i) => {
         const entry = cards[i];
         const card = entry ? findCard(entry.cardId) : null;
         if (!card) {
@@ -715,6 +803,9 @@ export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
             )}
             {scheduleType === "firstthen" && (
               <FirstThenPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+            )}
+            {scheduleType === "iwant" && (
+              <IWantPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
             )}
           </div>
           {pageIdx < pages.length - 1 && (
