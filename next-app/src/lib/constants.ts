@@ -82,3 +82,39 @@ export function getDailySpec(
   if (cardType === "text") return CARD_TYPE_GRIDS.text;
   return GRID_SPECS[gridCols as 2 | 3 | 4];
 }
+
+// Canvas UI strings per language: schedule titles, weekday names (Sunday
+// first, matching DAYS), "Column", and First/Then board words. Languages
+// without an entry fall back to English.
+export const CANVAS_STRINGS: Record<string, {
+  types: { daily: string; weekly: string; custom: string; firstthen: string };
+  column: string;
+  days: string[];
+  first: string; then: string; now: string; next: string; last: string;
+}> = {
+  en: { types: { daily: "Daily Schedule", weekly: "Weekly Schedule", custom: "Custom Schedule", firstthen: "First/Then Board" }, column: "Column", days: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], first: "First", then: "Then", now: "Now", next: "Next", last: "Last" },
+  hi: { types: { daily: "दैनिक दिनचर्या", weekly: "साप्ताहिक दिनचर्या", custom: "कस्टम दिनचर्या", firstthen: "पहले-फिर बोर्ड" }, column: "कॉलम", days: ["रविवार","सोमवार","मंगलवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"], first: "पहले", then: "फिर", now: "अब", next: "आगे", last: "अंत में" },
+  mr: { types: { daily: "दैनंदिन वेळापत्रक", weekly: "साप्ताहिक वेळापत्रक", custom: "कस्टम वेळापत्रक", firstthen: "आधी-नंतर बोर्ड" }, column: "कॉलम", days: ["रविवार","सोमवार","मंगळवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"], first: "आधी", then: "नंतर", now: "आता", next: "पुढे", last: "शेवटी" },
+  pa: { types: { daily: "ਰੋਜ਼ਾਨਾ ਸਮਾਂ-ਸੂਚੀ", weekly: "ਹਫ਼ਤਾਵਾਰੀ ਸਮਾਂ-ਸੂਚੀ", custom: "ਕਸਟਮ ਸਮਾਂ-ਸੂਚੀ", firstthen: "ਪਹਿਲਾਂ-ਫਿਰ ਬੋਰਡ" }, column: "ਕਾਲਮ", days: ["ਐਤਵਾਰ","ਸੋਮਵਾਰ","ਮੰਗਲਵਾਰ","ਬੁੱਧਵਾਰ","ਵੀਰਵਾਰ","ਸ਼ੁੱਕਰਵਾਰ","ਸ਼ਨਿੱਚਰਵਾਰ"], first: "ਪਹਿਲਾਂ", then: "ਫਿਰ", now: "ਹੁਣ", next: "ਅੱਗੇ", last: "ਆਖ਼ਰ ਵਿੱਚ" },
+  gu: { types: { daily: "દૈનિક સમયપત્રક", weekly: "સાપ્તાહિક સમયપત્રક", custom: "કસ્ટમ સમયપત્રક", firstthen: "પહેલા-પછી બોર્ડ" }, column: "કૉલમ", days: ["રવિવાર","સોમવાર","મંગળવાર","બુધવાર","ગુરુવાર","શુક્રવાર","શનિવાર"], first: "પહેલા", then: "પછી", now: "હવે", next: "આગળ", last: "છેલ્લે" },
+  ta: { types: { daily: "தினசரி அட்டவணை", weekly: "வார அட்டவணை", custom: "தனிப்பயன் அட்டவணை", firstthen: "முதலில்-பிறகு பலகை" }, column: "பத்தி", days: ["ஞாயிறு","திங்கள்","செவ்வாய்","புதன்","வியாழன்","வெள்ளி","சனி"], first: "முதலில்", then: "பிறகு", now: "இப்போது", next: "அடுத்து", last: "கடைசியாக" },
+  te: { types: { daily: "రోజువారీ షెడ్యూల్", weekly: "వారపు షెడ్యూల్", custom: "కస్టమ్ షెడ్యూల్", firstthen: "ముందు-తర్వాత బోర్డు" }, column: "కాలమ్", days: ["ఆదివారం","సోమవారం","మంగళవారం","బుధవారం","గురువారం","శుక్రవారం","శనివారం"], first: "ముందు", then: "తర్వాత", now: "ఇప్పుడు", next: "తదుపరి", last: "చివరగా" },
+  bn: { types: { daily: "দৈনিক রুটিন", weekly: "সাপ্তাহিক রুটিন", custom: "কাস্টম রুটিন", firstthen: "আগে-পরে বোর্ড" }, column: "কলাম", days: ["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"], first: "আগে", then: "পরে", now: "এখন", next: "এরপর", last: "শেষে" },
+  ur: { types: { daily: "روزانہ شیڈول", weekly: "ہفتہ وار شیڈول", custom: "کسٹم شیڈول", firstthen: "پہلے-پھر بورڈ" }, column: "کالم", days: ["اتوار","پیر","منگل","بدھ","جمعرات","جمعہ","ہفتہ"], first: "پہلے", then: "پھر", now: "اب", next: "آگے", last: "آخر میں" },
+  kn: { types: { daily: "ದೈನಂದಿನ ವೇಳಾಪಟ್ಟಿ", weekly: "ಸಾಪ್ತಾಹಿಕ ವೇಳಾಪಟ್ಟಿ", custom: "ಕಸ್ಟಮ್ ವೇಳಾಪಟ್ಟಿ", firstthen: "ಮೊದಲು-ನಂತರ ಬೋರ್ಡ್" }, column: "ಕಾಲಮ್", days: ["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"], first: "ಮೊದಲು", then: "ನಂತರ", now: "ಈಗ", next: "ಮುಂದೆ", last: "ಕೊನೆಗೆ" },
+  ml: { types: { daily: "ദിവസ ഷെഡ്യൂൾ", weekly: "ആഴ്ച ഷെഡ്യൂൾ", custom: "കസ്റ്റം ഷെഡ്യൂൾ", firstthen: "ആദ്യം-പിന്നെ ബോർഡ്" }, column: "കോളം", days: ["ഞായർ","തിങ്കൾ","ചൊവ്വ","ബുധൻ","വ്യാഴം","വെള്ളി","ശനി"], first: "ആദ്യം", then: "പിന്നെ", now: "ഇപ്പോൾ", next: "അടുത്തത്", last: "അവസാനം" },
+  es: { types: { daily: "Horario diario", weekly: "Horario semanal", custom: "Horario personalizado", firstthen: "Tablero Primero-Después" }, column: "Columna", days: ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"], first: "Primero", then: "Después", now: "Ahora", next: "Siguiente", last: "Último" },
+  fr: { types: { daily: "Programme quotidien", weekly: "Programme hebdomadaire", custom: "Programme personnalisé", firstthen: "Tableau D'abord-Ensuite" }, column: "Colonne", days: ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"], first: "D'abord", then: "Ensuite", now: "Maintenant", next: "Suivant", last: "Dernier" },
+  de: { types: { daily: "Tagesplan", weekly: "Wochenplan", custom: "Eigener Plan", firstthen: "Erst-Dann-Tafel" }, column: "Spalte", days: ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"], first: "Erst", then: "Dann", now: "Jetzt", next: "Weiter", last: "Zuletzt" },
+  ar: { types: { daily: "الجدول اليومي", weekly: "الجدول الأسبوعي", custom: "جدول مخصص", firstthen: "لوحة أولاً-ثم" }, column: "عمود", days: ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"], first: "أولاً", then: "ثم", now: "الآن", next: "التالي", last: "أخيراً" },
+  zh: { types: { daily: "每日计划", weekly: "每周计划", custom: "自定义计划", firstthen: "先后板" }, column: "列", days: ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"], first: "先", then: "然后", now: "现在", next: "接下来", last: "最后" },
+  ja: { types: { daily: "毎日のスケジュール", weekly: "週間スケジュール", custom: "カスタムスケジュール", firstthen: "はじめに・つぎに ボード" }, column: "列", days: ["日曜日","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日"], first: "はじめに", then: "つぎに", now: "いま", next: "つぎ", last: "さいご" },
+  ko: { types: { daily: "일일 일정", weekly: "주간 일정", custom: "맞춤 일정", firstthen: "먼저-다음 보드" }, column: "열", days: ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"], first: "먼저", then: "다음", now: "지금", next: "이어서", last: "마지막" },
+  pt: { types: { daily: "Rotina diária", weekly: "Rotina semanal", custom: "Rotina personalizada", firstthen: "Quadro Primeiro-Depois" }, column: "Coluna", days: ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"], first: "Primeiro", then: "Depois", now: "Agora", next: "Próximo", last: "Último" },
+  ind: { types: { daily: "Jadwal Harian", weekly: "Jadwal Mingguan", custom: "Jadwal Kustom", firstthen: "Papan Pertama-Lalu" }, column: "Kolom", days: ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"], first: "Pertama", then: "Lalu", now: "Sekarang", next: "Berikutnya", last: "Terakhir" },
+  ms: { types: { daily: "Jadual Harian", weekly: "Jadual Mingguan", custom: "Jadual Tersuai", firstthen: "Papan Dulu-Kemudian" }, column: "Lajur", days: ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"], first: "Dulu", then: "Kemudian", now: "Sekarang", next: "Seterusnya", last: "Akhir" },
+  th: { types: { daily: "ตารางประจำวัน", weekly: "ตารางประจำสัปดาห์", custom: "ตารางกำหนดเอง", firstthen: "บอร์ดก่อน-หลัง" }, column: "คอลัมน์", days: ["วันอาทิตย์","วันจันทร์","วันอังคาร","วันพุธ","วันพฤหัสบดี","วันศุกร์","วันเสาร์"], first: "ก่อน", then: "แล้ว", now: "ตอนนี้", next: "ถัดไป", last: "สุดท้าย" },
+  ru: { types: { daily: "Ежедневное расписание", weekly: "Недельное расписание", custom: "Своё расписание", firstthen: "Доска «Сначала-Потом»" }, column: "Колонка", days: ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"], first: "Сначала", then: "Потом", now: "Сейчас", next: "Далее", last: "В конце" },
+  tl: { types: { daily: "Pang-araw-araw na Iskedyul", weekly: "Lingguhang Iskedyul", custom: "Custom na Iskedyul", firstthen: "First-Then Board" }, column: "Hanay", days: ["Linggo","Lunes","Martes","Miyerkules","Huwebes","Biyernes","Sabado"], first: "Una", then: "Pagkatapos", now: "Ngayon", next: "Susunod", last: "Huli" },
+  vi: { types: { daily: "Lịch hằng ngày", weekly: "Lịch tuần", custom: "Lịch tùy chỉnh", firstthen: "Bảng Trước-Sau" }, column: "Cột", days: ["Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"], first: "Trước", then: "Sau", now: "Bây giờ", next: "Tiếp theo", last: "Cuối cùng" },
+};
