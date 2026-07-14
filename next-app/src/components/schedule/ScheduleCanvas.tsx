@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS,
-  getDailySpec, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
+  getDailySpec,
+  CANVAS_STRINGS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
 import { findCard, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
@@ -90,6 +91,24 @@ const SCHEDULE_TYPE_LABELS = {
   custom: "Custom Schedule",
   firstthen: "First/Then Board",
 } as const;
+
+// Title/labels in the schedule's language. A user-typed custom title always
+// wins; the stock English defaults localize automatically.
+function useCanvasStrings() {
+  const language = useScheduleState((s) => s.language);
+  return CANVAS_STRINGS[language] || CANVAS_STRINGS.en;
+}
+
+function useLocalizedTitle() {
+  const title = useScheduleState((s) => s.title);
+  const scheduleType = useScheduleState((s) => s.scheduleType);
+  const t = useCanvasStrings();
+  const englishDefaults = Object.values(SCHEDULE_TYPE_LABELS) as string[];
+  if (!title || englishDefaults.includes(title)) {
+    return t.types[scheduleType as keyof typeof t.types] || title;
+  }
+  return title;
+}
 
 function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pageIdx: number; justDropped: boolean }) {
   const pages = useScheduleState((s) => s.pages);
@@ -266,6 +285,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
   const language = useScheduleState((s) => s.language);
   const spec = getDailySpec(cardType, gridCols);
   const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
+  const shownTitle = useLocalizedTitle();
 
   return (
     <div
@@ -275,8 +295,8 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
     >
       <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 mb-2.5">
         <div className="col-start-2">
-          {title ? (
-            <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug text-center">{title}</h2>
+          {shownTitle ? (
+            <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug text-center">{shownTitle}</h2>
           ) : (
             <h2 className="font-serif text-[30px] text-[#CCC] leading-snug text-center">Untitled</h2>
           )}
@@ -304,8 +324,10 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
   const language = useScheduleState((s) => s.language);
   const weekMode = useScheduleState((s) => s.weekMode);
   const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
+  const shownTitle = useLocalizedTitle();
 
-  const days = weekMode === "weekdays" ? DAYS.slice(1, 6) : [...DAYS];
+  const localizedDays = useCanvasStrings().days;
+  const days = weekMode === "weekdays" ? localizedDays.slice(1, 6) : [...localizedDays];
   const dayKeys = weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS];
 
   return (
@@ -315,8 +337,8 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
-        {title ? (
-          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{title}</h2>
+        {shownTitle ? (
+          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
         ) : (
           <h2 className="font-serif text-[30px] text-[#CCC] leading-snug">Untitled</h2>
         )}
@@ -413,6 +435,8 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const customColNames = useScheduleState((s) => s.customColNames);
   const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
+  const shownTitle = useLocalizedTitle();
+  const customT = useCanvasStrings();
 
   const colCount = customColNames.length;
 
@@ -423,15 +447,21 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
       style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
-        {title ? (
-          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{title}</h2>
+        {shownTitle ? (
+          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
         ) : (
           <h2 className="font-serif text-[30px] text-[#CCC] leading-snug">Untitled</h2>
         )}
       </div>
       <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
         {customColNames.map((name, idx) => (
-          <CustomColumn key={idx} colIdx={idx} colName={name} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+          <CustomColumn
+            key={idx}
+            colIdx={idx}
+            colName={/^Column \d+$/.test(name) ? `${customT.column} ${idx + 1}` : name}
+            pageIdx={pageIdx}
+            justDroppedSlot={justDroppedSlot}
+          />
         ))}
       </div>
       <CanvasFooter show />
@@ -523,9 +553,16 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const ftStyle = useScheduleState((s) => s.ftStyle);
-  const labels = FT_LABELS[ftStyle] || FT_LABELS["first-then"];
+  const ftT = useCanvasStrings();
+  const labels =
+    ftStyle === "sequencing"
+      ? [ftT.first, ftT.next, ftT.then, ftT.last]
+      : ftStyle === "first-then-now"
+        ? [ftT.first, ftT.then, ftT.now]
+        : [ftT.first, ftT.then];
   const dims = FT_DIMS[labels.length] || FT_DIMS[2];
   const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
+  const shownTitle = useLocalizedTitle();
 
   return (
     <div
@@ -534,7 +571,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-4 shrink-0">
-        <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{title || scheduleTypeLabel}</h2>
+        <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
       </div>
 
       {/* Boards — 2, 3, or 4 depending on the chosen style */}
