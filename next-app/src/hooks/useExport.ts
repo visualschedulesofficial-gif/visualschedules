@@ -267,6 +267,14 @@ async function buildPdfBlob(scheduleType: string) {
           '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
           '[class*="border-b-[#C5D2B8]"]{border-bottom-color:#C5D2B8!important}',
           '[class*="border-r-[#C5D2B8]"]{border-right-color:#C5D2B8!important}',
+          '[class*="bg-[#E8EDE0]"]{background-color:#E8EDE0!important}',
+          '[class*="bg-[#FAFBF7]"]{background-color:#FAFBF7!important}',
+          '[class*="bg-[#EFF2E8]"]{background-color:#EFF2E8!important}',
+          '[class*="text-[#5A8A3C]"]{color:#5A8A3C!important}',
+          '[class*="text-[#4A5A3E]"]{color:#4A5A3E!important}',
+          '[class*="text-[#7A8F5E]"] , [class*="text-[#7A8F5E]"] *{color:#7A8F5E!important}',
+          '[class*="text-[#2C2C2C]"]{color:#2C2C2C!important}',
+          '[class*="stroke-[#8A9B74]"]{stroke:#8A9B74!important}',
         ].join("");
         _doc.head.appendChild(s);
       },
@@ -375,6 +383,14 @@ async function buildJpegBlobs(scheduleType: string) {
           '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
           '[class*="border-b-[#C5D2B8]"]{border-bottom-color:#C5D2B8!important}',
           '[class*="border-r-[#C5D2B8]"]{border-right-color:#C5D2B8!important}',
+          '[class*="bg-[#E8EDE0]"]{background-color:#E8EDE0!important}',
+          '[class*="bg-[#FAFBF7]"]{background-color:#FAFBF7!important}',
+          '[class*="bg-[#EFF2E8]"]{background-color:#EFF2E8!important}',
+          '[class*="text-[#5A8A3C]"]{color:#5A8A3C!important}',
+          '[class*="text-[#4A5A3E]"]{color:#4A5A3E!important}',
+          '[class*="text-[#7A8F5E]"] , [class*="text-[#7A8F5E]"] *{color:#7A8F5E!important}',
+          '[class*="text-[#2C2C2C]"]{color:#2C2C2C!important}',
+          '[class*="stroke-[#8A9B74]"]{stroke:#8A9B74!important}',
         ].join("");
         _doc.head.appendChild(s);
       },
@@ -454,6 +470,20 @@ export function useExport() {
       return;
     }
 
+    // On phones a silent download is confusing — open a tab now (while we
+    // still have the user's tap) and show the PDF in it when ready.
+    const isPhone =
+      typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+    let previewTab: Window | null = null;
+    if (isPhone) {
+      previewTab = window.open("", "_blank");
+      if (previewTab) {
+        previewTab.document.write(
+          '<title>Preparing your PDF…</title><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#4A5A3E;background:#F5F3EC">Preparing your PDF…</body>'
+        );
+      }
+    }
+
     setExporting(true);
     useScheduleState.getState().setExporting(true);
     showStatus("Preparing your PDF…");
@@ -462,7 +492,13 @@ export function useExport() {
     try {
       const blob = (await buildPdfBlob(scheduleType)) as Blob;
       const fileName = getExportFileBaseName(title) + ".pdf";
-      downloadBlob(blob, fileName);
+      if (previewTab) {
+        const url = URL.createObjectURL(blob);
+        previewTab.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 120000);
+      } else {
+        downloadBlob(blob, fileName);
+      }
       // Save to database after successful export (silently)
       showStatus("Saving…");
       await saveToDatabase();
