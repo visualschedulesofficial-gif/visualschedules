@@ -395,6 +395,7 @@ export function CardLibrarySidebar() {
                 <option value="weekly">Weekly Schedule</option>
                 <option value="custom">Custom Schedule</option>
                 <option value="firstthen">First/Then Board</option>
+                <option value="iwant">I Want (communication)</option>
               </select>
             </div>
             {scheduleType === "daily" && (
