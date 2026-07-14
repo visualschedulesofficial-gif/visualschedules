@@ -99,6 +99,7 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
       weekly: "Weekly Schedule",
       custom: "Custom Schedule",
       firstthen: "First/Then Board",
+      iwant: "I want",
     };
     const pages =
       scheduleType === "daily"
@@ -131,14 +132,22 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
       const page = { ...(newPages[pageIdx] as ColumnPageData) };
       const columns = { ...page.columns };
       const existing = columns[slotKey] || [];
+      // Cut-out capacity: I-want board holds 9; First/Then holds N×N where
+      // N is the number of boards (2→4, 3→9, 4→16).
+      const ftBoards =
+        get().ftStyle === "sequencing" ? 4 : get().ftStyle === "first-then-now" ? 3 : 2;
       const maxCards =
         scheduleType === "weekly"
           ? MAX_WEEKLY_CARDS
           : scheduleType === "custom"
             ? MAX_CUSTOM_CARDS
             : slotKey === "cutout"
-              ? 6
-              : MAX_FT_CARDS;
+              ? scheduleType === "iwant"
+                ? 9
+                : ftBoards * ftBoards
+              : scheduleType === "iwant"
+                ? 1
+                : MAX_FT_CARDS;
       if (existing.length < maxCards) {
         columns[slotKey] = [...existing, card];
       }
