@@ -40,6 +40,7 @@ import type { CardImageMap } from "@/lib/card-data";
 const SCHEDULE_TYPE_OPTIONS: { value: ScheduleType; label: string }[] = [
   { value: "daily", label: "Daily Schedule" },
   { value: "firstthen", label: "First/Then Board" },
+  { value: "iwant", label: "I Want (communication)" },
 ];
 
 const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
@@ -51,7 +52,7 @@ const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-[10px] tracking-widest uppercase text-[#8A8480] font-medium mb-0.5">
+    <div className="text-[12px] tracking-widest uppercase text-[#8A8480] font-medium mb-0.5">
       {children}
     </div>
   );
@@ -94,7 +95,7 @@ function CardTile({
       className="relative bg-white border border-[#C7D7B8] rounded active:scale-95 transition-transform overflow-hidden"
     >
       {isLocked && (
-        <span className="absolute top-0.5 left-0.5 z-10 text-[8px] font-bold tracking-wide px-1 py-[1px] rounded-sm leading-tight bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]">
+        <span className="absolute top-0.5 left-0.5 z-10 text-[12px] font-bold tracking-wide px-1 py-[1px] rounded-sm leading-tight bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]">
           🔒
         </span>
       )}
@@ -126,7 +127,7 @@ function CardTile({
       </div>
       <div
         className={`px-0.5 border-t border-[#F0F0F0] font-serif text-ink text-center leading-tight truncate ${
-          size === "small" ? "py-0.5 text-[9px]" : "py-1.5 text-[12px]"
+          size === "small" ? "py-0.5 text-[12px]" : "py-1.5 text-[12px]"
         }`}
       >
         {getCardLabel(card, language)}
@@ -309,9 +310,9 @@ export function MobileScheduleBuilder({
   // Canvas preview zoom (zoom must be 1 while exporting — the capture engine
   // mis-renders fonts inside CSS zoom)
   const baseW =
-    scheduleType === "daily" || scheduleType === "firstthen"
-      ? A4_PORTRAIT.width
-      : A4_LANDSCAPE.width;
+    scheduleType === "weekly" || scheduleType === "custom"
+      ? A4_LANDSCAPE.width
+      : A4_PORTRAIT.width;
   const [zoom, setZoom] = useState(0.42);
   useEffect(() => {
     const update = () => setZoom(Math.min(1, (window.innerWidth - 26) / baseW));
@@ -382,60 +383,41 @@ export function MobileScheduleBuilder({
         </div>
       </section>
 
-      {/* Character — above the canvas */}
-      {showCharacters && (
-        <section>
-          <SectionLabel>Character</SectionLabel>
-          <div className="flex gap-2">
-            {CHARACTER_OPTIONS.map((o) => {
-              const active = gender === o.value;
-              const faceImg = faceCard
-                ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
-                : null;
-              return (
-                <button
-                  key={o.value}
-                  onClick={() => setGender(o.value)}
-                  aria-label={o.label}
-                  title={o.label}
-                  className={`w-10 h-10 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
-                    active
-                      ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
-                      : "border-[#D8D4CC] opacity-75"
-                  }`}
-                >
-                  {faceImg ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={faceImg}
-                      alt={o.label}
-                      className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4"
-                    />
-                  ) : (
-                    <span className="text-[10px] font-sans text-ink-3">{o.label[0]}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Canvas preview */}
-      <section>
-        <SectionLabel>Your schedule</SectionLabel>
-        <div className={exporting ? "w-full" : "w-full overflow-hidden rounded border border-border bg-white"}>
-          <div style={{ zoom: exporting ? 1 : zoom }}>
-            <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
-          </div>
-        </div>
-      </section>
-
       {/* Cards: 5 × 2 quick grid + View all */}
       <section>
-        <SectionLabel>
-          Cards <span className="normal-case tracking-normal">(tap to add)</span>
-        </SectionLabel>
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="text-[12px] tracking-widest uppercase text-[#8A8480] font-medium">
+            Cards <span className="normal-case tracking-normal">(tap to add)</span>
+          </div>
+          {showCharacters && (
+            <div className="flex gap-1.5">
+              {CHARACTER_OPTIONS.map((o) => {
+                const active = gender === o.value;
+                const faceImg = faceCard
+                  ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
+                  : null;
+                return (
+                  <button
+                    key={o.value}
+                    onClick={() => setGender(o.value)}
+                    aria-label={o.label}
+                    title={o.label}
+                    className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                      active ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
+                    }`}
+                  >
+                    {faceImg ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                    ) : (
+                      <span className="text-[12px] font-sans text-ink-3">{o.label[0]}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         {filteredCards.length === 0 ? (
           <div className="text-[12px] text-[#8A8480] font-sans py-3">
             No cards match — try another category or search.
@@ -466,6 +448,16 @@ export function MobileScheduleBuilder({
             )}
           </>
         )}
+      </section>
+
+      {/* Canvas preview */}
+      <section>
+        <SectionLabel>Your schedule</SectionLabel>
+        <div className={exporting ? "w-full" : "w-full overflow-hidden rounded border border-border bg-white"}>
+          <div style={{ zoom: exporting ? 1 : zoom }}>
+            <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+          </div>
+        </div>
       </section>
 
       {/* Export */}
@@ -511,7 +503,7 @@ export function MobileScheduleBuilder({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
                     ) : (
-                      <span className="text-[10px] font-sans text-ink-3">{o.label[0]}</span>
+                      <span className="text-[12px] font-sans text-ink-3">{o.label[0]}</span>
                     )}
                   </button>
                 );
@@ -556,7 +548,7 @@ export function MobileScheduleBuilder({
                 if (catCards.length === 0) return null;
                 return (
                   <div key={c.id}>
-                    <div className="text-[10px] tracking-widest uppercase text-[#8A8480] font-medium mb-1.5">
+                    <div className="text-[12px] tracking-widest uppercase text-[#8A8480] font-medium mb-1.5">
                       {c.name} ({catCards.length})
                     </div>
                     <div className="grid grid-cols-3 gap-2">
