@@ -78,19 +78,19 @@ function DraggableCardItem({
       </div>
 
       {/* Card Label */}
-      <span className="text-[11px] font-semibold text-[#1C1B19] text-center line-clamp-2 leading-tight pointer-events-none">
+      <span className="text-[12px] font-semibold text-[#1C1B19] text-center line-clamp-2 leading-tight pointer-events-none">
         {getCardLabel(card, language)}
       </span>
 
       {/* Green Tick for Added Cards */}
       {isAdded && (
-        <div className="absolute top-1 right-1 bg-[#2D6A2D] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">
+        <div className="absolute top-1 right-1 bg-[#2D6A2D] text-white rounded-full w-5 h-5 flex items-center justify-center text-[12px] font-bold pointer-events-none">
           ✓
         </div>
       )}
 
       {/* Free / Paid badge */}
-      <div className={`absolute bottom-[28px] left-1 text-[9px] font-bold tracking-wide px-1 py-[1px] rounded-sm pointer-events-none leading-tight ${
+      <div className={`absolute bottom-[28px] left-1 text-[12px] font-bold tracking-wide px-1 py-[1px] rounded-sm pointer-events-none leading-tight ${
         isFree
           ? "bg-[#E6F2E6] text-[#2D6A2D] border border-[#BCE0BC]"
           : "bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]"
@@ -327,9 +327,8 @@ export function CardLibrarySidebar() {
   }, [cards]);
   const charactersLocked =
     !!selectedCategory &&
-    (flagsLoaded && selectedCategory in catFlags
-      ? !catFlags[selectedCategory]
-      : !categoryHasCharacterCards[selectedCategory]);
+    !categoryHasCharacterCards[selectedCategory] &&
+    !catFlags[selectedCategory];
   useEffect(() => {
     if (charactersLocked && gender !== "neutral") setGender("neutral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -365,7 +364,7 @@ export function CardLibrarySidebar() {
   if (loading) {
     return (
       <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0] items-center justify-center">
-        <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
+        <div className="w-5 h-5 border border-border border-t-accent rounded-full animate-spin" />
       </div>
     );
   }
@@ -385,7 +384,7 @@ export function CardLibrarySidebar() {
           {/* Row A: Schedule type + contextual dropdown */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Schedule type</label>
+              <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Schedule type</label>
               <select
                 value={scheduleType}
                 onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
@@ -400,7 +399,7 @@ export function CardLibrarySidebar() {
             </div>
             {scheduleType === "daily" && (
               <div>
-                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Card Type</label>
+                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Card Type</label>
                 <select
                   value={cardType}
                   onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
@@ -414,7 +413,7 @@ export function CardLibrarySidebar() {
             )}
             {scheduleType === "weekly" && (
               <div>
-                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Days</label>
+                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Days</label>
                 <select
                   value={weekMode}
                   onChange={(e) => setWeekMode(e.target.value as "week" | "weekdays")}
@@ -427,7 +426,7 @@ export function CardLibrarySidebar() {
             )}
             {scheduleType === "custom" && (
               <div>
-                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Columns</label>
+                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Columns</label>
                 <select
                   value={customColNames.length}
                   onChange={(e) => {
@@ -445,7 +444,7 @@ export function CardLibrarySidebar() {
             )}
             {scheduleType === "firstthen" && (
               <div>
-                <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Board style</label>
+                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Board style</label>
                 <select
                   value={ftStyle}
                   onChange={(e) => setFtStyle(e.target.value as "first-then" | "first-then-now" | "sequencing")}
@@ -464,7 +463,7 @@ export function CardLibrarySidebar() {
 
           {/* Row 2: Category/Search */}
           <div className="relative">
-            <label className="block text-[10px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category / Search</label>
+            <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category / Search</label>
             <div className="relative flex items-center">
               {/* Search Icon */}
               <svg className="absolute left-3 w-4 h-4 stroke-[#333] fill-none pointer-events-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round">
@@ -499,7 +498,7 @@ export function CardLibrarySidebar() {
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border-2 border-[#333] rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#333] rounded shadow-lg z-50 max-h-48 overflow-y-auto">
                 <div
                   className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-[#1C1B19] font-medium border-b border-[#E0E0E0]"
                   onClick={() => {
@@ -565,7 +564,7 @@ export function CardLibrarySidebar() {
                   }}
                   aria-label={g}
                   title={g}
-                  className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                  className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 transition-all ${
                     active
                       ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
                       : "border-[#D8D4CC] opacity-70 hover:opacity-100"
@@ -575,7 +574,7 @@ export function CardLibrarySidebar() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={faceImg} alt={g} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
                   ) : (
-                    <span className="text-[10px] font-sans text-ink-3 uppercase">{g[0]}</span>
+                    <span className="text-[12px] font-sans text-ink-3 uppercase">{g[0]}</span>
                   )}
                 </button>
               );
@@ -590,7 +589,7 @@ export function CardLibrarySidebar() {
           <div className="flex items-center justify-center h-full text-center">
             <div>
               <p className="text-[12px] text-[#666] font-medium">No cards found</p>
-              <p className="text-[11px] text-[#999] mt-1">Try a different search or category</p>
+              <p className="text-[12px] text-[#999] mt-1">Try a different search or category</p>
             </div>
           </div>
         ) : (
@@ -615,7 +614,7 @@ export function CardLibrarySidebar() {
                       else next.add(catId);
                       setCollapsedCats(next);
                     }}
-                    className="w-full flex items-center justify-between text-[11px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5"
+                    className="w-full flex items-center justify-between text-[12px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5"
                   >
                     <span>
                       {catName(catId)} <span className="text-[#B0ACA6] font-medium">({categoryCards.length})</span>
