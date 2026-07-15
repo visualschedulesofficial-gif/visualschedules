@@ -647,11 +647,12 @@ function IWantPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
     <div
       data-a4-page
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
+      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height }}
     >
-      {/* Phrase + target slot */}
-      <div className="shrink-0 flex items-start justify-between gap-6 mb-6">
-        <h2 className="font-serif text-[46px] text-[#5A8A3C] leading-tight pt-4 min-w-0 break-words">
+      {/* Full-bleed header band: phrase + target slot, matching the other
+          schedule types' header treatment */}
+      <div className="shrink-0 bg-[#F4F6EF] border-b-2 border-[#C5D2B8] px-8 pt-10 pb-8 flex items-start justify-between gap-6">
+        <h2 className="font-serif text-[46px] text-[#5A8A3C] leading-tight min-w-0 break-words">
           {shownTitle}
         </h2>
         <div
@@ -690,11 +691,12 @@ function IWantPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
         </div>
       </div>
 
-      {/* Cut-out cards — 3×3 */}
-      <CutoutStrip pageIdx={pageIdx} dims={IW_DIM} count={9} cols={3} justDroppedSlot={justDroppedSlot} />
-
-      <div className="flex-1" />
-      <CanvasFooter show />
+      {/* Body: cut-out cards + footer, in the page's normal padding */}
+      <div className="flex-1 min-h-0 flex flex-col px-8 pt-8 pb-6">
+        <CutoutStrip pageIdx={pageIdx} dims={IW_DIM} count={9} cols={3} justDroppedSlot={justDroppedSlot} />
+        <div className="flex-1" />
+        <CanvasFooter show />
+      </div>
     </div>
   );
 }
