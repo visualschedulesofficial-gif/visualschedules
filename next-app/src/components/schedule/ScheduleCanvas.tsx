@@ -255,7 +255,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
               </LabelStrip>
               <button
                 onClick={() => removeCard(pageIdx, dayKey, idx)}
-                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[11px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
+                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[12px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
               >
                 &times;
               </button>
@@ -303,7 +303,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
           )}
         </div>
         <div className="col-start-3 justify-self-end">
-          <span className="text-[11px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
+          <span className="text-[12px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
@@ -408,7 +408,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
               </LabelStrip>
               <button
                 onClick={() => removeCard(pageIdx, String(colIdx), idx)}
-                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[11px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
+                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[12px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
               >
                 &times;
               </button>
@@ -484,7 +484,7 @@ function FirstThenColumn({ colKey, colName, dims, pageIdx, justDroppedSlot }: { 
   const hasCard = cards.length > 0;
 
   return (
-    <div className="flex flex-col border-2 border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#FAFBF7] min-w-0">
+    <div className="flex flex-col border border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#FAFBF7] min-w-0">
       <div className="bg-[#E8EDE0] border-b-2 border-b-[#C5D2B8] px-2 py-3.5 text-center shrink-0">
         <span className="font-serif text-[26px] text-[#4A5A3E]">{colName}</span>
       </div>
@@ -789,7 +789,7 @@ export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
         <div key={pageIdx} className="flex flex-col items-center w-full">
           <div className="flex flex-col items-center gap-2">
             <div
-              className="text-[11px] tracking-widest uppercase text-[#B0ACA6] font-medium shrink-0"
+              className="text-[12px] tracking-widest uppercase text-[#B0ACA6] font-medium shrink-0"
               style={{ width: scheduleType === "daily" ? A4_PORTRAIT.width : A4_LANDSCAPE.width }}
             >
               Page {pageIdx + 1}
