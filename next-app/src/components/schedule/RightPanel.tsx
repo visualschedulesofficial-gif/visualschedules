@@ -5,7 +5,7 @@ import { useExport } from "@/hooks/useExport";
 import { LANGUAGES, type Language } from "@/lib/constants";
 
 const sectionLabel =
-  "text-[11px] tracking-widest uppercase text-[#8A8480] block font-medium";
+  "text-[12px] tracking-widest uppercase text-[#8A8480] block font-medium";
 const selectCls =
   "w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans";
 
@@ -73,7 +73,7 @@ export function RightPanel() {
           <span className="text-[13px] text-ink font-sans font-medium">1 / {pages.length}</span>
           <button
             onClick={addPage}
-            className="h-[34px] px-3 rounded border-2 border-[#7A8F5E] bg-white text-[#4A5A3E] text-[12px] font-sans font-semibold flex items-center gap-1.5 hover:bg-[#7A8F5E] hover:text-white transition-all"
+            className="h-[34px] px-3 rounded border border-[#7A8F5E] bg-white text-[#4A5A3E] text-[12px] font-sans font-semibold flex items-center gap-1.5 hover:bg-[#7A8F5E] hover:text-white transition-all"
           >
             <Icon.Plus /> Add
           </button>
@@ -137,7 +137,7 @@ export function RightPanel() {
         <button
           onClick={exportPDF}
           disabled={exporting}
-          className="w-full text-[12px] tracking-wide py-2.5 px-3 bg-[#7A8F5E] border-2 border-[#7A8F5E] text-white cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#6A7F4E] hover:border-[#6A7F4E] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full text-[12px] py-2.5 px-3 bg-[#7A8F5E] border border-[#7A8F5E] text-white cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#6A7F4E] hover:border-[#6A7F4E] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon.Pdf />
           {exporting ? "Preparing…" : "Download printable PDF"}
@@ -145,7 +145,7 @@ export function RightPanel() {
         <button
           onClick={exportJPEG}
           disabled={exporting}
-          className="w-full text-[12px] tracking-wide py-2.5 px-3 bg-[#F4F7EE] border-2 border-[#7A8F5E] text-[#4A5A3E] cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#E8EDE0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full text-[12px] py-2.5 px-3 bg-[#F4F7EE] border border-[#7A8F5E] text-[#4A5A3E] cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#E8EDE0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon.Image />
           {exporting ? "Preparing…" : "Download printable JPEG"}
@@ -153,7 +153,7 @@ export function RightPanel() {
         <button
           disabled
           title="Coming soon"
-          className="w-full text-[12px] tracking-wide py-2.5 px-3 bg-[#F0EEE9] text-[#A7A29A] border-2 border-[#E0DDD6] font-sans font-semibold flex items-center justify-center gap-2 rounded cursor-not-allowed"
+          className="w-full text-[12px] py-2.5 px-3 bg-[#F0EEE9] text-[#A7A29A] border border-[#E0DDD6] font-sans font-semibold flex items-center justify-center gap-2 rounded cursor-not-allowed"
         >
           <Icon.WhatsApp />
           Send on WhatsApp
@@ -178,7 +178,7 @@ export function RightPanel() {
         <div className="flex items-center justify-center gap-2">
           <a
             href="mailto:growgently.co@gmail.com"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[11px] font-sans font-medium text-[#2D5A2D] no-underline"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
           >
             <Icon.Mail /> Email
           </a>
@@ -186,7 +186,7 @@ export function RightPanel() {
             href="https://wa.me/919529723925?text=Hi!%20I%20have%20a%20question%20about%20Visual%20Schedules"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[11px] font-sans font-medium text-[#2D5A2D] no-underline"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
           >
             <Icon.WhatsApp /> WhatsApp
           </a>
@@ -194,7 +194,7 @@ export function RightPanel() {
             href="https://www.instagram.com/visual_schedule_official/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[11px] font-sans font-medium text-[#2D5A2D] no-underline"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
           >
             <Icon.Instagram /> Follow
           </a>
