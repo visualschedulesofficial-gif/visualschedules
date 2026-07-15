@@ -105,7 +105,7 @@ export function TopNav({
           // Not logged in — single Sign In button
           <Link
             href="/login"
-            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-[#8FA378] text-[#EAF1E2] no-underline font-medium font-sans hover:bg-[#EAF1E2] hover:text-[#3E4A32] transition-all whitespace-nowrap"
+            className="text-[12px] tracking-wider uppercase px-4 py-[0.42rem] border border-[#8FA378] text-[#EAF1E2] no-underline font-medium font-sans hover:bg-[#EAF1E2] hover:text-[#3E4A32] transition-all whitespace-nowrap"
           >
             Sign In
           </Link>
@@ -139,7 +139,7 @@ export function TopNav({
               <div className="absolute right-0 top-full mt-1.5 w-52 bg-surface border border-border shadow-lg z-[200]">
                 {/* Email header */}
                 <div className="px-3 py-2.5 border-b border-border">
-                  <p className="text-[10px] tracking-wider uppercase text-ink-3 font-medium mb-0.5">Signed in as</p>
+                  <p className="text-[12px] tracking-wider uppercase text-ink-3 font-medium mb-0.5">Signed in as</p>
                   <p className="text-[12px] text-ink truncate font-sans">{user.email}</p>
                 </div>
 
@@ -227,10 +227,10 @@ function SiteNavLinks() {
           <Link
             key={link.href}
             href={link.href}
-            className={`text-[10px] md:text-[11px] tracking-wider uppercase px-1.5 md:px-2 py-1 no-underline font-medium font-sans whitespace-nowrap transition-colors ${
+            className={`relative text-[14px] px-1 py-1 no-underline font-semibold font-sans whitespace-nowrap tracking-tight transition-colors after:content-[""] after:absolute after:-bottom-[1px] after:left-0 after:right-0 after:h-[3px] after:rounded-full after:transition-all ${
               active
-                ? "text-[#EAF1E2] border-b-2 border-[#B7CE9E]"
-                : "text-[#A9B896] hover:text-[#EAF1E2] border-b-2 border-transparent"
+                ? "text-white after:bg-[#B7CE9E]"
+                : "text-[#9FAE8A] hover:text-[#D8E3C8] after:bg-transparent"
             }`}
           >
             {link.label}
@@ -311,10 +311,10 @@ function MobileIconBar({ user }: { user: User | null }) {
           <Link
             key={t.href}
             href={t.href}
-            className={`px-3 pt-1 pb-2 text-[15px] font-sans font-medium no-underline whitespace-nowrap border-b-2 ${
+            className={`px-3 pt-1 pb-2 text-[15px] font-sans font-semibold no-underline whitespace-nowrap tracking-tight border-b-[3px] rounded-t-[2px] transition-colors ${
               t.active
-                ? "text-[#EAF1E2] border-[#B7CE9E]"
-                : "text-[#A9B896] border-transparent"
+                ? "text-white border-[#B7CE9E]"
+                : "text-[#9FAE8A] border-transparent"
             }`}
           >
             {t.label}
