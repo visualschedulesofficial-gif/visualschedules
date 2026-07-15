@@ -30,7 +30,7 @@ export function A11yBar() {
         </a>
 
         <div className="flex items-center gap-1.5" role="group" aria-label="Text size">
-          <span className="text-[11px] tracking-wider uppercase text-[#C9C5BE] hidden sm:inline">
+          <span className="text-[12px] tracking-wider uppercase text-[#C9C5BE] hidden sm:inline">
             Text size
           </span>
           <button
@@ -43,7 +43,7 @@ export function A11yBar() {
           </button>
           <button
             type="button"
-            className="text-[11px] text-white min-w-[36px] text-center hover:underline"
+            className="text-[12px] text-white min-w-[36px] text-center hover:underline"
             onClick={() => applyZoom(100)}
             aria-label="Reset text size"
           >
