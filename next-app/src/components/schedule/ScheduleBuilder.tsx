@@ -43,7 +43,7 @@ function PointerOverlay({ label }: { label: string }) {
       style={{ transform: "translate3d(-9999px, -9999px, 0)" }}
     >
       <div className="-translate-x-1/2 -translate-y-1/2">
-        <div className="w-[88px] bg-white border-2 border-accent/70 rounded shadow-[0_14px_28px_rgba(0,0,0,0.16),0_4px_10px_rgba(139,94,42,0.18)] rotate-[3deg]">
+        <div className="w-[88px] bg-white border border-accent/70 rounded shadow-[0_14px_28px_rgba(0,0,0,0.16),0_4px_10px_rgba(139,94,42,0.18)] rotate-[3deg]">
           <div className="w-full aspect-square bg-white flex items-center justify-center rounded-t">
             <svg
               className="w-5 h-5 stroke-accent/60 stroke-[1.5] fill-none"
@@ -53,7 +53,7 @@ function PointerOverlay({ label }: { label: string }) {
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
           </div>
-          <div className="px-1 py-1 bg-white border-t border-accent/15 text-[10px] text-ink text-center leading-tight font-sans font-medium rounded-b truncate">
+          <div className="px-1 py-1 bg-white border-t border-accent/15 text-[12px] text-ink text-center leading-tight font-sans font-medium rounded-b truncate">
             {label}
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function ScheduleBuilder() {
     const el = document.getElementById("canvas-wrap");
     if (!el) return;
     const canvasW =
-      scheduleTypeForFit === "daily" || scheduleTypeForFit === "firstthen" ? 794 : 1123;
+      scheduleTypeForFit === "weekly" || scheduleTypeForFit === "custom" ? 1123 : 794;
     const update = () => {
       const avail = el.clientWidth;
       if (avail < 200) return; // ignore bogus early measurements
@@ -164,11 +164,22 @@ export default function ScheduleBuilder() {
       if (emptyIdx === -1) return;
       placeCard(pageIdx, String(emptyIdx), { cardId: card.id, catId: card.categoryId });
       setJustDroppedSlot(`${pageIdx}-${emptyIdx}`);
+    } else if (scheduleType === "iwant") {
+      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
+      if ((page.columns?.["cutout"] || []).length < 9) {
+        placeCard(pageIdx, "cutout", { cardId: card.id, catId: card.categoryId });
+        setJustDroppedSlot(`${pageIdx}-cutout`);
+      } else {
+        setFullNotice("All nine card slots are full.");
+        setTimeout(() => setFullNotice(null), 2600);
+      }
     } else if (scheduleType === "firstthen") {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
       // Cards go to the cut-out placeholders only — the boards above stay
       // empty; the child physically places cut cards onto them after printing.
-      const order: Array<{ key: string; max: number }> = [{ key: "cutout", max: 6 }];
+      const { ftStyle } = useScheduleState.getState();
+      const ftN = ftStyle === "sequencing" ? 4 : ftStyle === "first-then-now" ? 3 : 2;
+      const order: Array<{ key: string; max: number }> = [{ key: "cutout", max: ftN * ftN }];
       let ftPlaced = false;
       for (const { key, max } of order) {
         if ((page.columns?.[key] || []).length < max) {
@@ -179,7 +190,7 @@ export default function ScheduleBuilder() {
         }
       }
       if (!ftPlaced) {
-        setFullNotice("All six cut-out slots are full.");
+        setFullNotice("All cut-out slots are full.");
         setTimeout(() => setFullNotice(null), 2600);
       }
     } else {
