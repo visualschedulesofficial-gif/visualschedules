@@ -397,7 +397,7 @@ export function MobileScheduleBuilder({
                     onClick={() => setGender(o.value)}
                     aria-label={o.label}
                     title={o.label}
-                    className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                    className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 transition-all ${
                       active ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
                     }`}
                   >
@@ -504,7 +504,7 @@ export function MobileScheduleBuilder({
                     key={o.value}
                     onClick={() => setGender(o.value)}
                     aria-label={o.label}
-                    className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 ${
+                    className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 ${
                       active ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
                     }`}
                   >
