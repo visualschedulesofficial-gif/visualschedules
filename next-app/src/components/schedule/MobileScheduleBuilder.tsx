@@ -174,6 +174,7 @@ export function MobileScheduleBuilder({
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [freeOnly, setFreeOnly] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
 
@@ -246,20 +247,14 @@ export function MobileScheduleBuilder({
     });
   }, [cards, category, search, language]);
 
-  // Character row shows only for categories the admin marked as having characters
-  // (All categories -> visible). Otherwise gender silently resets to Neutral.
-  const categoryHasCharacterCards = useMemo(() => {
-    const m: Record<string, boolean> = {};
-    cards.forEach((c) => {
-      if (isCharacterCard(c)) m[c.categoryId] = true;
-    });
-    return m;
-  }, [cards]);
-  const showCharacters =
-    !category ||
-    (flagsLoaded && category in catFlags
-      ? !!catFlags[category]
-      : !!categoryHasCharacterCards[category]);
+  // Character row shows when the cards currently being browsed actually
+  // include character variants — judged directly from the filtered list, so
+  // it can never mismatch a category-id lookup (admin categories vs. card
+  // categoryId aren't guaranteed to share the same key).
+  const showCharacters = useMemo(
+    () => filteredCards.some((c) => isCharacterCard(c)),
+    [filteredCards]
+  );
   useEffect(() => {
     if (!showCharacters && gender !== "neutral") setGender("neutral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -386,8 +381,8 @@ export function MobileScheduleBuilder({
       {/* Cards: 5 × 2 quick grid + View all */}
       <section>
         <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="text-[12px] tracking-widest uppercase text-[#8A8480] font-medium">
-            Cards <span className="normal-case tracking-normal">(tap to add)</span>
+          <div className="text-[12px] tracking-widest uppercase text-ink font-semibold">
+            Cards <span className="normal-case tracking-normal font-medium text-[#8A8480]">(tap to select)</span>
           </div>
           {showCharacters && (
             <div className="flex gap-1.5">
@@ -424,28 +419,28 @@ export function MobileScheduleBuilder({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-5 gap-1.5">
+            {/* A taste of the list — one scrollable row, not a full grid */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-3 px-3 snap-x">
               {filteredCards.slice(0, 10).map((card) => (
-                <CardTile
-                  key={card.id}
-                  card={card}
-                  language={language}
-                  gender={gender}
-                  isLocked={isLockedCard(card)}
-                  placed={placedIds.has(card.id)}
-                  onAdd={onAddCard}
-                  size="small"
-                />
+                <div key={card.id} className="w-[92px] shrink-0 snap-start">
+                  <CardTile
+                    card={card}
+                    language={language}
+                    gender={gender}
+                    isLocked={isLockedCard(card)}
+                    placed={placedIds.has(card.id)}
+                    onAdd={onAddCard}
+                    size="small"
+                  />
+                </div>
               ))}
             </div>
-            {filteredCards.length > 10 && (
-              <button
-                onClick={() => setShowAll(true)}
-                className="w-full mt-2 py-2 rounded border border-[#7A8F5E] text-[#4A5A3E] bg-white text-[13px] font-sans font-semibold"
-              >
-                View all {filteredCards.length} cards
-              </button>
-            )}
+            <button
+              onClick={() => setShowAll(true)}
+              className="w-full mt-2 py-2.5 rounded bg-[#4A5A3E] text-white text-[14px] font-sans font-semibold"
+            >
+              View all {filteredCards.length} cards
+            </button>
           </>
         )}
       </section>
@@ -483,7 +478,21 @@ export function MobileScheduleBuilder({
       {showAll && (
         <div className="fixed inset-0 z-50 bg-bg flex flex-col">
           <div className="shrink-0 bg-white border-b border-border">
-          {showCharacters && (
+          {showFilters && (
+          <div className="px-3 pt-2.5">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={inputCls}
+            >
+              <option value="">All categories</option>
+              {categoryOptions.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          )}
+          {showFilters && showCharacters && (
             <div className="flex gap-2 px-3 pt-2.5">
               {CHARACTER_OPTIONS.map((o) => {
                 const active = gender === o.value;
@@ -517,6 +526,19 @@ export function MobileScheduleBuilder({
                 : `${placedCount} added`}
             </span>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                aria-label="Filter by category"
+                className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 ${
+                  showFilters || category
+                    ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E]"
+                    : "border-border bg-white text-ink-3"
+                }`}
+              >
+                <svg className="w-4 h-4 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+              </button>
               <button
                 onClick={() => setFreeOnly(!freeOnly)}
                 className={`px-3 py-1.5 rounded-full border text-[12px] font-sans ${
