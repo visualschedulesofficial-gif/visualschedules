@@ -89,7 +89,7 @@ export function AppShell({ sidebar, rightPanel, children }: AppShellProps) {
       {(sidebar || rightPanel) && (
         <div className="flex md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-3 py-2 gap-2 z-[200] items-center safe-area-bottom">
           <button
-            className="flex-1 text-[11px] tracking-wider uppercase py-2.5 px-1 border border-border bg-transparent text-[#4A4540] font-medium font-sans flex items-center justify-center gap-1.5 active:bg-surface-hover rounded-sm"
+            className="flex-1 text-[12px] tracking-wider uppercase py-2.5 px-1 border border-border bg-transparent text-[#4A4540] font-medium font-sans flex items-center justify-center gap-1.5 active:bg-surface-hover rounded-sm"
             onClick={() => {
               setRightPanelOpen(false);
               setSidebarOpen((v) => !v);
@@ -102,7 +102,7 @@ export function AppShell({ sidebar, rightPanel, children }: AppShellProps) {
             Cards
           </button>
           <button
-            className="flex-1 text-[11px] tracking-wider uppercase py-2.5 px-1 bg-ink text-white border border-ink font-medium font-sans flex items-center justify-center gap-1.5 active:bg-[#333] rounded-sm"
+            className="flex-1 text-[12px] tracking-wider uppercase py-2.5 px-1 bg-ink text-white border border-ink font-medium font-sans flex items-center justify-center gap-1.5 active:bg-[#333] rounded-sm"
             onClick={() => {
               setSidebarOpen(false);
               setRightPanelOpen((v) => !v);
