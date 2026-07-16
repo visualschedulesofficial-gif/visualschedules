@@ -5,7 +5,7 @@ import { useExport } from "@/hooks/useExport";
 import { LANGUAGES, type Language } from "@/lib/constants";
 
 const sectionLabel =
-  "text-[12px] tracking-widest uppercase text-[#8A8480] block font-medium";
+  "text-[12px] tracking-widest uppercase text-[#5C5855] block font-medium";
 const selectCls =
   "w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans";
 
@@ -199,13 +199,13 @@ export function RightPanel() {
             <Icon.Instagram /> Follow
           </a>
         </div>
-        <p className="text-center mt-3 text-[12px] font-sans text-[#8A8480]">
+        <p className="text-center mt-3 text-[12px] font-sans text-[#5C5855]">
           With thanks to{" "}
           <a
             href="https://dataorc.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-[#8A8480] hover:text-ink"
+            className="underline text-[#5C5855] hover:text-ink"
           >
             DataOrc
           </a>
