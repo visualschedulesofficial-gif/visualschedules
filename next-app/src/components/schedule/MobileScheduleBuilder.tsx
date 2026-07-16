@@ -52,7 +52,7 @@ const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-[12px] tracking-widest uppercase text-[#8A8480] font-medium mb-0.5">
+    <div className="text-[14px] tracking-wide uppercase text-[#3A3733] font-semibold mb-1">
       {children}
     </div>
   );
@@ -382,7 +382,7 @@ export function MobileScheduleBuilder({
       <section>
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="text-[12px] tracking-widest uppercase text-ink font-semibold">
-            Cards <span className="normal-case tracking-normal font-medium text-[#8A8480]">(tap to select)</span>
+            Cards <span className="normal-case tracking-normal font-medium text-[#5C5855]">(tap to select)</span>
           </div>
           {showCharacters && (
             <div className="flex gap-1.5">
@@ -414,7 +414,7 @@ export function MobileScheduleBuilder({
           )}
         </div>
         {filteredCards.length === 0 ? (
-          <div className="text-[12px] text-[#8A8480] font-sans py-3">
+          <div className="text-[12px] text-[#5C5855] font-sans py-3">
             No cards match — try another category or search.
           </div>
         ) : (
@@ -520,7 +520,7 @@ export function MobileScheduleBuilder({
             </div>
           )}
           <div className="flex items-center justify-between px-3 py-2.5">
-            <span className="text-[13px] font-sans text-ink-2">
+            <span className="text-[14px] font-sans text-ink-2">
               {scheduleType === "daily"
                 ? `${placedCount}/${totalSlots} added`
                 : `${placedCount} added`}
@@ -551,7 +551,7 @@ export function MobileScheduleBuilder({
               </button>
               <button
                 onClick={() => setShowAll(false)}
-                className="px-4 py-1.5 rounded bg-[#4A5A3E] text-white text-[13px] font-semibold"
+                className="px-4 py-1.5 rounded bg-[#4A5A3E] text-white text-[14px] font-semibold"
               >
                 Done
               </button>
@@ -570,7 +570,7 @@ export function MobileScheduleBuilder({
                 if (catCards.length === 0) return null;
                 return (
                   <div key={c.id}>
-                    <div className="text-[12px] tracking-widest uppercase text-[#8A8480] font-medium mb-1.5">
+                    <div className="text-[12px] tracking-widest uppercase text-[#5C5855] font-medium mb-1.5">
                       {c.name} ({catCards.length})
                     </div>
                     <div className="grid grid-cols-3 gap-2">
