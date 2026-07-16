@@ -5,9 +5,9 @@ import { useExport } from "@/hooks/useExport";
 import { LANGUAGES, type Language } from "@/lib/constants";
 
 const sectionLabel =
-  "text-[12px] tracking-widest uppercase text-[#5C5855] block font-medium";
+  "text-[12px] tracking-widest uppercase text-ink-2 block font-medium";
 const selectCls =
-  "w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans";
+  "w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans";
 
 /* Professional line icons (Feather-style) */
 const Icon = {
@@ -73,7 +73,7 @@ export function RightPanel() {
           <span className="text-[13px] text-ink font-sans font-medium">1 / {pages.length}</span>
           <button
             onClick={addPage}
-            className="h-[34px] px-3 rounded border border-[#7A8F5E] bg-white text-[#4A5A3E] text-[12px] font-sans font-semibold flex items-center gap-1.5 hover:bg-[#7A8F5E] hover:text-white transition-all"
+            className="h-[34px] px-3 rounded border border-weekly-accent bg-white text-accent-strong text-[12px] font-sans font-semibold flex items-center gap-1.5 hover:bg-weekly-accent hover:text-white transition-all"
           >
             <Icon.Plus /> Add
           </button>
@@ -91,7 +91,7 @@ export function RightPanel() {
               value="text"
               checked={(labelMode || "single") !== "none"}
               onChange={() => setLabelMode("single")}
-              className="accent-[#7A8F5E] w-4 h-4"
+              className="accent-weekly-accent w-4 h-4"
             />
             Text
           </label>
@@ -102,7 +102,7 @@ export function RightPanel() {
               value="none"
               checked={(labelMode || "single") === "none"}
               onChange={() => setLabelMode("none")}
-              className="accent-[#7A8F5E] w-4 h-4"
+              className="accent-weekly-accent w-4 h-4"
             />
             No Text
           </label>
@@ -127,7 +127,7 @@ export function RightPanel() {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full py-2 px-2.5 h-[38px] border border-[#C9C4BB] rounded bg-white font-sans text-[13px] text-ink outline-none focus:ring-2 focus:ring-[#7A8F5E]"
+          className="w-full py-2 px-2.5 h-[38px] border border-input-border rounded bg-white font-sans text-[13px] text-ink outline-none focus:ring-2 focus:ring-weekly-accent"
         />
       </section>
 
@@ -137,7 +137,7 @@ export function RightPanel() {
         <button
           onClick={exportPDF}
           disabled={exporting}
-          className="w-full text-[12px] py-2.5 px-3 bg-[#7A8F5E] border border-[#7A8F5E] text-white cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#6A7F4E] hover:border-[#6A7F4E] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full text-[12px] py-2.5 px-3 bg-weekly-accent border border-weekly-accent text-white cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-accent-strong-hover hover:border-accent-strong-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon.Pdf />
           {exporting ? "Preparing…" : "Download printable PDF"}
@@ -145,7 +145,7 @@ export function RightPanel() {
         <button
           onClick={exportJPEG}
           disabled={exporting}
-          className="w-full text-[12px] py-2.5 px-3 bg-[#F4F7EE] border border-[#7A8F5E] text-[#4A5A3E] cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#E8EDE0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full text-[12px] py-2.5 px-3 bg-[#F4F7EE] border border-weekly-accent text-accent-strong cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#E8EDE0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon.Image />
           {exporting ? "Preparing…" : "Download printable JPEG"}
@@ -171,14 +171,14 @@ export function RightPanel() {
           href="https://chat.whatsapp.com/F452loR5KUE5RzcffScGw5"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 mb-2 py-2 px-3 rounded bg-[#EAF1E2] border border-[#4A5A3E] text-[12px] font-sans font-semibold text-[#2D5A2D] no-underline hover:bg-[#DFEAD3] transition-all"
+          className="flex items-center justify-center gap-2 mb-2 py-2 px-3 rounded bg-accent-soft border border-accent-strong text-[12px] font-sans font-semibold text-[#2D5A2D] no-underline hover:bg-[#DFEAD3] transition-all"
         >
           <Icon.WhatsApp /> Join our WhatsApp community
         </a>
         <div className="flex items-center justify-center gap-2">
           <a
             href="mailto:growgently.co@gmail.com"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-accent-soft border border-accent-strong hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
           >
             <Icon.Mail /> Email
           </a>
@@ -186,7 +186,7 @@ export function RightPanel() {
             href="https://wa.me/919529723925?text=Hi!%20I%20have%20a%20question%20about%20Visual%20Schedules"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-accent-soft border border-accent-strong hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
           >
             <Icon.WhatsApp /> WhatsApp
           </a>
@@ -194,18 +194,18 @@ export function RightPanel() {
             href="https://www.instagram.com/visual_schedule_official/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-[#EAF1E2] border border-[#4A5A3E] hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded bg-accent-soft border border-accent-strong hover:bg-[#DFEAD3] transition-all text-[12px] font-sans font-medium text-[#2D5A2D] no-underline"
           >
             <Icon.Instagram /> Follow
           </a>
         </div>
-        <p className="text-center mt-3 text-[12px] font-sans text-[#5C5855]">
+        <p className="text-center mt-3 text-[12px] font-sans text-ink-2">
           With thanks to{" "}
           <a
             href="https://dataorc.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-[#5C5855] hover:text-ink"
+            className="underline text-ink-2 hover:text-ink"
           >
             DataOrc
           </a>
