@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playwrite+DE+Grund:wght@400&family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playwrite+DE+Grund:wght@400&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ── Design Tokens ── */
@@ -30,8 +30,24 @@
   --badge-paid-bg: #FFF5EA;
   --badge-paid-text: #8B5E2A;
 
+  /* Accent green family — one edit here now reaches every button, active
+     state, and highlight across the whole app instead of hunting through
+     individual component files. */
+  --accent-soft: #EAF1E2;      /* light fill: soft buttons, community banner */
+  --accent-strong: #4A5A3E;    /* solid fill: primary buttons, active pills */
+  --accent-strong-hover: #6A7F4E;
+  --input-border: #C9C4BB;     /* every text input / select border */
+  --success: #4A8A4A;          /* placed checkmarks, success ticks */
+
+  /* Dark header (TopNav) — its own small palette since it sits on a dark
+     background, unlike the rest of the light-background app. */
+  --nav-bg: #3E4A32;
+  --nav-border: #33402A;
+  --nav-active: #B7CE9E;
+  --nav-muted: #C3D3AC;
+
   --font-serif: 'Playwrite DE Grund', Georgia, cursive;
-  --font-sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
 
   color-scheme: light;
 }
@@ -63,6 +79,17 @@
   --color-badge-free-text: var(--badge-free-text);
   --color-badge-paid-bg: var(--badge-paid-bg);
   --color-badge-paid-text: var(--badge-paid-text);
+
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-strong-hover: var(--accent-strong-hover);
+  --color-input-border: var(--input-border);
+  --color-success: var(--success);
+
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-border: var(--nav-border);
+  --color-nav-active: var(--nav-active);
+  --color-nav-muted: var(--nav-muted);
 
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
