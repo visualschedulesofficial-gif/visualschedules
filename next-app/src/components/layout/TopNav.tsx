@@ -227,10 +227,10 @@ function SiteNavLinks() {
           <Link
             key={link.href}
             href={link.href}
-            className={`relative text-[14px] px-1 py-1 no-underline font-semibold font-sans whitespace-nowrap tracking-tight transition-colors after:content-[""] after:absolute after:-bottom-[1px] after:left-0 after:right-0 after:h-[3px] after:rounded-full after:transition-all ${
+            className={`relative text-[14px] px-1 py-1 no-underline font-bold font-sans whitespace-nowrap tracking-tight transition-colors after:content-[""] after:absolute after:-bottom-[1px] after:left-0 after:right-0 after:h-[3px] after:rounded-full after:transition-all ${
               active
                 ? "text-white after:bg-[#B7CE9E]"
-                : "text-[#9FAE8A] hover:text-[#D8E3C8] after:bg-transparent"
+                : "text-[#C3D3AC] hover:text-[#EAF1E2] after:bg-transparent"
             }`}
           >
             {link.label}
@@ -311,10 +311,10 @@ function MobileIconBar({ user }: { user: User | null }) {
           <Link
             key={t.href}
             href={t.href}
-            className={`px-3 pt-1 pb-2 text-[15px] font-sans font-semibold no-underline whitespace-nowrap tracking-tight border-b-[3px] rounded-t-[2px] transition-colors ${
+            className={`px-3 pt-1.5 pb-2 text-[16px] font-sans font-bold no-underline whitespace-nowrap tracking-tight border-b-[3px] rounded-t-[2px] transition-colors ${
               t.active
                 ? "text-white border-[#B7CE9E]"
-                : "text-[#9FAE8A] border-transparent"
+                : "text-[#C3D3AC] border-transparent"
             }`}
           >
             {t.label}
