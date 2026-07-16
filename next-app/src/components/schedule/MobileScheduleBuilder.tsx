@@ -100,7 +100,7 @@ function CardTile({
         </span>
       )}
       {placed && !justAdded && (
-        <span className="absolute top-0.5 right-0.5 z-10 w-4 h-4 rounded-full bg-[#4A8A4A] flex items-center justify-center">
+        <span className="absolute top-0.5 right-0.5 z-10 w-4 h-4 rounded-full bg-success flex items-center justify-center">
           <svg className="w-2.5 h-2.5 stroke-white stroke-[3] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -108,7 +108,7 @@ function CardTile({
       )}
       {justAdded && (
         <span className="absolute inset-0 z-20 flex items-center justify-center bg-white/70">
-          <span className="w-7 h-7 rounded-full bg-[#4A8A4A] flex items-center justify-center">
+          <span className="w-7 h-7 rounded-full bg-success flex items-center justify-center">
             <svg className="w-4 h-4 stroke-white stroke-[3] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -382,7 +382,7 @@ export function MobileScheduleBuilder({
       <section>
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="text-[12px] tracking-widest uppercase text-ink font-semibold">
-            Cards <span className="normal-case tracking-normal font-medium text-[#5C5855]">(tap to select)</span>
+            Cards <span className="normal-case tracking-normal font-medium text-ink-2">(tap to select)</span>
           </div>
           {showCharacters && (
             <div className="flex gap-1.5">
@@ -398,7 +398,7 @@ export function MobileScheduleBuilder({
                     aria-label={o.label}
                     title={o.label}
                     className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 transition-all ${
-                      active ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
+                      active ? "border-success ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
                     }`}
                   >
                     {faceImg ? (
@@ -414,7 +414,7 @@ export function MobileScheduleBuilder({
           )}
         </div>
         {filteredCards.length === 0 ? (
-          <div className="text-[12px] text-[#5C5855] font-sans py-3">
+          <div className="text-[12px] text-ink-2 font-sans py-3">
             No cards match — try another category or search.
           </div>
         ) : (
@@ -437,7 +437,7 @@ export function MobileScheduleBuilder({
             </div>
             <button
               onClick={() => setShowAll(true)}
-              className="w-full mt-2 py-2.5 rounded bg-[#4A5A3E] text-white text-[14px] font-sans font-semibold"
+              className="w-full mt-2 py-2.5 rounded bg-accent-strong text-white text-[14px] font-sans font-semibold"
             >
               View all {filteredCards.length} cards
             </button>
@@ -461,14 +461,14 @@ export function MobileScheduleBuilder({
         <button
           onClick={exportPDF}
           disabled={exporting}
-          className="w-full py-3 rounded bg-[#4A5A3E] text-white font-sans text-[15px] font-semibold disabled:opacity-60"
+          className="w-full py-3 rounded bg-accent-strong text-white font-sans text-[15px] font-semibold disabled:opacity-60"
         >
           {exporting ? "Preparing…" : "Download PDF"}
         </button>
         <button
           onClick={exportJPEG}
           disabled={exporting}
-          className="w-full py-3 rounded border border-[#4A5A3E] text-[#4A5A3E] bg-white font-sans text-[15px] font-semibold disabled:opacity-60"
+          className="w-full py-3 rounded border border-accent-strong text-accent-strong bg-white font-sans text-[15px] font-semibold disabled:opacity-60"
         >
           {exporting ? "Preparing…" : "Download JPEG"}
         </button>
@@ -505,7 +505,7 @@ export function MobileScheduleBuilder({
                     onClick={() => setGender(o.value)}
                     aria-label={o.label}
                     className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 ${
-                      active ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
+                      active ? "border-success ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
                     }`}
                   >
                     {faceImg ? (
@@ -531,7 +531,7 @@ export function MobileScheduleBuilder({
                 aria-label="Filter by category"
                 className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 ${
                   showFilters || category
-                    ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E]"
+                    ? "border-weekly-accent bg-[#E8EDE0] text-accent-strong"
                     : "border-border bg-white text-ink-3"
                 }`}
               >
@@ -543,7 +543,7 @@ export function MobileScheduleBuilder({
                 onClick={() => setFreeOnly(!freeOnly)}
                 className={`px-3 py-1.5 rounded-full border text-[12px] font-sans ${
                   freeOnly
-                    ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
+                    ? "border-weekly-accent bg-[#E8EDE0] text-accent-strong font-semibold"
                     : "border-border bg-white text-ink-3"
                 }`}
               >
@@ -551,7 +551,7 @@ export function MobileScheduleBuilder({
               </button>
               <button
                 onClick={() => setShowAll(false)}
-                className="px-4 py-1.5 rounded bg-[#4A5A3E] text-white text-[14px] font-semibold"
+                className="px-4 py-1.5 rounded bg-accent-strong text-white text-[14px] font-semibold"
               >
                 Done
               </button>
@@ -570,7 +570,7 @@ export function MobileScheduleBuilder({
                 if (catCards.length === 0) return null;
                 return (
                   <div key={c.id}>
-                    <div className="text-[12px] tracking-widest uppercase text-[#5C5855] font-medium mb-1.5">
+                    <div className="text-[12px] tracking-widest uppercase text-ink-2 font-medium mb-1.5">
                       {c.name} ({catCards.length})
                     </div>
                     <div className="grid grid-cols-3 gap-2">
