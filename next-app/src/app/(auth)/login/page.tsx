@@ -136,7 +136,7 @@ export default function LoginPage() {
                     Enter your email — we'll send a 6-digit code. No password needed.
                   </p>
                   <form onSubmit={handleSendOTP}>
-                    <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-1.5 block font-medium">
+                    <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">
                       Email
                     </label>
                     <input
@@ -152,12 +152,12 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full text-[11px] tracking-wider uppercase py-3 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333] transition-all disabled:opacity-50"
+                      className="w-full text-[12px] tracking-wider uppercase py-3 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333] transition-all disabled:opacity-50"
                     >
                       {loading ? "Sending..." : "Send Code"}
                     </button>
                     {/* T&C inline — best practice, no extra screen */}
-                    <p className="text-[11px] text-ink-3 text-center mt-3 leading-relaxed">
+                    <p className="text-[12px] text-ink-3 text-center mt-3 leading-relaxed">
                       By continuing you agree to our{" "}
                       <Link href="/terms" className="text-ink underline">Terms</Link>
                       {" "}and{" "}
@@ -165,12 +165,13 @@ export default function LoginPage() {
                     </p>
                   </form>
                   <div className="mt-4 pt-4 border-t border-border text-center">
-                    <p className="text-[11px] text-ink-3">
-                      No account needed for free cards.{" "}
-                      <Link href="/schedule" className="text-ink underline">
-                        Start creating →
-                      </Link>
-                    </p>
+            <p className="text-center text-[13px] text-ink-3 font-sans mb-2">No account needed for free cards</p>
+            <a
+              href="/schedule"
+              className="block w-full text-center py-3 border border-[#7A8F5E] text-[#4A5A3E] rounded font-sans text-[14px] font-semibold no-underline hover:bg-[#7A8F5E] hover:text-white transition-all"
+            >
+              Create free schedule →
+            </a>
                   </div>
                 </>
               )}
@@ -184,7 +185,7 @@ export default function LoginPage() {
                     <strong className="text-ink">{email}</strong>. Enter it below.
                   </p>
                   <form onSubmit={handleVerifyOTP}>
-                    <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-1.5 block font-medium">
+                    <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">
                       6-Digit Code
                     </label>
                     <input
@@ -202,14 +203,14 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading || otp.length < 6}
-                      className="w-full text-[11px] tracking-wider uppercase py-3 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333] transition-all disabled:opacity-50"
+                      className="w-full text-[12px] tracking-wider uppercase py-3 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333] transition-all disabled:opacity-50"
                     >
                       {loading ? "Verifying..." : "Verify Code"}
                     </button>
                     <button
                       type="button"
                       onClick={() => { setStep("email"); setOtp(""); setError(""); }}
-                      className="w-full text-[11px] text-ink-3 mt-2 py-2 hover:text-ink"
+                      className="w-full text-[12px] text-ink-3 mt-2 py-2 hover:text-ink"
                     >
                       Use a different email
                     </button>
@@ -240,14 +241,14 @@ export default function LoginPage() {
                 For Grow Gently team only.
               </p>
               <form onSubmit={handleAdminLogin}>
-                <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-1.5 block font-medium">Email</label>
+                <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full py-2.5 px-3 border border-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent mb-3"
                 />
-                <label className="text-[11px] tracking-widest uppercase text-[#8A8480] mb-1.5 block font-medium">Password</label>
+                <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">Password</label>
                 <input
                   type="password"
                   value={password}
@@ -258,7 +259,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full text-[11px] tracking-wider uppercase py-3 bg-accent text-white border border-accent font-sans font-medium hover:bg-accent-hover transition-all disabled:opacity-50"
+                  className="w-full text-[12px] tracking-wider uppercase py-3 bg-accent text-white border border-accent font-sans font-medium hover:bg-accent-hover transition-all disabled:opacity-50"
                 >
                   {loading ? "Signing in..." : "Sign In"}
                 </button>
@@ -266,7 +267,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => { setMode("user"); setError(""); setPassword(""); }}
-                className="w-full text-[11px] text-ink-3 mt-3 py-2 hover:text-ink"
+                className="w-full text-[12px] text-ink-3 mt-3 py-2 hover:text-ink"
               >
                 ← Back to sign in
               </button>
@@ -280,7 +281,7 @@ export default function LoginPage() {
           {mode === "user" && step === "email" && (
             <button
               onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
-              className="text-[11px] text-ink-3 hover:text-ink underline underline-offset-2"
+              className="text-[12px] text-ink-3 hover:text-ink underline underline-offset-2"
             >
               Login as admin
             </button>
