@@ -57,11 +57,11 @@ function DraggableCardItem({
           : isDragging
           ? "opacity-50 scale-95 cursor-grabbing"
           : "cursor-grab hover:bg-[#F5F5F5]"
-      } ${isAdded ? "border border-[#7A8F5E] bg-white" : ""}`}
+      } ${isAdded ? "border border-weekly-accent bg-white" : ""}`}
       title={isLocked ? "Subscribe to unlock paid cards" : isCharacter ? `Character card - ${imageGender} variant` : "Neutral card - single image"}
     >
       {/* Card Image */}
-      <div className="w-full aspect-square bg-white rounded border-[1.5px] border-dashed border-[#E0E0E0] flex items-center justify-center overflow-hidden group-hover:shadow-md transition-all pointer-events-none">
+      <div className="w-full aspect-square bg-white rounded border-[1.5px] border-dashed border-border flex items-center justify-center overflow-hidden group-hover:shadow-md transition-all pointer-events-none">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -78,7 +78,7 @@ function DraggableCardItem({
       </div>
 
       {/* Card Label */}
-      <span className="text-[12px] font-semibold text-[#1C1B19] text-center line-clamp-2 leading-tight pointer-events-none">
+      <span className="text-[12px] font-semibold text-ink text-center line-clamp-2 leading-tight pointer-events-none">
         {getCardLabel(card, language)}
       </span>
 
@@ -363,14 +363,14 @@ export function CardLibrarySidebar() {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0] items-center justify-center">
+      <div className="flex flex-col h-full bg-white border-r border-border items-center justify-center">
         <div className="w-5 h-5 border border-border border-t-accent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-[#E0E0E0] relative">
+    <div className="flex flex-col h-full bg-white border-r border-border relative">
       {/* Drag the panel edge to resize (max = five cards per row) */}
       <div
         onMouseDown={startResize}
@@ -379,16 +379,16 @@ export function CardLibrarySidebar() {
       />
       {/* Everything scrolls; the toggle row below sticks to the top */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="border-b border-[#E0E0E0] bg-white">
+      <div className="border-b border-border bg-white">
         <div className="p-3 space-y-3">
           {/* Row A: Schedule type + contextual dropdown */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Schedule type</label>
+              <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Schedule type</label>
               <select
                 value={scheduleType}
                 onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
-                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
               >
                 <option value="daily">Daily Schedule</option>
                 <option value="weekly">Weekly Schedule</option>
@@ -399,11 +399,11 @@ export function CardLibrarySidebar() {
             </div>
             {scheduleType === "daily" && (
               <div>
-                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Card Type</label>
+                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Card Type</label>
                 <select
                   value={cardType}
                   onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
                 >
                   <option value="visual">Visual Focus</option>
                   <option value="equal">Equal Focus</option>
@@ -413,11 +413,11 @@ export function CardLibrarySidebar() {
             )}
             {scheduleType === "weekly" && (
               <div>
-                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Days</label>
+                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Days</label>
                 <select
                   value={weekMode}
                   onChange={(e) => setWeekMode(e.target.value as "week" | "weekdays")}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
                 >
                   <option value="week">Weekly</option>
                   <option value="weekdays">Weekdays</option>
@@ -426,7 +426,7 @@ export function CardLibrarySidebar() {
             )}
             {scheduleType === "custom" && (
               <div>
-                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Columns</label>
+                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Columns</label>
                 <select
                   value={customColNames.length}
                   onChange={(e) => {
@@ -434,7 +434,7 @@ export function CardLibrarySidebar() {
                     const names = Array.from({ length: n }, (_, i) => customColNames[i] || `Column ${i + 1}`);
                     setCustomColNames(names);
                   }}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
                 >
                   {[2, 3, 4, 5].map((n) => (
                     <option key={n} value={n}>{n} columns</option>
@@ -444,11 +444,11 @@ export function CardLibrarySidebar() {
             )}
             {scheduleType === "firstthen" && (
               <div>
-                <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Board style</label>
+                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Board style</label>
                 <select
                   value={ftStyle}
                   onChange={(e) => setFtStyle(e.target.value as "first-then" | "first-then-now" | "sequencing")}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
                 >
                   <option value="first-then">First, Then</option>
                   <option value="first-then-now">First, Then, Now</option>
@@ -463,7 +463,7 @@ export function CardLibrarySidebar() {
 
           {/* Row 2: Category/Search */}
           <div className="relative">
-            <label className="block text-[12px] font-bold text-[#1C1B19] uppercase tracking-widest mb-1">Category / Search</label>
+            <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Category / Search</label>
             <div className="relative flex items-center">
               {/* Search Icon */}
               <svg className="absolute left-3 w-4 h-4 stroke-[#333] fill-none pointer-events-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round">
@@ -481,7 +481,7 @@ export function CardLibrarySidebar() {
                   setIsDropdownOpen(true);
                 }}
                 onFocus={() => setIsDropdownOpen(true)}
-                className="w-full pl-10 pr-10 h-[38px] text-[13px] font-medium border border-[#C9C4BB] rounded bg-white text-[#1C1B19] placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-[#7A8F5E] font-sans"
+                className="w-full pl-10 pr-10 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
               />
 
               {/* Dropdown Icon */}
@@ -500,7 +500,7 @@ export function CardLibrarySidebar() {
             {isDropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#333] rounded shadow-lg z-50 max-h-48 overflow-y-auto">
                 <div
-                  className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-[#1C1B19] font-medium border-b border-[#E0E0E0]"
+                  className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-ink font-medium border-b border-border"
                   onClick={() => {
                     setSearchOrCategory("");
                     setIsDropdownOpen(false);
@@ -511,7 +511,7 @@ export function CardLibrarySidebar() {
                 {categories.map((catId) => (
                   <div
                     key={catId}
-                    className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-[#1C1B19] font-medium border-b border-[#E0E0E0] last:border-b-0"
+                    className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-ink font-medium border-b border-border last:border-b-0"
                     onClick={() => {
                       setSearchOrCategory(catId);
                       setIsDropdownOpen(false);
@@ -529,7 +529,7 @@ export function CardLibrarySidebar() {
       </div>
 
       {/* STICKY: free/paid + characters stay visible while browsing */}
-      <div className="sticky top-0 z-20 bg-white border-b border-[#E0E0E0] px-3 py-2 flex items-center justify-between gap-2">
+      <div className="sticky top-0 z-20 bg-white border-b border-border px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex gap-1.5">
           {(["free", "paid"] as const).map((v) => {
             const active = accessFilter === v;
@@ -539,8 +539,8 @@ export function CardLibrarySidebar() {
                 onClick={() => setAccessFilter(active ? "" : v)}
                 className={`h-9 px-3.5 rounded-full border text-[12px] font-sans capitalize transition-colors ${
                   active
-                    ? "border-[#7A8F5E] bg-[#E8EDE0] text-[#4A5A3E] font-semibold"
-                    : "border-[#C9C4BB] bg-white text-[#666]"
+                    ? "border-weekly-accent bg-[#E8EDE0] text-accent-strong font-semibold"
+                    : "border-input-border bg-white text-[#666]"
                 }`}
               >
                 {v}
@@ -566,7 +566,7 @@ export function CardLibrarySidebar() {
                   title={g}
                   className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 transition-all ${
                     active
-                      ? "border-[#4A8A4A] ring-2 ring-[#BCD9B4]"
+                      ? "border-success ring-2 ring-[#BCD9B4]"
                       : "border-[#D8D4CC] opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -614,7 +614,7 @@ export function CardLibrarySidebar() {
                       else next.add(catId);
                       setCollapsedCats(next);
                     }}
-                    className="w-full flex items-center justify-between text-[12px] font-bold text-[#5C5855] uppercase tracking-widest mb-2.5"
+                    className="w-full flex items-center justify-between text-[12px] font-bold text-ink-2 uppercase tracking-widest mb-2.5"
                   >
                     <span>
                       {catName(catId)} <span className="text-[#B0ACA6] font-medium">({categoryCards.length})</span>
@@ -657,7 +657,7 @@ export function CardLibrarySidebar() {
         <button
           onClick={() => { window.location.href = "/plans"; }}
           title="Unlock all cards"
-          className="absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-[#7A8F5E] text-white text-[18px] shadow-lg hover:bg-[#6A7F4E] transition-all flex items-center justify-center"
+          className="absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-weekly-accent text-white text-[18px] shadow-lg hover:bg-accent-strong-hover transition-all flex items-center justify-center"
         >
           🔓
         </button>
