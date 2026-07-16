@@ -614,7 +614,7 @@ export function CardLibrarySidebar() {
                       else next.add(catId);
                       setCollapsedCats(next);
                     }}
-                    className="w-full flex items-center justify-between text-[12px] font-bold text-[#8A8480] uppercase tracking-widest mb-2.5"
+                    className="w-full flex items-center justify-between text-[12px] font-bold text-[#5C5855] uppercase tracking-widest mb-2.5"
                   >
                     <span>
                       {catName(catId)} <span className="text-[#B0ACA6] font-medium">({categoryCards.length})</span>
