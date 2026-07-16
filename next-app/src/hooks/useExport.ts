@@ -37,7 +37,7 @@ async function ensureLibraries() {
   }
 }
 
-// Make sure the actual webfonts (Playwrite title font + Atkinson card font)
+// Make sure the actual webfonts (Playwrite title font + Inter UI font)
 // are fully loaded before html2canvas takes its picture. Without this, the
 // browser may still be showing a fallback font at capture time.
 async function ensureFontsLoaded() {
@@ -47,8 +47,8 @@ async function ensureFontsLoaded() {
     await Promise.allSettled([
       f.load('400 30px "Playwrite DE Grund"'),
       f.load('400 18px "Playwrite DE Grund"'),
-      f.load('400 18px "Atkinson Hyperlegible"'),
-      f.load('700 18px "Atkinson Hyperlegible"'),
+      f.load('400 18px "Inter"'),
+      f.load('700 18px "Inter"'),
     ]);
     await f.ready;
   } catch {
@@ -141,7 +141,22 @@ function getExportFileBaseName(title: string) {
   return titleVal.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "") || "schedule";
 }
 
-function downloadBlob(blob: Blob, filename: string) {
+async function downloadBlob(blob: Blob, filename: string) {
+  // On phones, the native share sheet makes the file visible immediately —
+  // preview, Save to Files, or send on WhatsApp. Falls back to a download.
+  const isPhone =
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+  if (isPhone && typeof navigator !== "undefined" && (navigator as any).canShare) {
+    try {
+      const file = new File([blob], filename, { type: blob.type });
+      if ((navigator as any).canShare({ files: [file] })) {
+        await (navigator as any).share({ files: [file], title: filename });
+        return;
+      }
+    } catch {
+      // user closed the sheet or share unsupported — fall through to download
+    }
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -256,7 +271,7 @@ async function buildPdfBlob(scheduleType: string) {
           // Keep the real title font in the export; Georgia is only a fallback
           ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
           // Card/label font, pinned so the clone can't fall back to a system font
-          ".font-sans{font-family:'Atkinson Hyperlegible',system-ui,sans-serif!important}",
+          ".font-sans{font-family:'Inter',system-ui,sans-serif!important}",
           // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
           // Pin card borders: exports were falling back to the default border
@@ -270,6 +285,8 @@ async function buildPdfBlob(scheduleType: string) {
           '[class*="bg-[#E8EDE0]"]{background-color:#E8EDE0!important}',
           '[class*="bg-[#FAFBF7]"]{background-color:#FAFBF7!important}',
           '[class*="bg-[#EFF2E8]"]{background-color:#EFF2E8!important}',
+          '[class*="bg-[#F5F7EF]"]{background-color:#F5F7EF!important}',
+          '[class*="border-[#E0E6D4]"]{border-bottom-color:#E0E6D4!important}',
           '[class*="text-[#5A8A3C]"]{color:#5A8A3C!important}',
           '[class*="text-[#4A5A3E]"]{color:#4A5A3E!important}',
           '[class*="text-[#7A8F5E]"] , [class*="text-[#7A8F5E]"] *{color:#7A8F5E!important}',
@@ -372,7 +389,7 @@ async function buildJpegBlobs(scheduleType: string) {
           // Keep the real title font in the export; Georgia is only a fallback
           ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
           // Card/label font, pinned so the clone can't fall back to a system font
-          ".font-sans{font-family:'Atkinson Hyperlegible',system-ui,sans-serif!important}",
+          ".font-sans{font-family:'Inter',system-ui,sans-serif!important}",
           // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
           // Pin card borders: exports were falling back to the default border
@@ -386,6 +403,8 @@ async function buildJpegBlobs(scheduleType: string) {
           '[class*="bg-[#E8EDE0]"]{background-color:#E8EDE0!important}',
           '[class*="bg-[#FAFBF7]"]{background-color:#FAFBF7!important}',
           '[class*="bg-[#EFF2E8]"]{background-color:#EFF2E8!important}',
+          '[class*="bg-[#F5F7EF]"]{background-color:#F5F7EF!important}',
+          '[class*="border-[#E0E6D4]"]{border-bottom-color:#E0E6D4!important}',
           '[class*="text-[#5A8A3C]"]{color:#5A8A3C!important}',
           '[class*="text-[#4A5A3E]"]{color:#4A5A3E!important}',
           '[class*="text-[#7A8F5E]"] , [class*="text-[#7A8F5E]"] *{color:#7A8F5E!important}',
@@ -497,7 +516,7 @@ export function useExport() {
         previewTab.location.href = url;
         setTimeout(() => URL.revokeObjectURL(url), 120000);
       } else {
-        downloadBlob(blob, fileName);
+        await downloadBlob(blob, fileName);
       }
       // Save to database after successful export (silently)
       showStatus("Saving…");
@@ -531,7 +550,7 @@ export function useExport() {
       for (let i = 0; i < blobs.length; i++) {
         const { blob, index } = blobs[i];
         const fname = pages.length > 1 ? `${baseName}-page-${index + 1}.jpg` : `${baseName}.jpg`;
-        downloadBlob(blob, fname);
+        await downloadBlob(blob, fname);
         if (i < blobs.length - 1) {
           await new Promise((r) => setTimeout(r, 400));
         }
