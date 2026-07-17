@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
+import { LANGUAGES } from "@/lib/constants";
 
 // Load scripts dynamically
 function loadExternalScript(src: string): Promise<void> {
@@ -23,23 +24,16 @@ function loadExternalScript(src: string): Promise<void> {
 
 async function ensureLibraries() {
   if (typeof (window as any).html2canvas === "undefined") {
-    // html2canvas-pro is a drop-in fork that understands modern Tailwind v4
-    // colors (oklch/oklab). The original html2canvas 1.4.1 crashes on them.
     await loadExternalScript("https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.11/dist/html2canvas-pro.min.js");
   }
   if (typeof (window as any).jspdf === "undefined") {
     await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
   }
-  // Verify the tools actually loaded — if blocked (offline, ad-blocker,
-  // strict content policy) the script tag resolves but the global is missing.
   if (typeof (window as any).html2canvas === "undefined" || !(window as any).jspdf?.jsPDF) {
     throw new Error("LIBS_FAILED");
   }
 }
 
-// Make sure the actual webfonts (Playwrite title font + Inter UI font)
-// are fully loaded before html2canvas takes its picture. Without this, the
-// browser may still be showing a fallback font at capture time.
 async function ensureFontsLoaded() {
   try {
     const f: any = (document as any).fonts;
@@ -51,12 +45,9 @@ async function ensureFontsLoaded() {
       f.load('700 18px "Inter"'),
     ]);
     await f.ready;
-  } catch {
-    // If the Font Loading API is unavailable, capture proceeds anyway
-  }
+  } catch {}
 }
 
-// Hide editing-only affordances (remove buttons, drop hints) so exports look like a finished schedule
 function injectExportHideStyle() {
   const style = document.createElement("style");
   style.id = "export-hide-style";
@@ -65,10 +56,6 @@ function injectExportHideStyle() {
   return style;
 }
 
-// html2canvas doesn't respect CSS object-fit on <img> — it stretches the
-// image to fill its box. Work around this by temporarily replacing
-// object-fit with explicit width/height that reproduce the same
-// letterboxed/contain look, which html2canvas renders correctly.
 function lockImageSizesForCapture(pageEl: HTMLElement) {
   const overrides: Array<{ el: HTMLImageElement; prev: string | null }> = [];
   pageEl.querySelectorAll("img").forEach((img) => {
@@ -101,8 +88,6 @@ function restoreImageSizes(overrides: Array<{ el: HTMLImageElement; prev: string
   });
 }
 
-// html2canvas also can't reliably render the text VALUE of <input> elements
-// Swap each one for a plain text div with the same class
 function swapColumnInputsForCapture(pageEl: HTMLElement) {
   const swaps: Array<{ input: HTMLInputElement; div: HTMLDivElement }> = [];
   pageEl.querySelectorAll("input.custom-col-input, input.ft-col-input, .col-name-input").forEach((input) => {
@@ -136,14 +121,21 @@ function restorePageAfterCapture(state: ReturnType<typeof prepPageForCapture>) {
   restoreColumnInputs(state.inputSwaps);
 }
 
-function getExportFileBaseName(title: string) {
-  const titleVal = (title || "schedule").trim();
-  return titleVal.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "") || "schedule";
+// "visual-schedule-{schedule name}-{language}" — same pattern for every
+// schedule type (daily, weekly, custom, First/Then, I Want) since they all
+// just supply a different `title`, and for both PDF and JPEG.
+function getExportFileBaseName(title: string, language: string) {
+  const slug = (s: string) =>
+    (s || "").trim().replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-+|-+$/g, "");
+  const titleSlug = slug(title) || "schedule";
+  const languageLabel = LANGUAGES[language as keyof typeof LANGUAGES] || language;
+  const languageSlug = slug(languageLabel);
+  return languageSlug
+    ? `visual-schedule-${titleSlug}-${languageSlug}`
+    : `visual-schedule-${titleSlug}`;
 }
 
 async function downloadBlob(blob: Blob, filename: string) {
-  // On phones, the native share sheet makes the file visible immediately —
-  // preview, Save to Files, or send on WhatsApp. Falls back to a download.
   const isPhone =
     typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   if (isPhone && typeof navigator !== "undefined" && (navigator as any).canShare) {
@@ -153,9 +145,7 @@ async function downloadBlob(blob: Blob, filename: string) {
         await (navigator as any).share({ files: [file], title: filename });
         return;
       }
-    } catch {
-      // user closed the sheet or share unsupported — fall through to download
-    }
+    } catch {}
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -167,12 +157,10 @@ async function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-// Find the schedule pages currently rendered on screen.
 function getPageElements(): HTMLElement[] {
   return Array.from(document.querySelectorAll("[data-a4-page]")) as HTMLElement[];
 }
 
-// Translate any internal error into a clear, plain-English message.
 function friendlyMessage(err: unknown, kind: "PDF" | "images"): string {
   const msg = err instanceof Error ? err.message : String(err);
   if (msg === "NO_PAGES" || msg === "No pages to export") {
@@ -213,7 +201,6 @@ async function buildPdfBlob(scheduleType: string) {
     pageEl.style.transform = "none";
     pageEl.style.margin = "0";
 
-    // Wait for all images on this page to load
     const imgs = pageEl.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
     await Promise.allSettled(
       Array.from(imgs).map(
@@ -230,7 +217,6 @@ async function buildPdfBlob(scheduleType: string) {
       )
     );
 
-    // Small delay to ensure images are rendered
     await new Promise((r) => setTimeout(r, 300));
 
     const captureState = prepPageForCapture(pageEl);
@@ -242,13 +228,6 @@ async function buildPdfBlob(scheduleType: string) {
       logging: false,
       windowTimeout: 20000,
       onclone: (_doc: Document) => {
-        // Apply export styles only to the CLONE — real canvas is never touched,
-        // so there is no flicker on the live page.
-        // SAFETY NET: copy every style rule the live page has in memory
-        // straight into the clone as plain text. Without this, the clone
-        // re-downloads CSS files from the server — and right after a deploy
-        // those old files are gone (404), producing a completely unstyled
-        // export. This makes the capture independent of the network.
         let liveCss = "";
         try {
           for (const sheet of Array.from(document.styleSheets)) {
@@ -256,10 +235,7 @@ async function buildPdfBlob(scheduleType: string) {
               for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
                 liveCss += rule.cssText + "\n";
               }
-            } catch {
-              // Cross-origin stylesheet (e.g. Google Fonts) — skip; fonts are
-              // already loaded in the main document and remain usable.
-            }
+            } catch {}
           }
         } catch {}
         const baseStyles = _doc.createElement("style");
@@ -268,15 +244,9 @@ async function buildPdfBlob(scheduleType: string) {
 
         const s = _doc.createElement("style");
         s.textContent = [
-          // Keep the real title font in the export; Georgia is only a fallback
           ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
-          // Card/label font, pinned so the clone can't fall back to a system font
           ".font-sans{font-family:'Inter',system-ui,sans-serif!important}",
-          // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
-          // Pin card borders: exports were falling back to the default border
-          // color (text ink = near-black). Force the light green from the
-          // canvas, 1px solid, on every element that asks for it.
           '[class*="border-[#C7D7B8]"]{border-color:#C7D7B8!important;border-style:solid!important;border-width:1px!important}',
           '[class*="border-[#C5D2B8]"]{border-color:#C5D2B8!important;border-style:solid!important}',
           '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
@@ -296,8 +266,6 @@ async function buildPdfBlob(scheduleType: string) {
         _doc.head.appendChild(s);
       },
       ignoreElements: (el: any) => {
-        // SVG elements store className as an object (SVGAnimatedString), not a
-        // string, so read it safely to avoid "includes is not a function".
         const raw = el.className;
         const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
         return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
@@ -360,13 +328,6 @@ async function buildJpegBlobs(scheduleType: string) {
       logging: false,
       windowTimeout: 20000,
       onclone: (_doc: Document) => {
-        // Apply export styles only to the CLONE — real canvas is never touched,
-        // so there is no flicker on the live page.
-        // SAFETY NET: copy every style rule the live page has in memory
-        // straight into the clone as plain text. Without this, the clone
-        // re-downloads CSS files from the server — and right after a deploy
-        // those old files are gone (404), producing a completely unstyled
-        // export. This makes the capture independent of the network.
         let liveCss = "";
         try {
           for (const sheet of Array.from(document.styleSheets)) {
@@ -374,10 +335,7 @@ async function buildJpegBlobs(scheduleType: string) {
               for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
                 liveCss += rule.cssText + "\n";
               }
-            } catch {
-              // Cross-origin stylesheet (e.g. Google Fonts) — skip; fonts are
-              // already loaded in the main document and remain usable.
-            }
+            } catch {}
           }
         } catch {}
         const baseStyles = _doc.createElement("style");
@@ -386,15 +344,9 @@ async function buildJpegBlobs(scheduleType: string) {
 
         const s = _doc.createElement("style");
         s.textContent = [
-          // Keep the real title font in the export; Georgia is only a fallback
           ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
-          // Card/label font, pinned so the clone can't fall back to a system font
           ".font-sans{font-family:'Inter',system-ui,sans-serif!important}",
-          // Resolve CSS variable borders to hex so they aren't black
           "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
-          // Pin card borders: exports were falling back to the default border
-          // color (text ink = near-black). Force the light green from the
-          // canvas, 1px solid, on every element that asks for it.
           '[class*="border-[#C7D7B8]"]{border-color:#C7D7B8!important;border-style:solid!important;border-width:1px!important}',
           '[class*="border-[#C5D2B8]"]{border-color:#C5D2B8!important;border-style:solid!important}',
           '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
@@ -414,8 +366,6 @@ async function buildJpegBlobs(scheduleType: string) {
         _doc.head.appendChild(s);
       },
       ignoreElements: (el: any) => {
-        // SVG elements store className as an object (SVGAnimatedString), not a
-        // string, so read it safely to avoid "includes is not a function".
         const raw = el.className;
         const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
         return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
@@ -440,13 +390,13 @@ async function buildJpegBlobs(scheduleType: string) {
 export function useExport() {
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
+  const language = useScheduleState((s) => s.language);
   const pages = useScheduleState((s) => s.pages);
   const scheduleId = useScheduleState((s) => s.id);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState("");
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Save schedule to DB — silently, never blocks or errors the export
   const saveToDatabase = async () => {
     try {
       const state = useScheduleState.getState();
@@ -470,9 +420,7 @@ export function useExport() {
         setLastSaved(new Date());
         state.markClean?.();
       }
-    } catch {
-      // Save failure never interrupts the export
-    }
+    } catch {}
   };
 
   const showStatus = useCallback((text: string) => {
@@ -489,8 +437,6 @@ export function useExport() {
       return;
     }
 
-    // On phones a silent download is confusing — open a tab now (while we
-    // still have the user's tap) and show the PDF in it when ready.
     const isPhone =
       typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
     let previewTab: Window | null = null;
@@ -510,7 +456,7 @@ export function useExport() {
     const hideStyle = injectExportHideStyle();
     try {
       const blob = (await buildPdfBlob(scheduleType)) as Blob;
-      const fileName = getExportFileBaseName(title) + ".pdf";
+      const fileName = getExportFileBaseName(title, language) + ".pdf";
       if (previewTab) {
         const url = URL.createObjectURL(blob);
         previewTab.location.href = url;
@@ -518,7 +464,6 @@ export function useExport() {
       } else {
         await downloadBlob(blob, fileName);
       }
-      // Save to database after successful export (silently)
       showStatus("Saving…");
       await saveToDatabase();
     } catch (err) {
@@ -530,7 +475,7 @@ export function useExport() {
       useScheduleState.getState().setExporting(false);
       hideStatus();
     }
-  }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
+  }, [pages, scheduleType, title, language, showStatus, hideStatus, saveToDatabase]);
 
   const exportJPEG = useCallback(async () => {
     if (!pages.length) {
@@ -544,7 +489,7 @@ export function useExport() {
 
     const hideStyle = injectExportHideStyle();
     try {
-      const baseName = getExportFileBaseName(title);
+      const baseName = getExportFileBaseName(title, language);
       const blobs = await buildJpegBlobs(scheduleType);
 
       for (let i = 0; i < blobs.length; i++) {
@@ -555,7 +500,6 @@ export function useExport() {
           await new Promise((r) => setTimeout(r, 400));
         }
       }
-      // Save to database after successful export (silently)
       showStatus("Saving…");
       await saveToDatabase();
     } catch (err) {
@@ -567,7 +511,7 @@ export function useExport() {
       useScheduleState.getState().setExporting(false);
       hideStatus();
     }
-  }, [pages, scheduleType, title, showStatus, hideStatus, saveToDatabase]);
+  }, [pages, scheduleType, title, language, showStatus, hideStatus, saveToDatabase]);
 
   return {
     exportPDF,
