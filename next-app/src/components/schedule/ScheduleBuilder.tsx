@@ -179,7 +179,7 @@ export default function ScheduleBuilder() {
       // empty; the child physically places cut cards onto them after printing.
       const { ftStyle } = useScheduleState.getState();
       const ftN = ftStyle === "sequencing" ? 4 : ftStyle === "first-then-now" ? 3 : 2;
-      const order: Array<{ key: string; max: number }> = [{ key: "cutout", max: ftN * ftN }];
+      const order: Array<{ key: string; max: number }> = [{ key: "cutout", max: ftN === 4 ? 16 : 9 }];
       let ftPlaced = false;
       for (const { key, max } of order) {
         if ((page.columns?.[key] || []).length < max) {
