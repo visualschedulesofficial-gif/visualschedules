@@ -240,7 +240,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group h-[106px] shrink-0 overflow-hidden">
+            <div key={idx} className={`bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden ${cards.length === 1 ? "flex-1 min-h-0" : "h-[106px] shrink-0"}`}>
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
                   <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
@@ -393,7 +393,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group h-[106px] shrink-0 overflow-hidden">
+            <div key={idx} className={`bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden ${cards.length === 1 ? "flex-1 min-h-0" : "h-[106px] shrink-0"}`}>
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
                   <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
@@ -484,7 +484,7 @@ function FirstThenColumn({ colKey, colName, dims, pageIdx, justDroppedSlot }: { 
   const hasCard = cards.length > 0;
 
   return (
-    <div className="flex flex-col border border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#FAFBF7] min-w-0">
+    <div className="flex flex-col border border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#F4F6EF] min-w-0">
       <div className="bg-[#E8EDE0] border-b-2 border-b-[#C5D2B8] px-2 py-3.5 text-center shrink-0">
         <span className="font-serif text-[26px] text-[#4A5A3E]">{colName}</span>
       </div>
@@ -541,7 +541,7 @@ function FirstThenColumn({ colKey, colName, dims, pageIdx, justDroppedSlot }: { 
 // Board card == cut-out card, and the cut-out grid is N×N — so all sizes
 // shrink together as boards grow: 2→2×2, 3→3×3, 4→4×4.
 const FT_DIMS: Record<number, { w: number; h: number }> = {
-  2: { w: 226, h: 250 },
+  2: { w: 216, h: 186 },
   3: { w: 200, h: 182 },
   4: { w: 162, h: 140 },
 };
@@ -581,9 +581,9 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
 
       {/* Boards — 2, 3, or 4 depending on the chosen style */}
       <div
-        className="shrink-0 grid gap-4"
+        className="shrink-0 grid gap-6"
         style={{
-          height: dims.h + 48 + 28,
+          height: dims.h + 48 + 44,
           gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))`,
         }}
       >
@@ -615,8 +615,8 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
       <CutoutStrip
         pageIdx={pageIdx}
         dims={dims}
-        count={labels.length * labels.length}
-        cols={labels.length}
+        count={labels.length === 4 ? 16 : 9}
+        cols={labels.length === 4 ? 4 : 3}
         justDroppedSlot={justDroppedSlot}
       />
 
@@ -651,8 +651,8 @@ function IWantPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
     >
       {/* Full-bleed header band: phrase + target slot, matching the other
           schedule types' header treatment */}
-      <div className="shrink-0 bg-[#F4F6EF] border-b-2 border-[#C5D2B8] px-8 pt-10 pb-8 flex items-start justify-between gap-6">
-        <h2 className="font-serif text-[46px] text-[#5A8A3C] leading-tight min-w-0 break-words">
+      <div className="shrink-0 bg-[#F4F6EF] border-b-2 border-[#C5D2B8] px-8 pt-10 pb-8 flex items-center justify-between gap-6">
+        <h2 className="font-serif text-[92px] text-[#5A8A3C] leading-[1.05] min-w-0 break-words">
           {shownTitle}
         </h2>
         <div
