@@ -144,7 +144,9 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
             : slotKey === "cutout"
               ? scheduleType === "iwant"
                 ? 9
-                : ftBoards * ftBoards
+                : ftBoards === 4
+                  ? 16
+                  : 9
               : scheduleType === "iwant"
                 ? 1
                 : MAX_FT_CARDS;
