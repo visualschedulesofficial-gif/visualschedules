@@ -240,7 +240,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className={`bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden ${cards.length === 1 ? "flex-1 min-h-0" : "h-[106px] shrink-0"}`}>
+            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden flex-1 min-h-0">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
                   <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
@@ -393,7 +393,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className={`bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden ${cards.length === 1 ? "flex-1 min-h-0" : "h-[106px] shrink-0"}`}>
+            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden flex-1 min-h-0">
               <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
                 {imageUrl ? (
                   <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
