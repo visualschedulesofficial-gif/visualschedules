@@ -231,7 +231,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 flex flex-col gap-1 p-1 justify-center transition-colors duration-150
+        className={`flex-1 min-h-0 overflow-hidden flex flex-col gap-1 p-1 justify-center transition-colors duration-150
           ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
         `}
       >
@@ -384,7 +384,7 @@ function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: n
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 flex flex-col gap-1 p-1 justify-center transition-colors duration-150
+        className={`flex-1 min-h-0 overflow-hidden flex flex-col gap-1 p-1 justify-center transition-colors duration-150
           ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
         `}
       >
