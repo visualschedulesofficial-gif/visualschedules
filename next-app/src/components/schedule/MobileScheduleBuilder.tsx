@@ -159,7 +159,7 @@ export function MobileScheduleBuilder({
   const setCardType = useScheduleState((s) => s.setCardType);
   // A weekly/custom schedule opened on mobile falls back to daily
   useEffect(() => {
-    if (scheduleType === "weekly" || scheduleType === "custom") setScheduleType("daily");
+    if (scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "timetable") setScheduleType("daily");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleType]);
   const gender = useScheduleState((s) => s.gender);
