@@ -16,6 +16,9 @@ interface ScheduleState {
   /** True while a PDF/JPEG capture runs — canvas zoom snaps to 100% */
   exporting: boolean;
   setExporting: (v: boolean) => void;
+  /** Timetable's one free-form column label (page 4, "Sick Day" by default) */
+  timetableExtraName: string;
+  setTimetableExtraName: (v: string) => void;
   /** First/Then board style: 2 boards, 3 boards, or a 4-step sequence */
   ftStyle: "first-then" | "first-then-now" | "sequencing";
   setFtStyle: (v: "first-then" | "first-then-now" | "sequencing") => void;
@@ -72,6 +75,8 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   setUiSearch: (s: string) => set({ uiSearch: s }),
   exporting: false,
   setExporting: (exporting) => set({ exporting }),
+  timetableExtraName: "Sick Day",
+  setTimetableExtraName: (timetableExtraName) => set({ timetableExtraName, isDirty: true }),
   ftStyle: "first-then",
   setFtStyle: (ftStyle) => set({ ftStyle, isDirty: true }),
   cardType: "visual",
@@ -100,11 +105,14 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
       custom: "Custom Schedule",
       firstthen: "First/Then Board",
       iwant: "I want",
+      timetable: "Timetable",
     };
     const pages =
       scheduleType === "daily"
         ? [createEmptyDailyPage(GRID_SPECS[get().gridCols].slots)]
-        : [createEmptyColumnPage()];
+        : scheduleType === "timetable"
+          ? [createEmptyColumnPage(), createEmptyColumnPage(), createEmptyColumnPage(), createEmptyColumnPage()]
+          : [createEmptyColumnPage()];
     set({ scheduleType, pages, title: TYPE_TITLES[scheduleType] || "My Schedule", isDirty: true });
   },
   setLanguage: (language) => set({ language, isDirty: true }),
