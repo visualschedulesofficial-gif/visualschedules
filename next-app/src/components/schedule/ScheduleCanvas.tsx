@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { GRID_SPECS,
   getDailySpec,
-  CANVAS_STRINGS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS } from "@/lib/constants";
+  CANVAS_STRINGS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS, MAX_TIMETABLE_CARDS } from "@/lib/constants";
 import { findCard, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
@@ -407,7 +407,7 @@ function TimetableColumn({
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 min-h-0 overflow-hidden flex flex-col gap-1 p-1 justify-center transition-colors duration-150
+        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-1.5 p-1.5 justify-start transition-colors duration-150
           ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
         `}
       >
@@ -416,17 +416,17 @@ function TimetableColumn({
           if (!card) return null;
           const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
           return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden flex-1 min-h-0">
-              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
+            <div key={idx} className="bg-white border border-[#C7D7B8] rounded-[6px] flex flex-row items-center relative group overflow-hidden h-[68px] shrink-0">
+              <div className="h-full aspect-square shrink-0 flex items-center justify-center overflow-hidden bg-white p-[4px]">
                 {imageUrl ? (
                   <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
                 ) : (
-                  <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                  <svg className="w-6 h-6 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
                 )}
               </div>
-              <LabelStrip className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
+              <LabelStrip className="flex-1 min-w-0 px-2 border-l border-[#F0F0F0] text-[15px] text-ink leading-tight font-serif break-words line-clamp-2">
                 <CardLabelText card={card} />
               </LabelStrip>
               <button
@@ -438,7 +438,7 @@ function TimetableColumn({
             </div>
           );
         })}
-        {cards.length < MAX_CUSTOM_CARDS && (
+        {cards.length < MAX_TIMETABLE_CARDS && (
           <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-transparent"}`}>
             {(isDragging || isOver) && (
               <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
