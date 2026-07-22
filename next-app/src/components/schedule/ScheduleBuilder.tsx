@@ -204,7 +204,7 @@ export default function ScheduleBuilder() {
           : scheduleType === "timetable"
             ? ["0", "1"]
             : customColNames.map((_, i) => String(i));
-      const max = 5;
+      const max = scheduleType === "timetable" ? 10 : 5;
       // Fill ROW BY ROW: each click goes to the leftmost column with the
       // fewest cards (Mon→Sun across row 1, then row 2, ...). First/Then
       // naturally becomes First, then Then.
@@ -222,7 +222,7 @@ export default function ScheduleBuilder() {
         setJustDroppedSlot(`${pageIdx}-${target}`);
       } else {
         // Every column already holds 5 cards
-        setFullNotice("All columns are full — only 5 cards fit in each column.");
+        setFullNotice(`All columns are full — only ${max} cards fit in each column.`);
         setTimeout(() => setFullNotice(null), 2600);
       }
     }
