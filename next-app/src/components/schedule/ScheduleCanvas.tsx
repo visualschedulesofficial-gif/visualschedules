@@ -367,14 +367,12 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
 
 function TimetableColumn({
   colIdx,
-  colName,
-  editable,
+  dayIdx,
   pageIdx,
   justDroppedSlot,
 }: {
   colIdx: number;
-  colName: string;
-  editable: boolean;
+  dayIdx: number | null; // null = the free-form extra column (Sick Day...)
   pageIdx: number;
   justDroppedSlot: string | null;
 }) {
@@ -384,6 +382,13 @@ function TimetableColumn({
   const gender = useScheduleState((s) => s.gender);
   const timetableExtraName = useScheduleState((s) => s.timetableExtraName);
   const setTimetableExtraName = useScheduleState((s) => s.setTimetableExtraName);
+  const timetableDayNames = useScheduleState((s) => s.timetableDayNames);
+  const setTimetableDayName = useScheduleState((s) => s.setTimetableDayName);
+  const t = useCanvasStrings();
+  const isExtra = dayIdx === null;
+  const headerValue = isExtra
+    ? timetableExtraName
+    : timetableDayNames[dayIdx] ?? t.days[dayIdx];
   const page = pages[pageIdx] as ColumnPageData;
   const cards = page?.columns?.[String(colIdx)] || [];
 
@@ -394,16 +399,14 @@ function TimetableColumn({
   return (
     <div className="flex flex-col min-w-0 overflow-hidden border border-[#C5D2B8] rounded-[8px]">
       <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
-        {editable ? (
-          <input
-            type="text"
-            value={timetableExtraName}
-            onChange={(e) => setTimetableExtraName(e.target.value)}
-            className="custom-col-input w-full text-center border-none bg-transparent font-serif text-[15px] text-[#4A5A3E] outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
-          />
-        ) : (
-          <div className="font-serif text-[15px] text-[#4A5A3E] px-1 py-0.5">{colName}</div>
-        )}
+        <input
+          type="text"
+          value={headerValue}
+          onChange={(e) =>
+            isExtra ? setTimetableExtraName(e.target.value) : setTimetableDayName(dayIdx as number, e.target.value)
+          }
+          className="custom-col-input w-full text-center border-none bg-transparent font-serif text-[15px] text-[#4A5A3E] outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
+        />
       </div>
       <div
         ref={setNodeRef}
@@ -454,10 +457,7 @@ function TimetableColumn({
 }
 
 function TimetablePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
-  const title = useScheduleState((s) => s.title);
   const shownTitle = useLocalizedTitle();
-  const timetableExtraName = useScheduleState((s) => s.timetableExtraName);
-  const t = useCanvasStrings();
   const [dayA, dayB] = TIMETABLE_PAGE_DAYS[pageIdx] || [1, 2];
 
   return (
@@ -474,20 +474,8 @@ function TimetablePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
         )}
       </div>
       <div className="flex-1 min-h-0 grid grid-cols-2 gap-4">
-        <TimetableColumn
-          colIdx={0}
-          colName={t.days[dayA]}
-          editable={false}
-          pageIdx={pageIdx}
-          justDroppedSlot={justDroppedSlot}
-        />
-        <TimetableColumn
-          colIdx={1}
-          colName={dayB === null ? timetableExtraName : t.days[dayB]}
-          editable={dayB === null}
-          pageIdx={pageIdx}
-          justDroppedSlot={justDroppedSlot}
-        />
+        <TimetableColumn colIdx={0} dayIdx={dayA} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+        <TimetableColumn colIdx={1} dayIdx={dayB} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
       </div>
       <CanvasFooter show />
     </div>
