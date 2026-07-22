@@ -200,7 +200,7 @@ export default function ScheduleBuilder() {
       // next PAGE once both of a page's columns are full. This is why the
       // page index can't be hardcoded to 0 here: every page needs to be
       // reachable by click, in reading order.
-      const max = 10;
+      const max = 12;
       let placed = false;
       outer: for (let pIdx = 0; pIdx < pages.length; pIdx++) {
         const page = pages[pIdx] as import("@/types/schedule").ColumnPageData;
