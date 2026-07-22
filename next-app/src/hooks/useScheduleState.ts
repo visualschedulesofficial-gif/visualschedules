@@ -19,6 +19,9 @@ interface ScheduleState {
   /** Timetable's one free-form column label (page 4, "Sick Day" by default) */
   timetableExtraName: string;
   setTimetableExtraName: (v: string) => void;
+  /** Per-day header overrides for Timetable (falls back to localized day) */
+  timetableDayNames: Record<number, string>;
+  setTimetableDayName: (dayIdx: number, name: string) => void;
   /** First/Then board style: 2 boards, 3 boards, or a 4-step sequence */
   ftStyle: "first-then" | "first-then-now" | "sequencing";
   setFtStyle: (v: "first-then" | "first-then-now" | "sequencing") => void;
@@ -77,6 +80,9 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   setExporting: (exporting) => set({ exporting }),
   timetableExtraName: "Sick Day",
   setTimetableExtraName: (timetableExtraName) => set({ timetableExtraName, isDirty: true }),
+  timetableDayNames: {},
+  setTimetableDayName: (dayIdx, name) =>
+    set((st) => ({ timetableDayNames: { ...st.timetableDayNames, [dayIdx]: name }, isDirty: true })),
   ftStyle: "first-then",
   setFtStyle: (ftStyle) => set({ ftStyle, isDirty: true }),
   cardType: "visual",
