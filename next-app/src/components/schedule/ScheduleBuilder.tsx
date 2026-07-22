@@ -201,7 +201,9 @@ export default function ScheduleBuilder() {
       const cols =
         scheduleType === "weekly"
           ? (weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS])
-          : customColNames.map((_, i) => String(i));
+          : scheduleType === "timetable"
+            ? ["0", "1"]
+            : customColNames.map((_, i) => String(i));
       const max = 5;
       // Fill ROW BY ROW: each click goes to the leftmost column with the
       // fewest cards (Mon→Sun across row 1, then row 2, ...). First/Then
