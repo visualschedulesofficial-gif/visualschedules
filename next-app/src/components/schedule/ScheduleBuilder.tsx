@@ -193,6 +193,31 @@ export default function ScheduleBuilder() {
         setFullNotice("All cut-out slots are full.");
         setTimeout(() => setFullNotice(null), 2600);
       }
+    } else if (scheduleType === "timetable") {
+      // Timetable is 4 SEPARATE pages (Mon/Tue, Wed/Thu, Fri/Sat, Sun/extra),
+      // and each column is one day's stacked subject list — so clicks fill
+      // top-to-bottom, one column completely before the next, moving to the
+      // next PAGE once both of a page's columns are full. This is why the
+      // page index can't be hardcoded to 0 here: every page needs to be
+      // reachable by click, in reading order.
+      const max = 10;
+      let placed = false;
+      outer: for (let pIdx = 0; pIdx < pages.length; pIdx++) {
+        const page = pages[pIdx] as import("@/types/schedule").ColumnPageData;
+        for (const col of ["0", "1"]) {
+          const len = (page.columns?.[col] || []).length;
+          if (len < max) {
+            placeCard(pIdx, col, { cardId: card.id, catId: card.categoryId });
+            setJustDroppedSlot(`${pIdx}-${col}`);
+            placed = true;
+            break outer;
+          }
+        }
+      }
+      if (!placed) {
+        setFullNotice(`All pages are full — only ${max} cards fit in each column.`);
+        setTimeout(() => setFullNotice(null), 2600);
+      }
     } else {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
       // Derive the full set of columns from the schedule setup — a fresh page
@@ -201,10 +226,8 @@ export default function ScheduleBuilder() {
       const cols =
         scheduleType === "weekly"
           ? (weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS])
-          : scheduleType === "timetable"
-            ? ["0", "1"]
-            : customColNames.map((_, i) => String(i));
-      const max = scheduleType === "timetable" ? 10 : 5;
+          : customColNames.map((_, i) => String(i));
+      const max = 5;
       // Fill ROW BY ROW: each click goes to the leftmost column with the
       // fewest cards (Mon→Sun across row 1, then row 2, ...). First/Then
       // naturally becomes First, then Then.
