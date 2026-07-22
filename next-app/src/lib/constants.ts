@@ -11,7 +11,7 @@ export const MAX_WEEKLY_CARDS = 5;
 export const MAX_CUSTOM_CARDS = 5;
 // Timetable cards are small and stacked (built to be cut apart one by one),
 // so each column holds far more than Custom's chunky columns.
-export const MAX_TIMETABLE_CARDS = 10;
+export const MAX_TIMETABLE_CARDS = 12;
 export const MAX_FT_CARDS = 1;
 export const FREE_SCHEDULE_LIMIT = 3;
 
