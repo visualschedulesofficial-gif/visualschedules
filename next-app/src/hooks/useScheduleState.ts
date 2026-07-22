@@ -7,7 +7,7 @@ import type {
   Language,
 } from "@/lib/constants";
 import type { CardRef, PageData, DailyPageData, ColumnPageData } from "@/types/schedule";
-import { GRID_SPECS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS, MAX_FT_CARDS } from "@/lib/constants";
+import { GRID_SPECS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS, MAX_FT_CARDS, MAX_TIMETABLE_CARDS } from "@/lib/constants";
 
 interface ScheduleState {
   /** Card search typed in the mobile app header */
@@ -149,15 +149,17 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
           ? MAX_WEEKLY_CARDS
           : scheduleType === "custom"
             ? MAX_CUSTOM_CARDS
-            : slotKey === "cutout"
-              ? scheduleType === "iwant"
-                ? 9
-                : ftBoards === 4
-                  ? 16
-                  : 9
-              : scheduleType === "iwant"
-                ? 1
-                : MAX_FT_CARDS;
+            : scheduleType === "timetable"
+              ? MAX_TIMETABLE_CARDS
+              : slotKey === "cutout"
+                ? scheduleType === "iwant"
+                  ? 9
+                  : ftBoards === 4
+                    ? 16
+                    : 9
+                : scheduleType === "iwant"
+                  ? 1
+                  : MAX_FT_CARDS;
       if (existing.length < maxCards) {
         columns[slotKey] = [...existing, card];
       }
