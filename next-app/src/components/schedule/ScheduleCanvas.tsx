@@ -392,7 +392,7 @@ function TimetableColumn({
   const isDragging = !!active;
 
   return (
-    <div className="flex flex-col border-r border-r-[#C5D2B8] last:border-r-0 min-w-0 overflow-hidden">
+    <div className="flex flex-col min-w-0 overflow-hidden border border-[#C5D2B8] rounded-[8px]">
       <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
         {editable ? (
           <input
@@ -473,7 +473,7 @@ function TimetablePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
           <h2 className="font-serif text-[30px] text-[#CCC] leading-snug">Untitled</h2>
         )}
       </div>
-      <div className="flex-1 min-h-0 grid grid-cols-2 border border-[#C5D2B8] rounded-sm overflow-hidden">
+      <div className="flex-1 min-h-0 grid grid-cols-2 gap-4">
         <TimetableColumn
           colIdx={0}
           colName={t.days[dayA]}
