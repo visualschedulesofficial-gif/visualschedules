@@ -53,7 +53,7 @@ function CanvasFooter({ show }: { show: boolean }) {
   // paid accounts simply get it empty.
   if (!show) return <div className="shrink-0 h-[62px]" />;
   return (
-    <div className="shrink-0 h-[62px] py-2 pb-3 border-t border-bg-muted flex items-end justify-between gap-3">
+    <div className="shrink-0 h-[62px] py-2 pb-3 flex items-end justify-between gap-3">
       <div className="min-w-0">
         <p className="text-[10.5px] text-[#8A8480] leading-snug">
           Create Personalized A4 Visual Schedules in Just 2 Minutes • https://visualschedule.app/schedule
@@ -91,7 +91,18 @@ const SCHEDULE_TYPE_LABELS = {
   custom: "Custom Schedule",
   firstthen: "First/Then Board",
   iwant: "I want",
+  timetable: "Timetable",
 } as const;
+
+// Which weekday (0=Sunday..6=Saturday, matching CANVAS_STRINGS.days) each
+// Timetable page shows. Page 4's second slot is the free-form extra column
+// (Sick Day / Rainy Day / Holiday...) instead of a day, so it's `null` here.
+const TIMETABLE_PAGE_DAYS: Array<[number, number | null]> = [
+  [1, 2], // Monday, Tuesday
+  [3, 4], // Wednesday, Thursday
+  [5, 6], // Friday, Saturday
+  [0, null], // Sunday, + editable extra column
+];
 
 // Title/labels in the schedule's language. A user-typed custom title always
 // wins; the stock English defaults localize automatically.
@@ -348,6 +359,135 @@ function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
         {dayKeys.map((key, idx) => (
           <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         ))}
+      </div>
+      <CanvasFooter show />
+    </div>
+  );
+}
+
+function TimetableColumn({
+  colIdx,
+  colName,
+  editable,
+  pageIdx,
+  justDroppedSlot,
+}: {
+  colIdx: number;
+  colName: string;
+  editable: boolean;
+  pageIdx: number;
+  justDroppedSlot: string | null;
+}) {
+  const pages = useScheduleState((s) => s.pages);
+  const removeCard = useScheduleState((s) => s.removeCard);
+  const language = useScheduleState((s) => s.language);
+  const gender = useScheduleState((s) => s.gender);
+  const timetableExtraName = useScheduleState((s) => s.timetableExtraName);
+  const setTimetableExtraName = useScheduleState((s) => s.setTimetableExtraName);
+  const page = pages[pageIdx] as ColumnPageData;
+  const cards = page?.columns?.[String(colIdx)] || [];
+
+  const droppableId = `${pageIdx}-${colIdx}`;
+  const { setNodeRef, isOver, active } = useDroppable({ id: droppableId });
+  const isDragging = !!active;
+
+  return (
+    <div className="flex flex-col border-r border-r-[#C5D2B8] last:border-r-0 min-w-0 overflow-hidden">
+      <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
+        {editable ? (
+          <input
+            type="text"
+            value={timetableExtraName}
+            onChange={(e) => setTimetableExtraName(e.target.value)}
+            className="custom-col-input w-full text-center border-none bg-transparent font-serif text-[15px] text-[#4A5A3E] outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
+          />
+        ) : (
+          <div className="font-serif text-[15px] text-[#4A5A3E] px-1 py-0.5">{colName}</div>
+        )}
+      </div>
+      <div
+        ref={setNodeRef}
+        className={`flex-1 min-h-0 overflow-hidden flex flex-col gap-1 p-1 justify-center transition-colors duration-150
+          ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
+        `}
+      >
+        {cards.map((cardRef, idx) => {
+          const card = findCard(cardRef.cardId);
+          if (!card) return null;
+          const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
+          return (
+            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden flex-1 min-h-0">
+              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
+                {imageUrl ? (
+                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                ) : (
+                  <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                )}
+              </div>
+              <LabelStrip className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
+                <CardLabelText card={card} />
+              </LabelStrip>
+              <button
+                onClick={() => removeCard(pageIdx, String(colIdx), idx)}
+                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[12px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
+              >
+                &times;
+              </button>
+            </div>
+          );
+        })}
+        {cards.length < MAX_CUSTOM_CARDS && (
+          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-transparent"}`}>
+            {(isDragging || isOver) && (
+              <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TimetablePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const title = useScheduleState((s) => s.title);
+  const shownTitle = useLocalizedTitle();
+  const timetableExtraName = useScheduleState((s) => s.timetableExtraName);
+  const t = useCanvasStrings();
+  const [dayA, dayB] = TIMETABLE_PAGE_DAYS[pageIdx] || [1, 2];
+
+  return (
+    <div
+      data-a4-page
+      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
+      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
+    >
+      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
+        {shownTitle ? (
+          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
+        ) : (
+          <h2 className="font-serif text-[30px] text-[#CCC] leading-snug">Untitled</h2>
+        )}
+      </div>
+      <div className="flex-1 min-h-0 grid grid-cols-2 border border-[#C5D2B8] rounded-sm overflow-hidden">
+        <TimetableColumn
+          colIdx={0}
+          colName={t.days[dayA]}
+          editable={false}
+          pageIdx={pageIdx}
+          justDroppedSlot={justDroppedSlot}
+        />
+        <TimetableColumn
+          colIdx={1}
+          colName={dayB === null ? timetableExtraName : t.days[dayB]}
+          editable={dayB === null}
+          pageIdx={pageIdx}
+          justDroppedSlot={justDroppedSlot}
+        />
       </div>
       <CanvasFooter show />
     </div>
@@ -808,6 +948,9 @@ export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
             )}
             {scheduleType === "iwant" && (
               <IWantPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+            )}
+            {scheduleType === "timetable" && (
+              <TimetablePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
             )}
           </div>
           {pageIdx < pages.length - 1 && (
