@@ -18,6 +18,7 @@ const navItems = [
     { href: "/admin/downloads", label: "Downloads", icon: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" },
     { href: "/admin/blog", label: "Blog Posts", icon: "M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" },
     { href: "/admin/users", label: "Users", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8" },
+    { href: "/admin/orgs", label: "Therapy Centers", icon: "M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" },
     { href: "/admin/analytics", label: "Analytics", icon: "M18 20V10M12 20V4M6 20v-6" },
   ]},
   { group: "Site", items: [
@@ -36,13 +37,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/" className="font-serif text-[0.95rem] italic text-[#F5F2EC] no-underline block">
             Visual Schedules
           </Link>
-          <p className="text-[11px] tracking-wider uppercase text-[#555] mt-0.5">Admin Panel</p>
+          <p className="text-[12px] tracking-wider uppercase text-[#555] mt-0.5">Admin Panel</p>
         </div>
 
         <nav className="flex-1 py-3">
           {navItems.map((group) => (
             <div key={group.group}>
-              <p className="text-[11px] tracking-[0.12em] uppercase text-[#444] px-4 py-2 font-normal">
+              <p className="text-[12px] tracking-[0.12em] uppercase text-[#444] px-4 py-2 font-normal">
                 {group.group}
               </p>
               {group.items.map((item) => {
@@ -69,11 +70,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         <div className="px-4 py-3 border-t border-[#2A2825] flex items-center gap-2">
-          <div className="w-[26px] h-[26px] rounded-full bg-accent flex items-center justify-center text-[11px] text-white shrink-0">
+          <div className="w-[26px] h-[26px] rounded-full bg-accent flex items-center justify-center text-[12px] text-white shrink-0">
             A
           </div>
           <span className="text-xs text-[#888]">Admin</span>
-          <Link href="/" className="ml-auto text-[11px] text-[#555] hover:text-[#EE8888] no-underline">
+          <Link href="/" className="ml-auto text-[12px] text-[#555] hover:text-[#EE8888] no-underline">
             Exit
           </Link>
         </div>
