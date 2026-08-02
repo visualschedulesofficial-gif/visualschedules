@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 
 type Org = { id: string; name: string; logo_url: string | null; access_code: string | null; active: number };
 type Member = { email: string; org_id: string };
+type Usage = { org_id: string; total_uses: number; unique_devices: number; last_used: string };
 
 async function uploadFile(file: File): Promise<string | null> {
   const fd = new FormData();
@@ -21,6 +22,7 @@ async function uploadFile(file: File): Promise<string | null> {
 export default function AdminOrgsPage() {
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [usage, setUsage] = useState<Usage[]>([]);
   const [busy, setBusy] = useState(false);
   const [newName, setNewName] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -32,6 +34,7 @@ export default function AdminOrgsPage() {
     const data = await res.json();
     setOrgs(data.orgs || []);
     setMembers(data.members || []);
+    setUsage(data.usage || []);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -120,6 +123,7 @@ export default function AdminOrgsPage() {
       <div className="space-y-4">
         {orgs.map((org) => {
           const orgMembers = members.filter((m) => m.org_id === org.id);
+          const u = usage.find((x) => x.org_id === org.id);
           return (
             <div key={org.id} className={`bg-white border border-border p-3 ${org.active ? "" : "opacity-60"}`}>
               <div className="flex items-center gap-3 mb-2">
@@ -136,6 +140,11 @@ export default function AdminOrgsPage() {
                   <div className="text-[12px] text-ink-3">
                     Access code: <span className="font-mono font-semibold text-accent-strong">{org.access_code}</span>
                     <button onClick={() => regenCode(org.id)} className="ml-2 underline">regenerate</button>
+                  </div>
+                  <div className="text-[12px] text-ink-3 mt-0.5">
+                    {u
+                      ? `Code used ${u.total_uses}× · ~${u.unique_devices} device${u.unique_devices === 1 ? "" : "s"} · last ${String(u.last_used).slice(0, 10)}`
+                      : "Code not used yet"}
                   </div>
                 </div>
                 <button onClick={() => toggleActive(org)} className="text-[12px] px-2 py-1 border border-border">
