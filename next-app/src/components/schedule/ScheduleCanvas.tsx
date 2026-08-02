@@ -70,9 +70,9 @@ function CanvasFooter({ show }: { show: boolean }) {
           {org.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src="/api/org-logo"
+              src={`/api/org-logo?v=${encodeURIComponent(org.logoUrl)}`}
               alt={org.name}
-              className="h-[40px] w-auto max-w-[120px] object-contain shrink-0"
+              className="h-[40px] w-auto max-w-[120px] object-contain shrink-0 bg-white rounded-[4px] p-[2px]"
             />
           )}
           <div className="min-w-0">
