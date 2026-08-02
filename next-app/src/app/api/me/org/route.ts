@@ -71,6 +71,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "That code wasn't recognized — check it with your therapist." }, { status: 404 });
     }
 
+    // Log the redemption for the center's usage count
+    try {
+      const ua = request.headers.get("user-agent") || "";
+      const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "";
+      const raw = ua + "|" + ip;
+      let hash = 0;
+      for (let i = 0; i < raw.length; i++) { hash = (hash * 31 + raw.charCodeAt(i)) | 0; }
+      await env.DB.prepare(
+        "INSERT INTO org_redemptions (id, org_id, device_hash) VALUES (?, ?, ?)"
+      ).bind(crypto.randomUUID(), org.id, String(hash)).run();
+    } catch {}
+
     const cookieStore = await cookies();
     cookieStore.set(ORG_COOKIE, Buffer.from(JSON.stringify({ orgId: org.id })).toString("base64"), {
       httpOnly: true,
