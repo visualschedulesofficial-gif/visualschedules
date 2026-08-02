@@ -19,7 +19,18 @@ export async function GET() {
   const { results: members } = await env.DB.prepare(
     "SELECT email, org_id FROM org_members ORDER BY email"
   ).all();
-  return NextResponse.json({ orgs: orgs || [], members: members || [] });
+  let usage: any[] = [];
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT org_id,
+              COUNT(*) AS total_uses,
+              COUNT(DISTINCT device_hash) AS unique_devices,
+              MAX(redeemed_at) AS last_used
+       FROM org_redemptions GROUP BY org_id`
+    ).all();
+    usage = results || [];
+  } catch {}
+  return NextResponse.json({ orgs: orgs || [], members: members || [], usage });
 }
 
 // POST — create org, add member, or regenerate code
