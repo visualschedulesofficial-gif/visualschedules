@@ -70,9 +70,8 @@ function CanvasFooter({ show }: { show: boolean }) {
           {org.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={org.logoUrl}
+              src="/api/org-logo"
               alt={org.name}
-              crossOrigin="anonymous"
               className="h-[40px] w-auto max-w-[120px] object-contain shrink-0"
             />
           )}
