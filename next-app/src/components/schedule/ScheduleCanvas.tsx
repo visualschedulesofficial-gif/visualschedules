@@ -48,7 +48,51 @@ function LabelStrip({ className, children }: { className: string; children: Reac
 
 // Free-tier footer, matching the printable references: two-line credit + QR
 // that sends anyone holding the paper to the builder. Paid users get none.
+// White-label: when the visitor is connected to a therapy center (code
+// session or linked login), the footer carries the center's logo + name.
+function useOrgBranding() {
+  const [org, setOrg] = useState<{ name: string; logoUrl: string | null } | null>(null);
+  useEffect(() => {
+    fetch("/api/me/org")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.org) setOrg(d.org); })
+      .catch(() => {});
+  }, []);
+  return org;
+}
+
 function CanvasFooter({ show }: { show: boolean }) {
+  const org = useOrgBranding();
+  if (org && show) {
+    return (
+      <div className="shrink-0 h-[62px] py-2 pb-3 flex items-end justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          {org.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={org.logoUrl}
+              alt={org.name}
+              crossOrigin="anonymous"
+              className="h-[40px] w-auto max-w-[120px] object-contain shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-[14px] font-serif text-[#4A5A3E] leading-snug truncate">{org.name}</p>
+            <p className="text-[12px] text-[#8A8480] leading-snug">
+              Made with visualschedule.app • © 2026 Grow Gently
+            </p>
+          </div>
+        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/qr-schedule.png"
+          alt="Scan to create your own visual schedule"
+          crossOrigin="anonymous"
+          className="w-[46px] h-[46px] shrink-0"
+        />
+      </div>
+    );
+  }
   // The footer band always occupies the same height so pages stay balanced;
   // paid accounts simply get it empty.
   if (!show) return <div className="shrink-0 h-[62px]" />;
