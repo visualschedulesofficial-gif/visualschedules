@@ -7,6 +7,31 @@ type Step = "email" | "otp" | "done";
 type Mode = "user" | "admin";
 
 export default function LoginPage() {
+  const [orgCode, setOrgCode] = useState("");
+  const [orgMsg, setOrgMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [orgBusy, setOrgBusy] = useState(false);
+  const redeemOrgCode = async () => {
+    if (!orgCode.trim()) return;
+    setOrgBusy(true);
+    setOrgMsg(null);
+    try {
+      const res = await fetch("/api/me/org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: orgCode.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setOrgMsg({ ok: true, text: `Welcome! You're connected to ${data.org.name}. Taking you to the builder…` });
+        setTimeout(() => { window.location.href = "/schedule"; }, 1200);
+      } else {
+        setOrgMsg({ ok: false, text: data.error || "That code wasn't recognized." });
+      }
+    } catch {
+      setOrgMsg({ ok: false, text: "Couldn't check the code — try again." });
+    }
+    setOrgBusy(false);
+  };
   const [mode, setMode] = useState<Mode>("user");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -172,6 +197,32 @@ export default function LoginPage() {
             >
               Create free schedule →
             </a>
+            <div className="mt-5 pt-4 border-t border-border">
+              <p className="text-center text-[13px] text-ink-2 font-sans mb-2 font-semibold">
+                Have a code from your therapist?
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={orgCode}
+                  onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. SUNSHINE24"
+                  className="flex-1 min-w-0 px-3 py-2.5 border border-input-border rounded font-sans text-[14px] tracking-widest uppercase text-ink outline-none focus:ring-2 focus:ring-weekly-accent"
+                />
+                <button
+                  onClick={redeemOrgCode}
+                  disabled={orgBusy || !orgCode.trim()}
+                  className="px-4 py-2.5 bg-accent-strong text-white rounded font-sans text-[13px] font-semibold disabled:opacity-50"
+                >
+                  {orgBusy ? "…" : "Join"}
+                </button>
+              </div>
+              {orgMsg && (
+                <p className={`mt-2 text-[12px] font-sans ${orgMsg.ok ? "text-success" : "text-[#C53030]"}`}>
+                  {orgMsg.text}
+                </p>
+              )}
+            </div>
                   </div>
                 </>
               )}
