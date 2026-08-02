@@ -7,6 +7,7 @@ type Step = "email" | "otp" | "done";
 type Mode = "user" | "admin";
 
 export default function LoginPage() {
+  const [loginMode, setLoginMode] = useState<"email" | "code">("email");
   const [orgCode, setOrgCode] = useState("");
   const [orgMsg, setOrgMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [orgBusy, setOrgBusy] = useState(false);
@@ -153,10 +154,36 @@ export default function LoginPage() {
           {/* ── USER FLOW ── */}
           {mode === "user" && (
             <>
-              {/* Step: email */}
+              {/* Mode toggle: email sign-in vs therapist code */}
               {step === "email" && (
                 <>
-                  <h1 className="font-serif text-xl italic text-ink mb-1.5">Sign in</h1>
+                  <h1 className="font-serif text-xl italic text-ink mb-3">Sign in</h1>
+                  <div className="flex rounded border border-input-border overflow-hidden mb-5">
+                    <button
+                      type="button"
+                      onClick={() => setLoginMode("email")}
+                      className={`flex-1 py-2.5 text-[13px] font-sans font-semibold transition-colors ${
+                        loginMode === "email"
+                          ? "bg-accent-strong text-white"
+                          : "bg-white text-ink-2"
+                      }`}
+                    >
+                      Login with Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginMode("code")}
+                      className={`flex-1 py-2.5 text-[13px] font-sans font-semibold transition-colors ${
+                        loginMode === "code"
+                          ? "bg-accent-strong text-white"
+                          : "bg-white text-ink-2"
+                      }`}
+                    >
+                      Login with Code
+                    </button>
+                  </div>
+                  {loginMode === "email" && (
+                  <>
                   <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
                     Enter your email — we'll send a 6-digit code. No password needed.
                   </p>
@@ -189,6 +216,36 @@ export default function LoginPage() {
                       <Link href="/privacy" className="text-ink underline">Privacy Policy</Link>.
                     </p>
                   </form>
+                  </>
+                  )}
+                  {loginMode === "code" && (
+                    <div>
+                      <p className="text-[13px] text-ink-2 leading-relaxed mb-4">
+                        Enter the access code your therapy center gave you — no email or password needed.
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={orgCode}
+                          onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+                          placeholder="e.g. SUNSHINE24"
+                          className="flex-1 min-w-0 px-3 py-3 border border-input-border rounded font-sans text-[15px] tracking-widest uppercase text-ink outline-none focus:ring-2 focus:ring-weekly-accent"
+                        />
+                        <button
+                          onClick={redeemOrgCode}
+                          disabled={orgBusy || !orgCode.trim()}
+                          className="px-5 py-3 bg-accent-strong text-white rounded font-sans text-[14px] font-semibold disabled:opacity-50"
+                        >
+                          {orgBusy ? "…" : "Join"}
+                        </button>
+                      </div>
+                      {orgMsg && (
+                        <p className={`mt-2 text-[12px] font-sans ${orgMsg.ok ? "text-success" : "text-[#C53030]"}`}>
+                          {orgMsg.text}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-4 pt-4 border-t border-border text-center">
             <p className="text-center text-[13px] text-ink-3 font-sans mb-2">No account needed for free cards</p>
             <a
@@ -197,32 +254,6 @@ export default function LoginPage() {
             >
               Create free schedule →
             </a>
-            <div className="mt-5 pt-4 border-t border-border">
-              <p className="text-center text-[13px] text-ink-2 font-sans mb-2 font-semibold">
-                Have a code from your therapist?
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={orgCode}
-                  onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. SUNSHINE24"
-                  className="flex-1 min-w-0 px-3 py-2.5 border border-input-border rounded font-sans text-[14px] tracking-widest uppercase text-ink outline-none focus:ring-2 focus:ring-weekly-accent"
-                />
-                <button
-                  onClick={redeemOrgCode}
-                  disabled={orgBusy || !orgCode.trim()}
-                  className="px-4 py-2.5 bg-accent-strong text-white rounded font-sans text-[13px] font-semibold disabled:opacity-50"
-                >
-                  {orgBusy ? "…" : "Join"}
-                </button>
-              </div>
-              {orgMsg && (
-                <p className={`mt-2 text-[12px] font-sans ${orgMsg.ok ? "text-success" : "text-[#C53030]"}`}>
-                  {orgMsg.text}
-                </p>
-              )}
-            </div>
                   </div>
                 </>
               )}
