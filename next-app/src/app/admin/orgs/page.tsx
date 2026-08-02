@@ -79,6 +79,19 @@ export default function AdminOrgsPage() {
     load();
   };
 
+  const changeLogo = async (org: Org, file: File) => {
+    setBusy(true);
+    const logoUrl = await uploadFile(file);
+    setBusy(false);
+    if (!logoUrl) { alert("Logo upload failed"); return; }
+    await fetch("/api/admin/orgs", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: org.id, name: org.name, logoUrl, active: !!org.active }),
+    });
+    load();
+  };
+
   const toggleActive = async (org: Org) => {
     await fetch("/api/admin/orgs", {
       method: "PUT",
@@ -147,6 +160,15 @@ export default function AdminOrgsPage() {
                       : "Code not used yet"}
                   </div>
                 </div>
+                <label className="text-[12px] px-2 py-1 border border-border cursor-pointer">
+                  Change logo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) changeLogo(org, f); e.target.value = ""; }}
+                  />
+                </label>
                 <button onClick={() => toggleActive(org)} className="text-[12px] px-2 py-1 border border-border">
                   {org.active ? "Active" : "Inactive"}
                 </button>
