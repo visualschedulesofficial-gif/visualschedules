@@ -67,6 +67,17 @@ export default function ScheduleBuilder() {
   const [activeCard, setActiveCard] = useState<{ id: string; label: string } | null>(null);
   const [justDroppedSlot, setJustDroppedSlot] = useState<string | null>(null);
   const [fullNotice, setFullNotice] = useState<string | null>(null);
+  const [orgBanner, setOrgBanner] = useState<{ name: string; code: string } | null>(null);
+  useEffect(() => {
+    fetch("/api/me/org")
+      .then((r) => r.json())
+      .then((d) => setOrgBanner(d.via === "code" ? { name: d.org.name, code: d.code } : null))
+      .catch(() => setOrgBanner(null));
+  }, []);
+  const leaveOrgCode = async () => {
+    await fetch("/api/me/org", { method: "DELETE" });
+    window.location.reload();
+  };
   const [cardImages, setLocalCardImages] = useState<CardImageMap>({});
   const [cardsLoaded, setCardsLoaded] = useState(false);
   // Mobile gets its own linear layout; desktop keeps the three-panel one.
@@ -301,6 +312,16 @@ export default function ScheduleBuilder() {
      {fullNotice && (
        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-ink text-white text-[13px] font-sans px-4 py-2.5 rounded-full shadow-lg">
          {fullNotice}
+       </div>
+     )}
+     {orgBanner && (
+       <div className="shrink-0 flex items-center justify-center gap-2 bg-accent-soft border-b border-weekly-accent px-4 py-1.5">
+         <span className="text-[12px] text-accent-strong font-sans">
+           Branding this schedule as: <span className="font-semibold">{orgBanner.name}</span> (code {orgBanner.code})
+         </span>
+         <button onClick={leaveOrgCode} className="text-[12px] font-sans font-semibold text-[#C53030] underline">
+           Not you? Leave
+         </button>
        </div>
      )}
      {isMobile ? (
