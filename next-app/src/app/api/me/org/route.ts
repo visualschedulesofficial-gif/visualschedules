@@ -13,25 +13,34 @@ const ORG_COOKIE = "vs_org";
 export async function GET() {
   try {
     const env = getEnv();
-    if (!env.DB) return NextResponse.json({ org: null });
+    if (!env.DB) return NextResponse.json({ org: null, via: null, code: null });
     const cookieStore = await cookies();
+    const session = cookieStore.get(SESSION_COOKIE);
 
-    // (a) code session
-    const orgCookie = cookieStore.get(ORG_COOKIE);
+    // (a) code session — ONLY while nobody is logged in. A real personal
+    // login always overrides a leftover anonymous code cookie; a signed-in
+    // user's branding must come from their own genuine center link (below),
+    // never from browsing history in the same browser.
+    const orgCookie = !session?.value ? cookieStore.get(ORG_COOKIE) : undefined;
     if (orgCookie?.value) {
       try {
         const { orgId } = JSON.parse(Buffer.from(orgCookie.value, "base64").toString());
         if (orgId) {
           const org = await env.DB.prepare(
-            "SELECT name, logo_url FROM orgs WHERE id = ? AND active = 1"
+            "SELECT name, logo_url, access_code FROM orgs WHERE id = ? AND active = 1"
           ).bind(orgId).first();
-          if (org) return NextResponse.json({ org: { name: org.name, logoUrl: org.logo_url } });
+          if (org) {
+            return NextResponse.json({
+              org: { name: org.name, logoUrl: org.logo_url },
+              via: "code",
+              code: org.access_code,
+            });
+          }
         }
       } catch {}
     }
 
     // (b) signed-in member email
-    const session = cookieStore.get(SESSION_COOKIE);
     if (session?.value) {
       try {
         const data = JSON.parse(Buffer.from(session.value, "base64").toString());
@@ -44,16 +53,29 @@ export async function GET() {
                JOIN orgs o ON o.id = m.org_id
                WHERE m.email = ? AND o.active = 1`
             ).bind((user.email as string).toLowerCase()).first();
-            if (org) return NextResponse.json({ org: { name: org.name, logoUrl: org.logo_url } });
+            if (org) {
+              return NextResponse.json({
+                org: { name: org.name, logoUrl: org.logo_url },
+                via: "member",
+                code: null,
+              });
+            }
           }
         }
       } catch {}
     }
 
-    return NextResponse.json({ org: null });
+    return NextResponse.json({ org: null, via: null, code: null });
   } catch {
     return NextResponse.json({ org: null });
   }
+}
+
+// DELETE /api/me/org — leave the current access-code session.
+export async function DELETE() {
+  const cookieStore = await cookies();
+  cookieStore.delete(ORG_COOKIE);
+  return NextResponse.json({ ok: true });
 }
 
 // POST /api/me/org — redeem a therapist access code; sets a 90-day session.
