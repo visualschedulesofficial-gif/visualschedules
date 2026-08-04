@@ -169,6 +169,17 @@ export function MobileScheduleBuilder({
   const { exportPDF, exportJPEG, exporting } = useExport();
 
   const [category, setCategory] = useState("");
+  const [orgBanner, setOrgBanner] = useState<{ name: string; code: string } | null>(null);
+  useEffect(() => {
+    fetch("/api/me/org")
+      .then((r) => r.json())
+      .then((d) => setOrgBanner(d.via === "code" ? { name: d.org.name, code: d.code } : null))
+      .catch(() => setOrgBanner(null));
+  }, []);
+  const leaveOrgCode = async () => {
+    await fetch("/api/me/org", { method: "DELETE" });
+    window.location.reload();
+  };
   // Daily Schedule defaults to the "Daily Routine" category so the quick
   // row shows everyday activity cards, not unrelated ones (AI, Art-Colour...)
   // that happen to sort early in the full 286-card catalog. Only sets the
@@ -334,6 +345,16 @@ export function MobileScheduleBuilder({
 
   return (
     <div className="px-3 pb-8 pt-2.5 space-y-3 bg-bg min-h-full">
+      {orgBanner && (
+        <div className="flex items-center justify-between gap-2 bg-accent-soft border border-weekly-accent rounded px-3 py-2">
+          <span className="text-[12px] text-accent-strong font-sans">
+            Branding: <span className="font-semibold">{orgBanner.name}</span> (code {orgBanner.code})
+          </span>
+          <button onClick={leaveOrgCode} className="text-[12px] font-sans font-semibold text-[#C53030] underline shrink-0">
+            Not you? Leave
+          </button>
+        </div>
+      )}
       {/* Row 1: Language + Category, then search */}
       <section>
         <div className="grid grid-cols-2 gap-2">
