@@ -11,19 +11,21 @@ function getEnv(): { DB?: any } {
 }
 
 // GET /api/user/subscription — is this visitor entitled to paid features?
-// Three doors, checked in order:
-//   1. A therapist access-code session (vs_org cookie) on an ACTIVE center
-//      — no login needed at all.
-//   2. A signed-in user with a real, unexpired subscription.
-//   3. A signed-in user whose email is linked to an ACTIVE center.
-// Flipping a center to Inactive in admin closes doors 1 and 3 instantly.
+// IMPORTANT ORDERING: a real personal login always takes priority over the
+// anonymous access-code cookie. That cookie can linger in a browser for 90
+// days (by design, so parents don't re-enter it) — but once someone signs
+// in as a specific, real person, we must judge THEM: their own paid plan,
+// or their email being genuinely linked to a center. A leftover code cookie
+// from earlier browsing must never silently grant a different, unrelated
+// account free paid access.
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const env = getEnv();
+    const session = cookieStore.get(SESSION_COOKIE);
 
-    // ---- Door 1: therapist code session (works without any login) ----
-    if (env.DB) {
+    // ---- Door 1: therapist code session — ONLY when nobody is logged in ----
+    if (env.DB && !session?.value) {
       const orgCookie = cookieStore.get(ORG_COOKIE);
       if (orgCookie?.value) {
         try {
@@ -42,7 +44,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const session = cookieStore.get(SESSION_COOKIE);
     if (!session?.value) {
       return NextResponse.json({ subscription: null });
     }
