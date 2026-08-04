@@ -1,10 +1,19 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
 const FROM_EMAIL = "Visual Schedules <welcome@visualschedule.app>";
+
+type EmailEnv = {
+  RESEND_API_KEY?: string;
+  EMAIL?: { send: (msg: Record<string, string>) => Promise<{ messageId?: string }> };
+};
 
 /**
  * Send email. Primary: Resend API (works for ANY recipient — needs
  * RESEND_API_KEY secret + visualschedule.app verified in Resend).
  * Fallback: Cloudflare Workers EMAIL binding (only delivers to addresses
  * verified in the Cloudflare account — fine for admin/dev, not for users).
+ * Bindings are not exposed on process.env — they must be read from
+ * getCloudflareContext().env.
  */
 export async function sendEmail({
   to,
@@ -17,7 +26,12 @@ export async function sendEmail({
   html: string;
   text?: string;
 }): Promise<boolean> {
-  const env = (process as any).env;
+  let env: EmailEnv | undefined;
+  try {
+    env = getCloudflareContext().env as EmailEnv;
+  } catch {
+    // Not running on Cloudflare (plain `next dev`) — fall through to console log
+  }
 
   // 1) Resend — the real path for user-facing email
   if (env?.RESEND_API_KEY) {

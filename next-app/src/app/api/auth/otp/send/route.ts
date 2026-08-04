@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { sendOTPEmail } from "@/lib/email/send";
+import type { D1 } from "@/types/cloudflare";
 
 // POST /api/auth/otp/send — send 6-digit OTP to email
 export async function POST(request: NextRequest) {
@@ -10,24 +12,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
 
-    // Generate 6-digit code
+    const normalizedEmail = email.toLowerCase().trim();
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
 
-    // TODO: Store in D1 otp_codes table
-    // For now, store in a simple in-memory map (works for single worker instance)
-    // In production, this MUST be D1
-    console.log(`[OTP] ${email} → ${code} (expires ${expiresAt})`);
+    const { env } = getCloudflareContext() as unknown as { env: { DB?: D1 } };
+    if (!env?.DB) {
+      // Local dev without D1 — log the code so signup can still be tested
+      console.log(`[OTP] No DB binding. ${normalizedEmail} → ${code}`);
+      return NextResponse.json({ success: true });
+    }
 
-    // Store OTP globally for verification (temporary until D1 wired)
-    const global = globalThis as any;
-    if (!global.__otpStore) global.__otpStore = {};
-    global.__otpStore[email.toLowerCase()] = { code, expiresAt };
+    await env.DB.prepare(
+      `INSERT INTO otp_codes (email, code, expires_at) VALUES (?, ?, ?)
+       ON CONFLICT(email) DO UPDATE SET code = excluded.code, expires_at = excluded.expires_at`
+    )
+      .bind(normalizedEmail, code, expiresAt)
+      .run();
 
-    // Send email
-    const sent = await sendOTPEmail(email, code);
+    const sent = await sendOTPEmail(normalizedEmail, code);
     if (!sent) {
-      console.log(`[OTP] Email send failed for ${email}, code: ${code}`);
+      return NextResponse.json({ error: "Failed to send OTP" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

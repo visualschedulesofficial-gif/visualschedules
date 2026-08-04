@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import type { D1 } from "@/types/cloudflare";
 
 const SESSION_COOKIE = "vs_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -15,9 +17,16 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check OTP from in-memory store (TODO: query D1 otp_codes table)
-    const global = globalThis as any;
-    const stored = global.__otpStore?.[normalizedEmail];
+    const { env } = getCloudflareContext() as unknown as { env: { DB?: D1 } };
+    if (!env?.DB) {
+      return NextResponse.json({ error: "Verification unavailable" }, { status: 500 });
+    }
+
+    const stored = await env.DB.prepare(
+      `SELECT code, expires_at FROM otp_codes WHERE email = ?`
+    )
+      .bind(normalizedEmail)
+      .first<{ code: string; expires_at: string }>();
 
     if (!stored) {
       return NextResponse.json({ error: "No OTP found. Please request a new code." }, { status: 401 });
@@ -27,13 +36,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid code" }, { status: 401 });
     }
 
-    if (new Date(stored.expiresAt) < new Date()) {
-      delete global.__otpStore[normalizedEmail];
+    if (new Date(stored.expires_at) < new Date()) {
+      await env.DB.prepare(`DELETE FROM otp_codes WHERE email = ?`).bind(normalizedEmail).run();
       return NextResponse.json({ error: "Code expired. Please request a new one." }, { status: 401 });
     }
 
-    // OTP valid — clear it
-    delete global.__otpStore[normalizedEmail];
+    // OTP valid — clear it so it can't be reused
+    await env.DB.prepare(`DELETE FROM otp_codes WHERE email = ?`).bind(normalizedEmail).run();
 
     // TODO: Upsert user in D1 (create on first login)
     const userId = `user-${normalizedEmail.replace(/[^a-z0-9]/g, "")}`;

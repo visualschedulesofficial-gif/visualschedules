@@ -79,3 +79,9 @@ export const appSettings = sqliteTable("app_settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 });
+
+export const otpCodes = sqliteTable("otp_codes", {
+  email: text("email").primaryKey(),
+  code: text("code").notNull(),
+  expiresAt: text("expires_at").notNull(),
+});
