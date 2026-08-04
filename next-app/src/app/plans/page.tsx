@@ -47,6 +47,7 @@ const PLANS = [
       "Any new categories added",
     ],
     cta: "Subscribe — ₹399",
+    payLink: "https://rzp.io/rzp/h4nTG4O",
     highlight: false,
     isFree: false,
   },
@@ -65,6 +66,7 @@ const PLANS = [
       "Any new categories added",
     ],
     cta: "Subscribe — ₹699",
+    payLink: "https://rzp.io/rzp/G0d01AM",
     highlight: true, // Most popular
     isFree: false,
   },
@@ -84,6 +86,7 @@ const PLANS = [
       "Any new categories added",
     ],
     cta: "Subscribe — ₹1,199",
+    payLink: "https://rzp.io/rzp/9aCIdVf",
     highlight: false,
     isFree: false,
   },
@@ -195,14 +198,14 @@ export default function PlansPage() {
         {!user ? (
           <Link
             href="/login"
-            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all"
+            className="text-[12px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all"
           >
             Sign In
           </Link>
         ) : (
           <Link
             href="/schedules"
-            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all"
+            className="text-[12px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all"
           >
             My Schedules
           </Link>
@@ -240,14 +243,14 @@ export default function PlansPage() {
               {/* Most popular / best value badge */}
               {plan.highlight && (
                 <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <span className="text-[10px] tracking-wider uppercase font-semibold bg-accent text-white px-3 py-1">
+                  <span className="text-[12px] tracking-wider uppercase font-semibold bg-accent text-white px-3 py-1">
                     Most Popular
                   </span>
                 </div>
               )}
               {plan.badge && (
                 <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <span className="text-[10px] tracking-wider uppercase font-semibold bg-[#A8824A] text-white px-3 py-1">
+                  <span className="text-[12px] tracking-wider uppercase font-semibold bg-[#A8824A] text-white px-3 py-1">
                     {plan.badge}
                   </span>
                 </div>
@@ -256,7 +259,7 @@ export default function PlansPage() {
               <div className="p-5 flex flex-col flex-1">
                 {/* Plan name + price */}
                 <div className="mb-4 pb-4 border-b border-border">
-                  <h2 className="text-[11px] tracking-wider uppercase font-semibold text-ink-3 mb-2">
+                  <h2 className="text-[12px] tracking-wider uppercase font-semibold text-ink-3 mb-2">
                     {plan.name}
                   </h2>
                   <div className="flex items-baseline gap-1.5">
@@ -264,7 +267,7 @@ export default function PlansPage() {
                     <span className="text-[12px] text-ink-3">/ {plan.period}</span>
                   </div>
                   {plan.perMonth && (
-                    <p className="text-[11px] text-ink-3 mt-1">{plan.perMonth}</p>
+                    <p className="text-[12px] text-ink-3 mt-1">{plan.perMonth}</p>
                   )}
                   <p className="text-[12px] text-ink-2 mt-2">{plan.description}</p>
                 </div>
@@ -294,22 +297,23 @@ export default function PlansPage() {
                 {plan.isFree ? (
                   <Link
                     href="/schedule"
-                    className="w-full text-center text-[11px] tracking-wider uppercase py-2.5 border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all block"
+                    className="w-full text-center text-[12px] tracking-wider uppercase py-2.5 border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all block"
                   >
                     {plan.cta}
                   </Link>
                 ) : (
-                  <button
-                    disabled={paying !== null}
-                    onClick={() => handleSubscribeClick(plan.id)}
-                    className={`w-full text-[11px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all ${
+                  <a
+                    href={plan.payLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`w-full text-center text-[12px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all no-underline block ${
                       plan.highlight
                         ? "bg-accent text-white border border-accent hover:bg-accent-hover"
                         : "bg-ink text-white border border-ink hover:bg-[#333]"
                     }`}
                   >
                     {plan.cta}
-                  </button>
+                  </a>
                 )}
               </div>
             </div>
