@@ -33,8 +33,14 @@ const PLAN_MAP: Record<string, { amount: number; months: number; label: string }
 // POST /api/payments/create-order — body: { plan: "3mo" | "6mo" | "12mo" }
 export async function POST(request: NextRequest) {
   const env = getEnv();
-  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
-    return NextResponse.json({ error: "Payments not configured yet" }, { status: 503 });
+  const missing: string[] = [];
+  if (!env.RAZORPAY_KEY_ID) missing.push("RAZORPAY_KEY_ID");
+  if (!env.RAZORPAY_KEY_SECRET) missing.push("RAZORPAY_KEY_SECRET");
+  if (missing.length) {
+    return NextResponse.json(
+      { error: `Payments not configured — missing on server: ${missing.join(", ")}` },
+      { status: 503 }
+    );
   }
 
   const userId = await getUserId(env);
@@ -57,7 +63,12 @@ export async function POST(request: NextRequest) {
   });
 
   if (!res.ok) {
-    return NextResponse.json({ error: "Could not start payment. Please try again." }, { status: 502 });
+    const detail = await res.text().catch(() => "");
+    console.error("[create-order] Razorpay rejected the order:", res.status, detail);
+    return NextResponse.json(
+      { error: `Razorpay rejected the request (HTTP ${res.status}): ${detail.slice(0, 300)}` },
+      { status: 502 }
+    );
   }
   const order: any = await res.json();
 
