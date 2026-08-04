@@ -169,6 +169,18 @@ export function MobileScheduleBuilder({
   const { exportPDF, exportJPEG, exporting } = useExport();
 
   const [category, setCategory] = useState("");
+  // Daily Schedule defaults to the "Daily Routine" category so the quick
+  // row shows everyday activity cards, not unrelated ones (AI, Art-Colour...)
+  // that happen to sort early in the full 286-card catalog. Only sets the
+  // default once, when landing on Daily with nothing chosen yet — a
+  // deliberate switch to "All categories" afterward is left alone.
+  useEffect(() => {
+    if (scheduleType === "daily" && category === "") {
+      const dailyCat = CATEGORIES.find((c: any) => /daily/i.test(c.name));
+      if (dailyCat) setCategory(dailyCat.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleType]);
   const search = useScheduleState((s) => s.uiSearch);
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
