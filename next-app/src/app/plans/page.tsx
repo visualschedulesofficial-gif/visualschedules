@@ -47,7 +47,7 @@ const PLANS = [
       "Any new categories added",
     ],
     cta: "Subscribe — ₹399",
-    payLink: "https://rzp.io/rzp/h4nTG4O",
+    payLink: "https://rzp.io/rzp/9aCIdVf",
     highlight: false,
     isFree: false,
   },
@@ -86,7 +86,7 @@ const PLANS = [
       "Any new categories added",
     ],
     cta: "Subscribe — ₹1,199",
-    payLink: "https://rzp.io/rzp/9aCIdVf",
+    payLink: "https://rzp.io/rzp/h4nTG4O",
     highlight: false,
     isFree: false,
   },
@@ -302,18 +302,22 @@ export default function PlansPage() {
                     {plan.cta}
                   </Link>
                 ) : (
-                  <a
-                    href={plan.payLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`w-full text-center text-[12px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all no-underline block ${
+                  <button
+                    onClick={() => {
+                      if (!user) {
+                        window.location.href = `/login?next=/plans`;
+                        return;
+                      }
+                      window.open(plan.payLink, "_blank", "noopener,noreferrer");
+                    }}
+                    className={`w-full text-center text-[12px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all ${
                       plan.highlight
                         ? "bg-accent text-white border border-accent hover:bg-accent-hover"
                         : "bg-ink text-white border border-ink hover:bg-[#333]"
                     }`}
                   >
                     {plan.cta}
-                  </a>
+                  </button>
                 )}
               </div>
             </div>
