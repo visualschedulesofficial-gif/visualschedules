@@ -97,8 +97,8 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   secondLanguage: "hi",
   setSecondLanguage: (secondLanguage) => set({ secondLanguage, isDirty: true }),
   id: null,
-  title: "Daily Schedule",
-  scheduleType: "daily",
+  title: "My Schedule",
+  scheduleType: "mini",
   language: "en",
   gender: "boy",
   gridCols: 3,
@@ -117,7 +117,7 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
       firstthen: "First/Then Board",
       iwant: "I want",
       timetable: "Timetable",
-      mini: "Mini Schedule",
+      mini: "My Schedule",
     };
     const pages =
       scheduleType === "daily"
@@ -235,15 +235,15 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   reset: () =>
     set({
       id: null,
-      title: "Daily Schedule",
-      scheduleType: "daily",
+      title: "My Schedule",
+      scheduleType: "mini",
       language: "en",
       gender: "neutral",
       gridCols: 3,
       cardStyle: "white",
       customColNames: ["Column 1", "Column 2", "Column 3", "Column 4"],
       weekMode: "week",
-      pages: [createEmptyDailyPage(GRID_SPECS[3].slots)],
+      pages: [createEmptyColumnPage()],
       isDirty: false,
     }),
 
