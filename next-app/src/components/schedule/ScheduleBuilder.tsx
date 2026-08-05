@@ -93,7 +93,7 @@ export default function ScheduleBuilder() {
     const el = document.getElementById("canvas-wrap");
     if (!el) return;
     const canvasW =
-      scheduleTypeForFit === "weekly" || scheduleTypeForFit === "custom" ? 1123 : 794;
+      scheduleTypeForFit === "weekly" || scheduleTypeForFit === "custom" ? 1123 : 794; // mini stays portrait (794)
     const update = () => {
       const avail = el.clientWidth;
       if (avail < 200) return; // ignore bogus early measurements
@@ -175,6 +175,16 @@ export default function ScheduleBuilder() {
       if (emptyIdx === -1) return;
       placeCard(pageIdx, String(emptyIdx), { cardId: card.id, catId: card.categoryId });
       setJustDroppedSlot(`${pageIdx}-${emptyIdx}`);
+    } else if (scheduleType === "mini") {
+      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
+      const { miniCardCount } = useScheduleState.getState();
+      if ((page.columns?.["0"] || []).length < miniCardCount) {
+        placeCard(pageIdx, "0", { cardId: card.id, catId: card.categoryId });
+        setJustDroppedSlot(`${pageIdx}-0`);
+      } else {
+        setFullNotice(`This page holds ${miniCardCount} cards — add another page for more.`);
+        setTimeout(() => setFullNotice(null), 2600);
+      }
     } else if (scheduleType === "iwant") {
       const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
       if ((page.columns?.["cutout"] || []).length < 9) {
