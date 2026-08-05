@@ -19,6 +19,9 @@ interface ScheduleState {
   /** Timetable's one free-form column label (page 4, "Sick Day" by default) */
   timetableExtraName: string;
   setTimetableExtraName: (v: string) => void;
+  /** Mini Schedule: how many big cards the single centered column holds (2-5) */
+  miniCardCount: 2 | 3 | 4 | 5;
+  setMiniCardCount: (v: 2 | 3 | 4 | 5) => void;
   /** Per-day header overrides for Timetable (falls back to localized day) */
   timetableDayNames: Record<number, string>;
   setTimetableDayName: (dayIdx: number, name: string) => void;
@@ -80,6 +83,8 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   setExporting: (exporting) => set({ exporting }),
   timetableExtraName: "Sick Day",
   setTimetableExtraName: (timetableExtraName) => set({ timetableExtraName, isDirty: true }),
+  miniCardCount: 4,
+  setMiniCardCount: (miniCardCount) => set({ miniCardCount, isDirty: true }),
   timetableDayNames: {},
   setTimetableDayName: (dayIdx, name) =>
     set((st) => ({ timetableDayNames: { ...st.timetableDayNames, [dayIdx]: name }, isDirty: true })),
@@ -112,13 +117,14 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
       firstthen: "First/Then Board",
       iwant: "I want",
       timetable: "Timetable",
+      mini: "Mini Schedule",
     };
     const pages =
       scheduleType === "daily"
         ? [createEmptyDailyPage(GRID_SPECS[get().gridCols].slots)]
         : scheduleType === "timetable"
           ? [createEmptyColumnPage(), createEmptyColumnPage(), createEmptyColumnPage(), createEmptyColumnPage()]
-          : [createEmptyColumnPage()];
+          : [createEmptyColumnPage()]; // mini falls in here too — one page, one column
     set({ scheduleType, pages, title: TYPE_TITLES[scheduleType] || "My Schedule", isDirty: true });
   },
   setLanguage: (language) => set({ language, isDirty: true }),
@@ -157,7 +163,9 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
             ? MAX_CUSTOM_CARDS
             : scheduleType === "timetable"
               ? MAX_TIMETABLE_CARDS
-              : slotKey === "cutout"
+              : scheduleType === "mini"
+                ? get().miniCardCount
+                : slotKey === "cutout"
                 ? scheduleType === "iwant"
                   ? 9
                   : ftBoards === 4
