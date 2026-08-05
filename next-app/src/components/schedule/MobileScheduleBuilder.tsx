@@ -38,10 +38,10 @@ import type { CardImageMap } from "@/lib/card-data";
 // Landscape schedules (weekly/custom) don't suit phone screens — mobile
 // offers the two portrait types only.
 const SCHEDULE_TYPE_OPTIONS: { value: ScheduleType; label: string }[] = [
+  { value: "mini", label: "My Schedule" },
   { value: "daily", label: "Daily Schedule" },
   { value: "firstthen", label: "First/Then Board" },
   { value: "iwant", label: "I Want (communication)" },
-  { value: "mini", label: "Mini Schedule" },
 ];
 
 const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
