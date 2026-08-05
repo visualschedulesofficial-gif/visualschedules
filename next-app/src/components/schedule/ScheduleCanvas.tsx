@@ -135,6 +135,7 @@ const SCHEDULE_TYPE_LABELS = {
   firstthen: "First/Then Board",
   iwant: "I want",
   timetable: "Timetable",
+  mini: "Mini Schedule",
 } as const;
 
 // Which weekday (0=Sunday..6=Saturday, matching CANVAS_STRINGS.days) each
@@ -520,6 +521,77 @@ function TimetablePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
         <TimetableColumn colIdx={0} dayIdx={dayA} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
         <TimetableColumn colIdx={1} dayIdx={dayB} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
       </div>
+      <CanvasFooter show />
+    </div>
+  );
+}
+
+function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+  const shownTitle = useLocalizedTitle();
+  const pages = useScheduleState((s) => s.pages);
+  const removeCard = useScheduleState((s) => s.removeCard);
+  const language = useScheduleState((s) => s.language);
+  const gender = useScheduleState((s) => s.gender);
+  const labelMode = useScheduleState((s) => s.labelMode);
+  const page = pages[pageIdx] as ColumnPageData;
+  const cards = page?.columns?.["0"] || [];
+
+  const droppableId = `${pageIdx}-0`;
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
+
+  return (
+    <div
+      data-a4-page
+      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
+      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
+    >
+      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-4 shrink-0">
+        <h2 className="font-serif text-[34px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
+      </div>
+
+      {/* One big column, centered with margins either side — not full width */}
+      <div className="flex-1 min-h-0 flex justify-center">
+        <div
+          ref={setNodeRef}
+          className={`w-full max-w-[420px] flex-1 min-h-0 overflow-hidden flex flex-col gap-3 p-2 rounded-[10px] transition-colors duration-150 ${
+            isOver ? "bg-[#EFF2E8]" : ""
+          }`}
+        >
+          {cards.map((cardRef, idx) => {
+            const card = findCard(cardRef.cardId);
+            if (!card) return null;
+            const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
+            return (
+              <div
+                key={idx}
+                className="bg-white border-[1.5px] border-[#C7D7B8] rounded-[12px] flex flex-col relative group overflow-hidden flex-1 min-h-0"
+              >
+                <div className={`${labelMode === "none" ? "flex-1" : "flex-[0_0_72%]"} p-2 flex items-center justify-center overflow-hidden bg-white`}>
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+                  ) : (
+                    <svg className="w-10 h-10 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  )}
+                </div>
+                {labelMode !== "none" && (
+                  <LabelStrip className="px-2 py-2 border-t border-[#F0F0F0] bg-white text-[24px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
+                    <CardLabelText card={card} />
+                  </LabelStrip>
+                )}
+                <button
+                  onClick={() => removeCard(pageIdx, "0", idx)}
+                  className="absolute top-2 right-2 w-[24px] h-[24px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[15px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
+                >
+                  &times;
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <CanvasFooter show />
     </div>
   );
@@ -982,6 +1054,9 @@ export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
             )}
             {scheduleType === "timetable" && (
               <TimetablePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+            )}
+            {scheduleType === "mini" && (
+              <MiniSchedulePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
             )}
           </div>
           {pageIdx < pages.length - 1 && (
