@@ -152,6 +152,8 @@ export function CardLibrarySidebar() {
   const setCardType = useScheduleState((s) => s.setCardType);
   const ftStyle = useScheduleState((s) => s.ftStyle);
   const setFtStyle = useScheduleState((s) => s.setFtStyle);
+  const miniCardCount = useScheduleState((s) => s.miniCardCount);
+  const setMiniCardCount = useScheduleState((s) => s.setMiniCardCount);
   const customColNames = useScheduleState((s) => s.customColNames);
   const setCustomColNames = useScheduleState((s) => s.setCustomColNames);
   const scheduleType = useScheduleState((s) => s.scheduleType);
@@ -396,6 +398,7 @@ export function CardLibrarySidebar() {
                 <option value="firstthen">First/Then Board</option>
                 <option value="iwant">I Want (communication)</option>
                 <option value="timetable">Timetable</option>
+                <option value="mini">Mini Schedule</option>
               </select>
             </div>
             {scheduleType === "daily" && (
@@ -439,6 +442,20 @@ export function CardLibrarySidebar() {
                 >
                   {[2, 3, 4, 5].map((n) => (
                     <option key={n} value={n}>{n} columns</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {scheduleType === "mini" && (
+              <div>
+                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Cards</label>
+                <select
+                  value={miniCardCount}
+                  onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)}
+                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
+                >
+                  {[2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>{n} cards</option>
                   ))}
                 </select>
               </div>
