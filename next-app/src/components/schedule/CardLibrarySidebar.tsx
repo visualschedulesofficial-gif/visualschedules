@@ -392,13 +392,13 @@ export function CardLibrarySidebar() {
                 onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
                 className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
               >
+                <option value="mini">My Schedule</option>
                 <option value="daily">Daily Schedule</option>
                 <option value="weekly">Weekly Schedule</option>
                 <option value="custom">Custom Schedule</option>
                 <option value="firstthen">First/Then Board</option>
                 <option value="iwant">I Want (communication)</option>
                 <option value="timetable">Timetable</option>
-                <option value="mini">Mini Schedule</option>
               </select>
             </div>
             {scheduleType === "daily" && (
