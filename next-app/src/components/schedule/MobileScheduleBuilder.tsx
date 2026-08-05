@@ -41,6 +41,7 @@ const SCHEDULE_TYPE_OPTIONS: { value: ScheduleType; label: string }[] = [
   { value: "daily", label: "Daily Schedule" },
   { value: "firstthen", label: "First/Then Board" },
   { value: "iwant", label: "I Want (communication)" },
+  { value: "mini", label: "Mini Schedule" },
 ];
 
 const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
@@ -157,6 +158,8 @@ export function MobileScheduleBuilder({
   const setWeekMode = useScheduleState((s) => s.setWeekMode);
   const cardType = useScheduleState((s) => s.cardType);
   const setCardType = useScheduleState((s) => s.setCardType);
+  const miniCardCount = useScheduleState((s) => s.miniCardCount);
+  const setMiniCardCount = useScheduleState((s) => s.setMiniCardCount);
   // A weekly/custom schedule opened on mobile falls back to daily
   useEffect(() => {
     if (scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "timetable") setScheduleType("daily");
@@ -405,6 +408,20 @@ export function MobileScheduleBuilder({
                 <option value="visual">Visual Focus</option>
                 <option value="equal">Equal Focus</option>
                 <option value="text">Text Focus</option>
+              </select>
+            </div>
+          )}
+          {scheduleType === "mini" && (
+            <div>
+              <SectionLabel>Cards</SectionLabel>
+              <select
+                value={miniCardCount}
+                onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)}
+                className={inputCls}
+              >
+                {[2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n}>{n} cards</option>
+                ))}
               </select>
             </div>
           )}
