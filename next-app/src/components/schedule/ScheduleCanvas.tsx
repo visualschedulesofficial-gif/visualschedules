@@ -135,7 +135,7 @@ const SCHEDULE_TYPE_LABELS = {
   firstthen: "First/Then Board",
   iwant: "I want",
   timetable: "Timetable",
-  mini: "Mini Schedule",
+  mini: "My Schedule",
 } as const;
 
 // Which weekday (0=Sunday..6=Saturday, matching CANVAS_STRINGS.days) each
@@ -533,6 +533,7 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justD
   const language = useScheduleState((s) => s.language);
   const gender = useScheduleState((s) => s.gender);
   const labelMode = useScheduleState((s) => s.labelMode);
+  const miniCardCount = useScheduleState((s) => s.miniCardCount);
   const page = pages[pageIdx] as ColumnPageData;
   const cards = page?.columns?.["0"] || [];
 
@@ -557,6 +558,13 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justD
             isOver ? "bg-[#EFF2E8]" : ""
           }`}
         >
+          {cards.length === 0 && (
+            <div className="flex-1 min-h-0 flex items-center justify-center border-2 border-dashed border-[#C5D2B8] rounded-[12px]">
+              <p className="text-[18px] text-weekly-accent font-serif text-center px-6 leading-snug">
+                Drag and drop up to {miniCardCount} cards
+              </p>
+            </div>
+          )}
           {cards.map((cardRef, idx) => {
             const card = findCard(cardRef.cardId);
             if (!card) return null;
