@@ -6,7 +6,10 @@
 // session carries the center's branding on every exported schedule.
 import { useState, useEffect, useCallback } from "react";
 
-type Org = { id: string; name: string; logo_url: string | null; access_code: string | null; active: number };
+type Org = {
+  id: string; name: string; logo_url: string | null; access_code: string | null; active: number;
+  plan: "free" | "paid"; plan_expires_at: string | null;
+};
 type Member = { email: string; org_id: string };
 type Usage = { org_id: string; total_uses: number; unique_devices: number; last_used: string };
 
@@ -75,6 +78,29 @@ export default function AdminOrgsPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ kind: "regenerate-code", orgId }),
+    });
+    load();
+  };
+
+  const [payUntil, setPayUntil] = useState<Record<string, string>>({});
+
+  const markPaid = async (org: Org) => {
+    const expiresAt = payUntil[org.id];
+    if (!expiresAt) { alert("Pick the date their paid plan runs until first."); return; }
+    await fetch("/api/admin/orgs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "mark-paid", orgId: org.id, expiresAt: new Date(expiresAt).toISOString() }),
+    });
+    load();
+  };
+
+  const markFree = async (org: Org) => {
+    if (!confirm(`Move "${org.name}" back to the free plan? Their footer will show Visual Schedules branding + QR again.`)) return;
+    await fetch("/api/admin/orgs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "mark-free", orgId: org.id }),
     });
     load();
   };
@@ -158,6 +184,31 @@ export default function AdminOrgsPage() {
                     {u
                       ? `Code used ${u.total_uses}× · ~${u.unique_devices} device${u.unique_devices === 1 ? "" : "s"} · last ${String(u.last_used).slice(0, 10)}`
                       : "Code not used yet"}
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    {org.plan === "paid" ? (
+                      <>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#EAF5EA] text-[#2D6A2D] font-semibold">
+                          White-label paid — until {String(org.plan_expires_at).slice(0, 10)}
+                        </span>
+                        <button onClick={() => markFree(org)} className="text-[11px] underline text-ink-3">
+                          Move to free
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#F0EEE9] text-ink-3">Free plan</span>
+                        <input
+                          type="date"
+                          value={payUntil[org.id] || ""}
+                          onChange={(e) => setPayUntil((m) => ({ ...m, [org.id]: e.target.value }))}
+                          className="text-[11px] border border-border px-1.5 py-0.5"
+                        />
+                        <button onClick={() => markPaid(org)} className="text-[11px] px-2 py-0.5 bg-accent-strong text-white">
+                          Mark paid until…
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <label className="text-[12px] px-2 py-1 border border-border cursor-pointer">
