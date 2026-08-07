@@ -557,11 +557,21 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justD
   const droppableId = `${pageIdx}-0`;
   const { setNodeRef, isOver } = useDroppable({ id: droppableId });
 
+  // Fixed left/right margin as a ratio of the page width — proportional,
+  // never overly wide, and matches at any zoom level since it's not a
+  // fixed pixel padding on the outer page.
+  const sideMargin = A4_PORTRAIT.width * 0.06;
+  const emptySlots = Math.max(0, miniCardCount - cards.length);
+
   return (
     <div
       data-a4-page
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
+      style={{
+        width: A4_PORTRAIT.width,
+        height: A4_PORTRAIT.height,
+        padding: `24px ${sideMargin}px 20px`,
+      }}
     >
       <div className="text-center pb-3 border-b border-[#C5D2B8] mb-4 shrink-0">
         <h2 className="font-serif text-[34px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
@@ -571,17 +581,10 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justD
       <div className="flex-1 min-h-0 flex justify-center">
         <div
           ref={setNodeRef}
-          className={`w-full max-w-[420px] flex-1 min-h-0 overflow-hidden flex flex-col gap-3 p-2 rounded-[10px] transition-colors duration-150 ${
+          className={`w-full max-w-[420px] flex-1 min-h-0 overflow-hidden flex flex-col gap-3 rounded-[10px] transition-colors duration-150 ${
             isOver ? "bg-[#EFF2E8]" : ""
           }`}
         >
-          {cards.length === 0 && (
-            <div className="flex-1 min-h-0 flex items-center justify-center border-2 border-dashed border-[#C5D2B8] rounded-[12px]">
-              <p className="text-[18px] text-weekly-accent font-serif text-center px-6 leading-snug">
-                Drag and drop up to {miniCardCount} cards
-              </p>
-            </div>
-          )}
           {cards.map((cardRef, idx) => {
             const card = findCard(cardRef.cardId);
             if (!card) return null;
@@ -614,6 +617,16 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justD
               </div>
             );
           })}
+          {Array.from({ length: emptySlots }).map((_, i) => (
+            <div
+              key={`empty-${i}`}
+              className="flex-1 min-h-0 flex items-center justify-center border-2 border-dashed border-[#C5D2B8] rounded-[12px]"
+            >
+              <p className="text-[14px] text-weekly-accent font-sans text-center px-4 leading-snug">
+                Click or drag &amp; drop to add
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
