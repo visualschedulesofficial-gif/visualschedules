@@ -24,13 +24,17 @@ export async function GET(request: NextRequest) {
     const env = getEnv();
     const session = cookieStore.get(SESSION_COOKIE);
 
-    // ---- Door 1: therapist code session — ONLY when nobody is logged in ----
-    if (env.DB && !session?.value) {
+    // ---- Door 1: therapist code session — same rule as branding: a code
+    // entered in the last 15 minutes always applies (deliberate, just now);
+    // an older cookie only applies when nobody is logged in. ----
+    const RECENT_MS = 15 * 60 * 1000;
+    if (env.DB) {
       const orgCookie = cookieStore.get(ORG_COOKIE);
       if (orgCookie?.value) {
         try {
-          const { orgId } = JSON.parse(Buffer.from(orgCookie.value, "base64").toString());
-          if (orgId) {
+          const { orgId, redeemedAt } = JSON.parse(Buffer.from(orgCookie.value, "base64").toString());
+          const isFresh = typeof redeemedAt === "number" && Date.now() - redeemedAt < RECENT_MS;
+          if (orgId && (isFresh || !session?.value)) {
             const org = await env.DB.prepare(
               "SELECT name FROM orgs WHERE id = ? AND active = 1"
             ).bind(orgId).first();
