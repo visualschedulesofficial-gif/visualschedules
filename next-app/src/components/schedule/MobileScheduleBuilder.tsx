@@ -93,7 +93,7 @@ function CardTile({
         setJustAdded(true);
         setTimeout(() => setJustAdded(false), 1200);
       }}
-      className="relative bg-white border border-[#C7D7B8] rounded active:scale-95 transition-transform overflow-hidden"
+      className="relative w-full min-w-0 block bg-white border border-[#C7D7B8] rounded active:scale-95 transition-transform overflow-hidden"
     >
       {isLocked && (
         <span className="absolute top-0.5 left-0.5 z-10 text-[12px] font-bold tracking-wide px-1 py-[1px] rounded-sm leading-tight bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]">
