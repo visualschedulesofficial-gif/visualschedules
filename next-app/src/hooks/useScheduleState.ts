@@ -83,7 +83,7 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
   setExporting: (exporting) => set({ exporting }),
   timetableExtraName: "Sick Day",
   setTimetableExtraName: (timetableExtraName) => set({ timetableExtraName, isDirty: true }),
-  miniCardCount: 4,
+  miniCardCount: 3,
   setMiniCardCount: (miniCardCount) => set({ miniCardCount, isDirty: true }),
   timetableDayNames: {},
   setTimetableDayName: (dayIdx, name) =>
