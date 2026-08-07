@@ -27,11 +27,12 @@ export async function GET() {
         const { orgId } = JSON.parse(Buffer.from(orgCookie.value, "base64").toString());
         if (orgId) {
           const org = await env.DB.prepare(
-            "SELECT name, logo_url, access_code FROM orgs WHERE id = ? AND active = 1"
+            "SELECT name, logo_url, access_code, plan, plan_expires_at FROM orgs WHERE id = ? AND active = 1"
           ).bind(orgId).first();
           if (org) {
+            const isPaid = org.plan === "paid" && (!org.plan_expires_at || (org.plan_expires_at as string) > new Date().toISOString());
             return NextResponse.json({
-              org: { name: org.name, logoUrl: org.logo_url },
+              org: { name: org.name, logoUrl: org.logo_url, isPaid },
               via: "code",
               code: org.access_code,
             });
@@ -49,13 +50,14 @@ export async function GET() {
             .bind(data.userId).first();
           if (user?.email) {
             const org = await env.DB.prepare(
-              `SELECT o.name, o.logo_url FROM org_members m
+              `SELECT o.name, o.logo_url, o.plan, o.plan_expires_at FROM org_members m
                JOIN orgs o ON o.id = m.org_id
                WHERE m.email = ? AND o.active = 1`
             ).bind((user.email as string).toLowerCase()).first();
             if (org) {
+              const isPaid = org.plan === "paid" && (!org.plan_expires_at || (org.plan_expires_at as string) > new Date().toISOString());
               return NextResponse.json({
-                org: { name: org.name, logoUrl: org.logo_url },
+                org: { name: org.name, logoUrl: org.logo_url, isPaid },
                 via: "member",
                 code: null,
               });
