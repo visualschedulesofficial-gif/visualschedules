@@ -51,7 +51,7 @@ function LabelStrip({ className, children }: { className: string; children: Reac
 // White-label: when the visitor is connected to a therapy center (code
 // session or linked login), the footer carries the center's logo + name.
 function useOrgBranding() {
-  const [org, setOrg] = useState<{ name: string; logoUrl: string | null } | null>(null);
+  const [org, setOrg] = useState<{ name: string; logoUrl: string | null; isPaid?: boolean } | null>(null);
   useEffect(() => {
     fetch("/api/me/org")
       .then((r) => (r.ok ? r.json() : null))
@@ -64,6 +64,23 @@ function useOrgBranding() {
 function CanvasFooter({ show }: { show: boolean }) {
   const org = useOrgBranding();
   if (org && show) {
+    // Paid centers get PURE white-label: their logo + name only — no
+    // Visual Schedules attribution text, no QR code anywhere on the page.
+    if (org.isPaid) {
+      return (
+        <div className="shrink-0 h-[62px] py-2 pb-3 flex items-center gap-3">
+          {org.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/org-logo?v=${encodeURIComponent(org.logoUrl)}`}
+              alt={org.name}
+              className="h-[42px] w-auto max-w-[160px] object-contain shrink-0 bg-white rounded-[4px] p-[2px]"
+            />
+          )}
+          <p className="text-[15px] font-serif text-[#4A5A3E] leading-snug truncate">{org.name}</p>
+        </div>
+      );
+    }
     return (
       <div className="shrink-0 h-[62px] py-2 pb-3 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
