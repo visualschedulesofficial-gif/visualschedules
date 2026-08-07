@@ -14,7 +14,7 @@ export async function GET() {
   const env = getEnv();
   if (!(await requireAdmin(env))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { results: orgs } = await env.DB.prepare(
-    "SELECT id, name, logo_url, access_code, active, created_at FROM orgs ORDER BY created_at DESC"
+    "SELECT id, name, logo_url, access_code, active, plan, plan_expires_at, created_at FROM orgs ORDER BY created_at DESC"
   ).all();
   const { results: members } = await env.DB.prepare(
     "SELECT email, org_id FROM org_members ORDER BY email"
@@ -54,6 +54,22 @@ export async function POST(request: NextRequest) {
     await env.DB.prepare(
       "INSERT OR REPLACE INTO org_members (email, org_id) VALUES (?, ?)"
     ).bind(body.email.trim().toLowerCase(), body.orgId).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.kind === "mark-paid") {
+    if (!body.orgId || !body.expiresAt) return NextResponse.json({ error: "orgId and expiresAt required" }, { status: 400 });
+    await env.DB.prepare(
+      "UPDATE orgs SET plan = 'paid', plan_expires_at = ? WHERE id = ?"
+    ).bind(body.expiresAt, body.orgId).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.kind === "mark-free") {
+    if (!body.orgId) return NextResponse.json({ error: "orgId required" }, { status: 400 });
+    await env.DB.prepare(
+      "UPDATE orgs SET plan = 'free', plan_expires_at = NULL WHERE id = ?"
+    ).bind(body.orgId).run();
     return NextResponse.json({ ok: true });
   }
 
