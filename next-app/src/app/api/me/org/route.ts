@@ -17,15 +17,18 @@ export async function GET() {
     const cookieStore = await cookies();
     const session = cookieStore.get(SESSION_COOKIE);
 
-    // (a) code session — ONLY while nobody is logged in. A real personal
-    // login always overrides a leftover anonymous code cookie; a signed-in
-    // user's branding must come from their own genuine center link (below),
-    // never from browsing history in the same browser.
-    const orgCookie = !session?.value ? cookieStore.get(ORG_COOKIE) : undefined;
+    // (a) code session. A code entered in the last 15 minutes always
+    // applies — that's a deliberate action just taken, even if the visitor
+    // also happens to be logged in personally. An OLDER cookie only applies
+    // when nobody is logged in, so a forgotten cookie from days ago can't
+    // silently brand an unrelated account that signs in later.
+    const RECENT_MS = 15 * 60 * 1000;
+    const orgCookie = cookieStore.get(ORG_COOKIE);
     if (orgCookie?.value) {
       try {
-        const { orgId } = JSON.parse(Buffer.from(orgCookie.value, "base64").toString());
-        if (orgId) {
+        const { orgId, redeemedAt } = JSON.parse(Buffer.from(orgCookie.value, "base64").toString());
+        const isFresh = typeof redeemedAt === "number" && Date.now() - redeemedAt < RECENT_MS;
+        if (orgId && (isFresh || !session?.value)) {
           const org = await env.DB.prepare(
             "SELECT name, logo_url, access_code, plan, plan_expires_at FROM orgs WHERE id = ? AND active = 1"
           ).bind(orgId).first();
@@ -108,7 +111,7 @@ export async function POST(request: NextRequest) {
     } catch {}
 
     const cookieStore = await cookies();
-    cookieStore.set(ORG_COOKIE, Buffer.from(JSON.stringify({ orgId: org.id })).toString("base64"), {
+    cookieStore.set(ORG_COOKIE, Buffer.from(JSON.stringify({ orgId: org.id, redeemedAt: Date.now() })).toString("base64"), {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
