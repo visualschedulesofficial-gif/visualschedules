@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 
 type Post = {
   id: string; slug: string; title: string; meta_description: string | null;
-  keywords: string | null; cover_url: string | null; content: string;
+  keywords: string | null; cover_url: string | null; youtube_url: string | null; content: string;
   status: string; published_at: string | null; updated_at: string;
 };
 
-const EMPTY = { id: "", title: "", slug: "", metaDescription: "", keywords: "", coverUrl: "", content: "", status: "draft" };
+const EMPTY = { id: "", title: "", slug: "", metaDescription: "", keywords: "", coverUrl: "", youtubeUrl: "", content: "", status: "draft" };
 
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -29,7 +29,7 @@ export default function AdminBlogPage() {
     setEditing({
       id: p.id, title: p.title, slug: p.slug,
       metaDescription: p.meta_description || "", keywords: p.keywords || "",
-      coverUrl: p.cover_url || "", content: p.content || "", status: p.status,
+      coverUrl: p.cover_url || "", youtubeUrl: p.youtube_url || "", content: p.content || "", status: p.status,
     });
     setMessage("");
   };
@@ -89,7 +89,7 @@ export default function AdminBlogPage() {
         {editing && (
           <div className="bg-card border border-border p-4 space-y-3">
             <div>
-              <label className="text-[11px] text-ink-3 block mb-1">
+              <label className="text-[12px] text-ink-3 block mb-1">
                 Title — this is your Google headline. Aim under 60 characters.{" "}
                 <span className={titleLen > 60 ? "text-[#B05555]" : ""}>({titleLen}/60)</span>
               </label>
@@ -98,7 +98,7 @@ export default function AdminBlogPage() {
                 className="w-full px-3 py-2 border border-border text-[14px]" />
             </div>
             <div>
-              <label className="text-[11px] text-ink-3 block mb-1">
+              <label className="text-[12px] text-ink-3 block mb-1">
                 URL slug — short, lowercase, keywords-first. Leave blank to auto-generate from title.
               </label>
               <div className="flex items-center gap-1 text-[13px]">
@@ -108,7 +108,7 @@ export default function AdminBlogPage() {
               </div>
             </div>
             <div>
-              <label className="text-[11px] text-ink-3 block mb-1">
+              <label className="text-[12px] text-ink-3 block mb-1">
                 Meta description — the grey text under your link on Google. Aim 140–160 characters, include your main keyword, end with a reason to click.{" "}
                 <span className={descLen > 160 ? "text-[#B05555]" : ""}>({descLen}/160)</span>
               </label>
@@ -116,29 +116,38 @@ export default function AdminBlogPage() {
                 rows={2} className="w-full px-3 py-2 border border-border text-[13px]" />
             </div>
             <div>
-              <label className="text-[11px] text-ink-3 block mb-1">
+              <label className="text-[12px] text-ink-3 block mb-1">
                 Keywords — comma separated phrases people would search (e.g. visual schedule autism, morning routine chart).
               </label>
               <input value={editing.keywords} onChange={(e) => setEditing({ ...editing, keywords: e.target.value })}
                 className="w-full px-3 py-2 border border-border text-[13px]" />
             </div>
             <div>
-              <label className="text-[11px] text-ink-3 block mb-1">Cover image (shows on the blog list, Google preview, and social shares)</label>
+              <label className="text-[12px] text-ink-3 block mb-1">Cover image (shows on the blog list, Google preview, and social shares)</label>
               <div className="flex items-center gap-2">
                 {editing.coverUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={editing.coverUrl} alt="" className="w-16 h-10 object-cover rounded" />
                 )}
-                <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} className="text-[11px]" />
+                <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} className="text-[12px]" />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-ink-3 font-sans block mb-1">YouTube video (optional)</label>
+                <input
+                  value={editing.youtubeUrl}
+                  onChange={(e) => setEditing({ ...editing, youtubeUrl: e.target.value })}
+                  placeholder="https://youtube.com/watch?v=... or youtu.be/..."
+                  className="w-full px-2 py-1.5 border border-border text-[12px]"
+                />
               </div>
             </div>
             <div>
-              <label className="text-[11px] text-ink-3 block mb-1">
+              <label className="text-[12px] text-ink-3 block mb-1">
                 Content — Markdown: ## Heading, **bold**, *italic*, - bullet, [link text](https://url)
               </label>
               <textarea value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })}
                 rows={16} className="w-full px-3 py-2 border border-border text-[13px] font-mono" />
-              <label className="inline-flex items-center gap-2 mt-1.5 text-[11px] text-ink-3 cursor-pointer">
+              <label className="inline-flex items-center gap-2 mt-1.5 text-[12px] text-ink-3 cursor-pointer">
                 <span className="px-2 py-1 border border-border rounded hover:bg-surface-hover">
                   {busy ? "Uploading…" : "📷 Insert image into post"}
                 </span>
@@ -178,7 +187,7 @@ export default function AdminBlogPage() {
         )}
 
         <div className="bg-card border border-border overflow-hidden">
-          <div className="grid grid-cols-[1fr_90px_100px_130px] gap-2 px-4 py-2 border-b border-border text-[10px] tracking-wider uppercase text-ink-3 font-medium">
+          <div className="grid grid-cols-[1fr_90px_100px_130px] gap-2 px-4 py-2 border-b border-border text-[12px] tracking-wider uppercase text-ink-3 font-medium">
             <span>Title</span><span>Status</span><span>Updated</span><span></span>
           </div>
           {posts.length === 0 && <div className="px-4 py-6 text-[12px] text-ink-3">No posts yet — click "+ New post".</div>}
@@ -186,18 +195,18 @@ export default function AdminBlogPage() {
             <div key={p.id} className="grid grid-cols-[1fr_90px_100px_130px] gap-2 px-4 py-3 border-b border-border last:border-b-0 items-center text-[13px]">
               <div>
                 <div className="text-ink">{p.title}</div>
-                <div className="text-[11px] text-ink-3">/blog/{p.slug}</div>
+                <div className="text-[12px] text-ink-3">/blog/{p.slug}</div>
               </div>
-              <span className={`text-[10px] px-1.5 py-0.5 font-medium tracking-wider w-fit ${p.status === "published" ? "bg-badge-free-bg text-badge-free-text" : "bg-surface-hover text-ink-3"}`}>
+              <span className={`text-[12px] px-1.5 py-0.5 font-medium tracking-wider w-fit ${p.status === "published" ? "bg-badge-free-bg text-badge-free-text" : "bg-surface-hover text-ink-3"}`}>
                 {p.status.toUpperCase()}
               </span>
               <span className="text-ink-3 text-[12px]">{(p.updated_at || "").slice(0, 10)}</span>
               <div className="flex gap-2">
-                <button onClick={() => startEdit(p)} className="text-[11px] px-2 py-1 border border-border text-ink-2 hover:bg-surface-hover">Edit</button>
+                <button onClick={() => startEdit(p)} className="text-[12px] px-2 py-1 border border-border text-ink-2 hover:bg-surface-hover">Edit</button>
                 {p.status === "published" && (
-                  <a href={`/blog/${p.slug}`} target="_blank" className="text-[11px] px-2 py-1 border border-border text-ink-2 hover:bg-surface-hover no-underline">View</a>
+                  <a href={`/blog/${p.slug}`} target="_blank" className="text-[12px] px-2 py-1 border border-border text-ink-2 hover:bg-surface-hover no-underline">View</a>
                 )}
-                <button onClick={() => remove(p)} className="text-[11px] px-2 py-1 border border-border text-[#B05555] hover:bg-surface-hover">Delete</button>
+                <button onClick={() => remove(p)} className="text-[12px] px-2 py-1 border border-border text-[#B05555] hover:bg-surface-hover">Delete</button>
               </div>
             </div>
           ))}
