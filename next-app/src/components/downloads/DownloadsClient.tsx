@@ -190,36 +190,43 @@ export function DownloadsClient() {
               onClick={() => setPreview(null)}
             >
               <div
-                className="bg-white rounded-lg max-w-[520px] w-full max-h-[90vh] overflow-y-auto"
+                className="bg-white rounded-lg max-w-[520px] w-full max-h-[90vh] flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="bg-[#FBFAF7] flex items-center justify-center">
-                  {preview.file.preview_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={preview.file.preview_url}
-                      alt={preview.item.title}
-                      className="w-full h-auto block"
-                    />
-                  ) : (
-                    <div className="py-16 text-center text-[13px] text-ink-3">{preview.item.title}</div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <p className="text-[16px] font-serif text-ink mb-0.5">{preview.item.title}</p>
-                  <p className="text-[12px] text-ink-3 mb-2">{preview.bundle.title}</p>
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {preview.file.character && (
-                      <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#E8EDE0] text-[#4A5A3E] capitalize">{preview.file.character}</span>
-                    )}
-                    {preview.file.language && (
-                      <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#FBF0DD] text-[#9A6B12] capitalize">{preview.file.language}</span>
-                    )}
-                    {preview.file.label && (
-                      <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#F0F0F0] text-[#666]">{preview.file.label}</span>
+                {/* Scrolls on its own — the image can be any height without
+                    ever pushing the Download button out of view */}
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="bg-[#FBFAF7] flex items-center justify-center">
+                    {preview.file.preview_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={preview.file.preview_url}
+                        alt={preview.item.title}
+                        className="w-full h-auto block"
+                      />
+                    ) : (
+                      <div className="py-16 text-center text-[13px] text-ink-3">{preview.item.title}</div>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="px-4 pt-4">
+                    <p className="text-[16px] font-serif text-ink mb-0.5">{preview.item.title}</p>
+                    <p className="text-[12px] text-ink-3 mb-2">{preview.bundle.title}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {preview.file.character && (
+                        <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#E8EDE0] text-[#4A5A3E] capitalize">{preview.file.character}</span>
+                      )}
+                      {preview.file.language && (
+                        <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#FBF0DD] text-[#9A6B12] capitalize">{preview.file.language}</span>
+                      )}
+                      {preview.file.label && (
+                        <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#F0F0F0] text-[#666]">{preview.file.label}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pinned footer — always visible, never scrolls away */}
+                <div className="shrink-0 flex gap-2 p-4 border-t border-border bg-white">
                     <a
                       href={preview.file.file_url}
                       download
@@ -235,7 +242,6 @@ export function DownloadsClient() {
                     >
                       Close
                     </button>
-                  </div>
                 </div>
               </div>
             </div>
