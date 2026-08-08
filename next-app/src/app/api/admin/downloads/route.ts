@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv, requireAdmin } from "@/lib/admin-auth";
 
-// Google Drive share links open a viewer; convert them to direct-download form
+// Extract a Google Drive file ID from any common share-link shape.
+function driveFileId(url: string): string | null {
+  const m =
+    url.match(/drive\.google\.com\/file\/d\/([\w-]+)/) ||
+    url.match(/[?&]id=([\w-]+)/);
+  return m ? m[1] : null;
+}
+
+// Google Drive share links open a viewer page, not a raw file — convert to
+// direct-download form so a link click actually downloads the PDF/JPEG.
 function normalizeFileUrl(url: string): string {
-  const m = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
-  if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-  return url;
+  const id = driveFileId(url);
+  return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
+}
+
+// For an <img> tag specifically, Drive's download URL is unreliable (virus-
+// scan interstitial on larger files, wrong content-type). Drive's thumbnail
+// endpoint is built for exactly this — it always returns real image bytes.
+function normalizePreviewUrl(url: string): string {
+  const id = driveFileId(url);
+  return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w1000` : url;
 }
 
 // GET — full tree incl. disabled
@@ -55,7 +71,7 @@ export async function POST(request: NextRequest) {
     const variant = body.variant || [body.character, body.language].filter(Boolean).join(" · ") || "default";
     await env.DB.prepare(
       "INSERT INTO download_files (id, item_id, variant, label, file_url, preview_url, sort_order, character, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(id, body.itemId, variant, body.label || null, normalizeFileUrl(body.fileUrl), body.previewUrl || null, body.sortOrder ?? 0, body.character || null, body.language || null).run();
+    ).bind(id, body.itemId, variant, body.label || null, normalizeFileUrl(body.fileUrl), body.previewUrl ? normalizePreviewUrl(body.previewUrl) : null, body.sortOrder ?? 0, body.character || null, body.language || null).run();
   } else {
     return NextResponse.json({ error: "unknown kind" }, { status: 400 });
   }
