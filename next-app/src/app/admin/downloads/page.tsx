@@ -22,6 +22,31 @@ export default function AdminDownloadsPage() {
   const [activeBundle, setActiveBundle] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [addingPreviewFor, setAddingPreviewFor] = useState<string | null>(null);
+
+  // Takes the whole existing file row (not just its id) so its current
+  // variant/character/language/label are preserved — the backend's SET
+  // clause updates all those columns together, not just the new preview.
+  const addPreviewToExisting = async (f: DFile, file: File) => {
+    setAddingPreviewFor(f.id);
+    const url = await uploadFile(file);
+    if (!url) { alert("Upload failed — try again."); setAddingPreviewFor(null); return; }
+    await fetch("/api/admin/downloads", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "file",
+        id: f.id,
+        variant: f.variant,
+        label: f.label,
+        character: f.character,
+        language: f.language,
+        previewUrl: url,
+      }),
+    });
+    setAddingPreviewFor(null);
+    load();
+  };
 
   const [newBundle, setNewBundle] = useState("");
   const [newItem, setNewItem] = useState("");
@@ -94,20 +119,20 @@ export default function AdminDownloadsPage() {
     <>
       <div className="h-[52px] bg-card border-b border-border flex items-center justify-between px-6 shrink-0">
         <span className="text-sm text-ink">Downloads</span>
-        <span className="text-[11px] text-ink-3">{bundles.length} bundles · {items.length} items · {files.length} files</span>
+        <span className="text-[12px] text-ink-3">{bundles.length} bundles · {items.length} items · {files.length} files</span>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Bundles */}
           <div className="bg-card border border-border">
-            <div className="px-3 py-2 border-b border-border text-[10px] uppercase tracking-wider text-ink-3">1 · Categories</div>
+            <div className="px-3 py-2 border-b border-border text-[12px] uppercase tracking-wider text-ink-3">1 · Categories</div>
             <div className="p-2 space-y-1">
               {bundles.map((b) => (
                 <div key={b.id} className={`flex items-center gap-1 rounded ${activeBundle === b.id ? "bg-[#E8EDE0]" : ""}`}>
                   <button onClick={() => { setActiveBundle(b.id); setActiveItem(null); }} className="flex-1 text-left px-2 py-1.5 text-[13px] text-ink">
-                    {b.title} <span className="text-ink-3 text-[11px]">({items.filter((i) => i.bundle_id === b.id).length})</span>
+                    {b.title} <span className="text-ink-3 text-[12px]">({items.filter((i) => i.bundle_id === b.id).length})</span>
                   </button>
-                  <button onClick={() => del("bundle", b.id, `bundle "${b.title}" and everything in it`)} className="text-[11px] text-[#B05555] px-2">✕</button>
+                  <button onClick={() => del("bundle", b.id, `bundle "${b.title}" and everything in it`)} className="text-[12px] text-[#B05555] px-2">✕</button>
                 </div>
               ))}
               <div className="flex gap-1 pt-2">
@@ -119,15 +144,15 @@ export default function AdminDownloadsPage() {
 
           {/* Items */}
           <div className="bg-card border border-border">
-            <div className="px-3 py-2 border-b border-border text-[10px] uppercase tracking-wider text-ink-3">2 · Subcategories {activeBundle ? "" : "(select a category)"}</div>
+            <div className="px-3 py-2 border-b border-border text-[12px] uppercase tracking-wider text-ink-3">2 · Subcategories {activeBundle ? "" : "(select a category)"}</div>
             {activeBundle && (
               <div className="p-2 space-y-1">
                 {bundleItems.map((i) => (
                   <div key={i.id} className={`flex items-center gap-1 rounded ${activeItem === i.id ? "bg-[#E8EDE0]" : ""}`}>
                     <button onClick={() => setActiveItem(i.id)} className="flex-1 text-left px-2 py-1.5 text-[13px] text-ink">
-                      {i.title} <span className="text-ink-3 text-[11px]">({files.filter((f) => f.item_id === i.id).length})</span>
+                      {i.title} <span className="text-ink-3 text-[12px]">({files.filter((f) => f.item_id === i.id).length})</span>
                     </button>
-                    <button onClick={() => del("item", i.id, `item "${i.title}"`)} className="text-[11px] text-[#B05555] px-2">✕</button>
+                    <button onClick={() => del("item", i.id, `item "${i.title}"`)} className="text-[12px] text-[#B05555] px-2">✕</button>
                   </div>
                 ))}
                 <div className="flex gap-1 pt-2">
@@ -140,7 +165,7 @@ export default function AdminDownloadsPage() {
 
           {/* Files */}
           <div className="bg-card border border-border">
-            <div className="px-3 py-2 border-b border-border text-[10px] uppercase tracking-wider text-ink-3">3 · Versions {activeItem ? "" : "(select an item)"}</div>
+            <div className="px-3 py-2 border-b border-border text-[12px] uppercase tracking-wider text-ink-3">3 · Versions {activeItem ? "" : "(select an item)"}</div>
             {activeItem && (
               <div className="p-2 space-y-2">
                 {itemFiles.map((f) => (
@@ -155,9 +180,21 @@ export default function AdminDownloadsPage() {
                       <div className="text-[12px] text-ink capitalize">
                         {[f.character, f.language, f.label].filter(Boolean).join(" · ") || f.variant}
                       </div>
-                      <a href={f.file_url} target="_blank" rel="noopener" className="text-[10px] text-[#4A5A3E] underline">view file</a>
+                      <a href={f.file_url} target="_blank" rel="noopener" className="text-[12px] text-[#4A5A3E] underline">view file</a>
                     </div>
-                    <button onClick={() => del("file", f.id, `version "${f.variant}"`)} className="text-[11px] text-[#B05555] px-1.5">✕</button>
+                    {!f.preview_url && (
+                      <label className="text-[11px] text-[#2D6A2D] bg-[#EAF5EA] border border-[#7A8F5E] rounded px-1.5 py-1 cursor-pointer whitespace-nowrap">
+                        {addingPreviewFor === f.id ? "Uploading…" : "+ Add preview"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={addingPreviewFor === f.id}
+                          onChange={(e) => { const file = e.target.files?.[0]; if (file) addPreviewToExisting(f, file); e.target.value = ""; }}
+                        />
+                      </label>
+                    )}
+                    <button onClick={() => del("file", f.id, `version "${f.variant}"`)} className="text-[12px] text-[#B05555] px-1.5">✕</button>
                   </div>
                 ))}
                 <div className="border-t border-border pt-2 space-y-1.5">
@@ -173,13 +210,16 @@ export default function AdminDownloadsPage() {
                   </div>
                   <input value={newVariant} onChange={(e) => setNewVariant(e.target.value)} placeholder="Label (optional) e.g. mini" className="w-full px-2 py-1.5 border border-border text-[12px]" />
                   <input value={driveLink} onChange={(e) => setDriveLink(e.target.value)} placeholder="Paste Google Drive link (or upload a file below)" className="w-full px-2 py-1.5 border border-border text-[12px]" />
-                  <label className="block text-[11px] text-ink-3">
+                  <label className="block text-[12px] text-ink-3">
                     File (PDF):{" "}
-                    <input type="file" accept="application/pdf,image/*" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} className="text-[11px]" />
+                    <input type="file" accept="application/pdf,image/*" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} className="text-[12px]" />
                   </label>
-                  <label className="block text-[11px] text-ink-3">
-                    Preview image (optional):{" "}
-                    <input type="file" accept="image/*" onChange={(e) => setPreviewFile(e.target.files?.[0] || null)} className="text-[11px]" />
+                  <label className="block text-[12px] text-ink-3 bg-[#EAF5EA] border border-[#7A8F5E] rounded px-2 py-1.5">
+                    <span className="font-semibold text-[#2D6A2D]">Preview image — upload here</span>{" "}
+                    <span className="text-ink-3">(don't paste a Drive link for this one — Google blocks Drive images on other sites)</span>
+                    <br />
+                    <input type="file" accept="image/*" onChange={(e) => setPreviewFile(e.target.files?.[0] || null)} className="text-[12px] mt-1" />
+                    {previewFile && <span className="text-[11px] text-[#2D6A2D] ml-1">✓ {previewFile.name}</span>}
                   </label>
                   <button disabled={busy || (!pdfFile && !driveLink.trim())} onClick={addVariantFile} className="w-full py-1.5 bg-[#4A5A3E] text-white text-[12px] disabled:opacity-50">
                     {busy ? "Uploading…" : "Upload version"}
@@ -189,7 +229,7 @@ export default function AdminDownloadsPage() {
             )}
           </div>
         </div>
-        <p className="text-[11px] text-ink-3 mt-4">
+        <p className="text-[12px] text-ink-3 mt-4">
           Structure: Category (Morning Schedule) → Subcategory (Brushing, Bath…) → Versions with Character + Language.
           For each version, either paste a Google Drive share link or upload a file. Everything appears on the public Downloads page immediately, filterable by all of these.
         </p>
