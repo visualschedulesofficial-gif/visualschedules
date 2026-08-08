@@ -14,8 +14,38 @@ type PostRow = {
   youtubeUrl: string | null;
   published_at: string | null;
   viewCount: number;
-  excerpt: string;
+  content: string;
 };
+
+// Small, trusted-content markdown renderer (posts are admin-authored only,
+// same trust level as any other content on this site) — enough for the
+// simple markdown the blog editor produces: headers, images, bold/italic,
+// links, paragraphs.
+function renderMarkdown(md: string): string {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const blocks = md.split(/\n{2,}/);
+  return blocks
+    .map((block) => {
+      const line = block.trim();
+      if (!line) return "";
+      const h = line.match(/^(#{1,3})\s+(.*)$/);
+      if (h) {
+        const level = h[1].length + 1; // markdown H1 -> visual h2, etc.
+        return `<h${level} class="font-serif text-ink mt-6 mb-2" style="font-size:${28 - level * 3}px">${esc(h[2])}</h${level}>`;
+      }
+      const img = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
+      if (img) {
+        return `<img src="${img[2]}" alt="${esc(img[1])}" class="w-full rounded my-4" loading="lazy" />`;
+      }
+      let html = esc(line)
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-weekly-accent underline" target="_blank" rel="noopener">$1</a>')
+        .replace(/\n/g, "<br/>");
+      return `<p class="mb-4 leading-relaxed">${html}</p>`;
+    })
+    .join("");
+}
 
 // Pull the 11-char video ID out of any common YouTube URL shape, so we can
 // build a real thumbnail + link without an API call.
@@ -123,37 +153,23 @@ export function BlogListClient({ posts }: { posts: PostRow[] }) {
         <h1 className="font-serif text-[28px] text-ink mb-6">Blog</h1>
 
         {/* Featured — the latest post, shown open */}
-        <Link
-          href={`/blog/${featured.slug}`}
-          className="block no-underline group mb-10 border-b border-border pb-8"
-        >
-          {featured.youtubeUrl ? (
-            <VideoPreview url={featured.youtubeUrl} />
-          ) : (
-            featured.thumb && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={featured.thumb}
-                alt=""
-                className="w-full max-h-[360px] object-cover rounded mb-4"
-                loading="eager"
-              />
-            )
-          )}
+        <div className="mb-10 border-b border-border pb-8">
           <p className="text-[11px] tracking-wide uppercase text-weekly-accent font-sans font-semibold mb-1.5">
             Latest post
           </p>
-          <h2 className="font-serif text-[24px] text-ink leading-snug mb-2 group-hover:text-weekly-accent transition-colors">
-            {featured.title}
-          </h2>
-          <p className="text-[14px] text-ink-2 leading-relaxed mb-3">
-            {featured.excerpt}
-            {featured.excerpt.length >= 320 ? "…" : ""}
-          </p>
-          <p className="text-[11px] text-ink-3 mb-3">{(featured.published_at || "").slice(0, 10)}</p>
-        </Link>
-        <div className="-mt-6 mb-10">
-          <ShareRow slug={featured.slug} title={featured.title} />
+          <h2 className="font-serif text-[26px] text-ink leading-snug mb-1">{featured.title}</h2>
+          <p className="text-[11px] text-ink-3 mb-4">{(featured.published_at || "").slice(0, 10)}</p>
+
+          {/* Full article, open — no separate preview thumbnail here; any
+              images in the post itself render inline as part of the content. */}
+          <div
+            className="text-[15px] text-ink-2 [&_a]:break-words"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(featured.content) }}
+          />
+
+          <div className="mt-2">
+            <ShareRow slug={featured.slug} title={featured.title} />
+          </div>
         </div>
 
         {/* Older posts */}
