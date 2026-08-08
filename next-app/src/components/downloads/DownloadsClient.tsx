@@ -29,6 +29,7 @@ export function DownloadsClient() {
   const [subcategory, setSubcategory] = useState("");
   const [character, setCharacter] = useState("");
   const [languageFilter, setLanguageFilter] = useState("");
+  const [preview, setPreview] = useState<{ bundle: DBundle; item: DItem; file: DFile } | null>(null);
 
   useEffect(() => {
     fetch("/api/downloads")
@@ -140,7 +141,8 @@ export function DownloadsClient() {
             </div>
           </div>
 
-          {/* Results */}
+          {/* Results — Pinterest-style: just the images. Tap one to preview
+              and download; no button competing with the artwork for space. */}
           {loading && <p className="text-[13px] text-ink-3">Loading…</p>}
           {!loading && results.length === 0 && (
             <p className="text-[13px] text-ink-3">
@@ -149,49 +151,95 @@ export function DownloadsClient() {
                 : "Nothing matches these filters — try clearing one."}
             </p>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 [column-fill:balance]">
             {results.map(({ bundle, item, file }) => (
-              <div key={file.id} className="bg-white border border-[#C7D7B8] rounded overflow-hidden flex flex-col">
-                <div className="aspect-square bg-[#FBFAF7] flex items-center justify-center overflow-hidden">
+              <button
+                key={file.id}
+                onClick={() => setPreview({ bundle, item, file })}
+                className="block w-full mb-3 break-inside-avoid bg-white border border-[#C7D7B8] rounded overflow-hidden text-left group"
+              >
+                <div className="bg-[#FBFAF7] flex items-center justify-center overflow-hidden relative">
                   {file.preview_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={file.preview_url}
                       alt={`${item.title} — ${file.variant}`}
-                      className="w-full h-full object-contain"
+                      className="w-full h-auto block group-hover:opacity-90 transition-opacity"
                       loading="lazy"
                     />
                   ) : (
-                    <span className="text-[12px] text-ink-3 px-2 text-center">{item.title}</span>
+                    <span className="text-[12px] text-ink-3 px-2 py-8 text-center block">{item.title}</span>
                   )}
-                </div>
-                <div className="p-2 border-t border-[#F0F0F0] flex-1 flex flex-col">
-                  <div className="text-[13px] font-serif text-ink leading-tight">{item.title}</div>
-                  <div className="text-[10px] text-ink-3 mb-1.5">{bundle.title}</div>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {file.character && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#E8EDE0] text-[#4A5A3E] capitalize">{file.character}</span>
-                    )}
-                    {file.language && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#FBF0DD] text-[#9A6B12] capitalize">{file.language}</span>
-                    )}
-                    {file.label && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#F0F0F0] text-[#666]">{file.label}</span>
-                    )}
+                  <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] font-sans font-semibold text-white bg-ink/70 px-2.5 py-1 rounded-full">
+                      Preview
+                    </span>
                   </div>
-                  <a
-                    href={file.file_url}
-                    download
-                    target="_blank"
-                    rel="noopener"
-                    className="mt-auto block text-center text-[12px] font-semibold bg-[#4A5A3E] text-white rounded py-1.5 hover:opacity-90 no-underline"
-                  >
-                    Download
-                  </a>
                 </div>
-              </div>
+                <div className="px-2 py-1.5">
+                  <p className="text-[12px] font-serif text-ink truncate">{item.title}</p>
+                </div>
+              </button>
             ))}
           </div>
+
+          {/* Lightbox: full preview + download, tags, no clutter on the grid itself */}
+          {preview && (
+            <div
+              className="fixed inset-0 z-[200] bg-ink/60 flex items-center justify-center p-4"
+              onClick={() => setPreview(null)}
+            >
+              <div
+                className="bg-white rounded-lg max-w-[520px] w-full max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-[#FBFAF7] flex items-center justify-center">
+                  {preview.file.preview_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={preview.file.preview_url}
+                      alt={preview.item.title}
+                      className="w-full h-auto block"
+                    />
+                  ) : (
+                    <div className="py-16 text-center text-[13px] text-ink-3">{preview.item.title}</div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <p className="text-[16px] font-serif text-ink mb-0.5">{preview.item.title}</p>
+                  <p className="text-[12px] text-ink-3 mb-2">{preview.bundle.title}</p>
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {preview.file.character && (
+                      <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#E8EDE0] text-[#4A5A3E] capitalize">{preview.file.character}</span>
+                    )}
+                    {preview.file.language && (
+                      <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#FBF0DD] text-[#9A6B12] capitalize">{preview.file.language}</span>
+                    )}
+                    {preview.file.label && (
+                      <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-[#F0F0F0] text-[#666]">{preview.file.label}</span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={preview.file.file_url}
+                      download
+                      target="_blank"
+                      rel="noopener"
+                      className="flex-1 text-center text-[13px] font-semibold bg-accent-strong text-white rounded py-2 hover:opacity-90 no-underline"
+                    >
+                      Download
+                    </a>
+                    <button
+                      onClick={() => setPreview(null)}
+                      className="px-4 py-2 text-[13px] font-sans text-ink-2 border border-input-border rounded"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <p className="mt-8 text-[13px] text-ink-2">
             Want to customize — different cards, your language, your child's routine?{" "}
