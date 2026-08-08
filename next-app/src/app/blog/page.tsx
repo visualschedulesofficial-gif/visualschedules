@@ -25,22 +25,21 @@ export default async function BlogIndexPage() {
         const firstImg = (p.content || "").match(/!\[[^\]]*\]\(([^)\s]+)\)/);
         // Plain-text excerpt: strip markdown image/heading/link syntax for a
         // clean opening paragraph under the featured post.
-        const excerpt = (p.content || "")
-          .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
-          .replace(/^#+\s*/gm, "")
-          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-          .replace(/[*_`]/g, "")
-          .trim()
-          .slice(0, 320);
+        const ytMatch = (p.youtube_url || "").match(
+          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/
+        );
+        const ytThumb = ytMatch ? `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg` : null;
         return {
           slug: p.slug,
           title: p.title,
           meta_description: p.meta_description,
           published_at: p.published_at,
-          thumb: p.cover_url || (firstImg ? firstImg[1] : null),
+          // Collapsed-card thumbnail only: cover image, else first inline
+          // image, else the video's own thumbnail if there's a video.
+          thumb: p.cover_url || (firstImg ? firstImg[1] : null) || ytThumb,
           youtubeUrl: p.youtube_url || null,
           viewCount: p.view_count || 0,
-          excerpt,
+          content: p.content || "",
         };
       });
     } catch {
