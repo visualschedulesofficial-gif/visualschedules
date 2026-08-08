@@ -16,12 +16,14 @@ function normalizeFileUrl(url: string): string {
   return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
 }
 
-// For an <img> tag specifically, Drive's download URL is unreliable (virus-
-// scan interstitial on larger files, wrong content-type). Drive's thumbnail
-// endpoint is built for exactly this — it always returns real image bytes.
+// For an <img> tag specifically: Drive's own /thumbnail endpoint is meant
+// for Drive's internal UI, not public embedding, and often blocks external
+// hotlinking even on fully public files. Google's photo-serving CDN
+// (lh3.googleusercontent.com) is the format that actually works reliably
+// for embedding a Drive image on an external site.
 function normalizePreviewUrl(url: string): string {
   const id = driveFileId(url);
-  return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w1000` : url;
+  return id ? `https://lh3.googleusercontent.com/d/${id}` : url;
 }
 
 // GET — full tree incl. disabled
