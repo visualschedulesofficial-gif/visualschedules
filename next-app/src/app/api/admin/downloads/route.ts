@@ -97,9 +97,18 @@ export async function PUT(request: NextRequest) {
       "UPDATE download_items SET title = ?, description = ?, sort_order = ?, enabled = ? WHERE id = ?"
     ).bind(body.title, body.description || null, body.sortOrder ?? 0, body.enabled ? 1 : 0, body.id).run();
   } else if (body.kind === "file") {
-    await env.DB.prepare(
-      "UPDATE download_files SET variant = ?, label = ?, sort_order = ?, character = ?, language = ? WHERE id = ?"
-    ).bind(body.variant, body.label || null, body.sortOrder ?? 0, body.character || null, body.language || null, body.id).run();
+    // previewUrl is optional on edit — only overwrite it when a new one is
+    // actually provided, so re-saving other fields never accidentally wipes
+    // an existing preview.
+    if (body.previewUrl !== undefined && body.previewUrl !== null) {
+      await env.DB.prepare(
+        "UPDATE download_files SET variant = ?, label = ?, sort_order = ?, character = ?, language = ?, preview_url = ? WHERE id = ?"
+      ).bind(body.variant, body.label || null, body.sortOrder ?? 0, body.character || null, body.language || null, normalizePreviewUrl(body.previewUrl), body.id).run();
+    } else {
+      await env.DB.prepare(
+        "UPDATE download_files SET variant = ?, label = ?, sort_order = ?, character = ?, language = ? WHERE id = ?"
+      ).bind(body.variant, body.label || null, body.sortOrder ?? 0, body.character || null, body.language || null, body.id).run();
+    }
   }
   return NextResponse.json({ ok: true });
 }
