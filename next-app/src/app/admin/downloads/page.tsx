@@ -6,10 +6,52 @@ type Bundle = { id: string; title: string; description: string | null; sort_orde
 type Item = { id: string; bundle_id: string; title: string; description: string | null; sort_order: number; enabled: number };
 type DFile = { id: string; item_id: string; variant: string; label: string | null; file_url: string; preview_url: string | null; character: string | null; language: string | null };
 
+// Preview images from a phone camera are often 3-8MB — slow to upload and
+// slow for parents to load later. Shrink to a sane max dimension and
+// re-compress as JPEG before sending, right in the browser. PDFs and other
+// non-image files pass through untouched.
+async function compressImage(file: File, maxDim = 1000, quality = 0.82): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    if (!blob) return file;
+    // Only use the compressed version if it's actually smaller
+    if (blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file; // if compression fails for any reason, upload the original rather than block
+  }
+}
+
+// The real downloadable/printable file (PDF, or sometimes a full JPEG card)
+// must NEVER be compressed — full quality, exactly as uploaded, since this
+// is what a parent actually prints.
 async function uploadFile(file: File): Promise<string | null> {
   const fd = new FormData();
   fd.append("folder", "downloads");
   fd.append("file", file);
+  const res = await fetch("/api/admin/uploads", { method: "POST", body: fd });
+  const d = await res.json().catch(() => null);
+  return res.ok ? d?.url || null : null;
+}
+
+// Preview THUMBNAILS only — never used for the real downloadable file.
+// Small and fast is the right tradeoff here since this is just a grid icon.
+async function uploadPreview(file: File): Promise<string | null> {
+  const toSend = await compressImage(file);
+  const fd = new FormData();
+  fd.append("folder", "downloads");
+  fd.append("file", toSend);
   const res = await fetch("/api/admin/uploads", { method: "POST", body: fd });
   const d = await res.json().catch(() => null);
   return res.ok ? d?.url || null : null;
@@ -29,7 +71,7 @@ export default function AdminDownloadsPage() {
   // clause updates all those columns together, not just the new preview.
   const addPreviewToExisting = async (f: DFile, file: File) => {
     setAddingPreviewFor(f.id);
-    const url = await uploadFile(file);
+    const url = await uploadPreview(file);
     if (!url) { alert("Upload failed — try again."); setAddingPreviewFor(null); return; }
     await fetch("/api/admin/downloads", {
       method: "PUT",
@@ -42,6 +84,29 @@ export default function AdminDownloadsPage() {
         character: f.character,
         language: f.language,
         previewUrl: url,
+      }),
+    });
+    setAddingPreviewFor(null);
+    load();
+  };
+
+  // For entries where the FILE itself is already an image (a JPEG card, not
+  // a real PDF) — no upload needed at all, just point preview at the same
+  // file that's already sitting there.
+  const isImageUrl = (url: string) => /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url);
+  const useFileAsPreview = async (f: DFile) => {
+    setAddingPreviewFor(f.id);
+    await fetch("/api/admin/downloads", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "file",
+        id: f.id,
+        variant: f.variant,
+        label: f.label,
+        character: f.character,
+        language: f.language,
+        previewUrl: f.file_url,
       }),
     });
     setAddingPreviewFor(null);
@@ -93,12 +158,24 @@ export default function AdminDownloadsPage() {
   const addVariantFile = async () => {
     if (!activeItem || (!pdfFile && !driveLink.trim())) return;
     setBusy(true);
-    // Either upload a file OR use a pasted link (e.g. Google Drive)
-    let fileUrl: string | null = driveLink.trim() || null;
-    if (!fileUrl && pdfFile) fileUrl = await uploadFile(pdfFile);
-    const previewUrl = previewFile ? await uploadFile(previewFile) : null;
+
+    let fileUrl: string | null = null;
+    let previewUrl: string | null = null;
+
+    if (driveLink.trim()) {
+      // One pasted link does double duty — the server normalizes it into a
+      // real download URL and a real preview-image URL from the same link.
+      fileUrl = driveLink.trim();
+      previewUrl = driveLink.trim();
+    } else if (pdfFile) {
+      // One uploaded image, one upload call for full quality — and the
+      // same image, compressed, becomes the preview automatically.
+      fileUrl = await uploadFile(pdfFile);
+      previewUrl = fileUrl ? await uploadPreview(pdfFile) : null;
+    }
+
     setBusy(false);
-    if (!fileUrl) { alert("File upload failed"); return; }
+    if (!fileUrl) { alert("Upload failed — try again."); return; }
     await post({
       kind: "file",
       itemId: activeItem,
@@ -182,7 +259,16 @@ export default function AdminDownloadsPage() {
                       </div>
                       <a href={f.file_url} target="_blank" rel="noopener" className="text-[12px] text-[#4A5A3E] underline">view file</a>
                     </div>
-                    {!f.preview_url && (
+                    {!f.preview_url && isImageUrl(f.file_url) && (
+                      <button
+                        onClick={() => useFileAsPreview(f)}
+                        disabled={addingPreviewFor === f.id}
+                        className="text-[11px] text-[#2D6A2D] bg-[#EAF5EA] border border-[#7A8F5E] rounded px-1.5 py-1 whitespace-nowrap disabled:opacity-50"
+                      >
+                        {addingPreviewFor === f.id ? "…" : "Use file as preview"}
+                      </button>
+                    )}
+                    {!f.preview_url && !isImageUrl(f.file_url) && (
                       <label className="text-[11px] text-[#2D6A2D] bg-[#EAF5EA] border border-[#7A8F5E] rounded px-1.5 py-1 cursor-pointer whitespace-nowrap">
                         {addingPreviewFor === f.id ? "Uploading…" : "+ Add preview"}
                         <input
@@ -209,20 +295,31 @@ export default function AdminDownloadsPage() {
                     <input value={newLanguage} onChange={(e) => setNewLanguage(e.target.value)} placeholder="Language e.g. english / hindi" className="px-2 py-1.5 border border-border text-[12px]" />
                   </div>
                   <input value={newVariant} onChange={(e) => setNewVariant(e.target.value)} placeholder="Label (optional) e.g. mini" className="w-full px-2 py-1.5 border border-border text-[12px]" />
-                  <input value={driveLink} onChange={(e) => setDriveLink(e.target.value)} placeholder="Paste Google Drive link (or upload a file below)" className="w-full px-2 py-1.5 border border-border text-[12px]" />
-                  <label className="block text-[12px] text-ink-3">
-                    File (PDF):{" "}
-                    <input type="file" accept="application/pdf,image/*" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} className="text-[12px]" />
+
+                  {/* One image, one action — it becomes both the download
+                      and the preview automatically. No PDF, no second field. */}
+                  <label className="block text-[12px] text-ink-3 bg-[#EAF5EA] border border-[#7A8F5E] rounded px-2 py-1.5 cursor-pointer">
+                    <span className="font-semibold text-[#2D6A2D]">Upload image</span>{" "}
+                    <span className="text-ink-3">— this is both the download and the preview</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                      className="text-[12px] mt-1 block"
+                    />
+                    {pdfFile && <span className="text-[11px] text-[#2D6A2D] mt-1 block">✓ {pdfFile.name}</span>}
                   </label>
-                  <label className="block text-[12px] text-ink-3 bg-[#EAF5EA] border border-[#7A8F5E] rounded px-2 py-1.5">
-                    <span className="font-semibold text-[#2D6A2D]">Preview image — upload here</span>{" "}
-                    <span className="text-ink-3">(don't paste a Drive link for this one — Google blocks Drive images on other sites)</span>
-                    <br />
-                    <input type="file" accept="image/*" onChange={(e) => setPreviewFile(e.target.files?.[0] || null)} className="text-[12px] mt-1" />
-                    {previewFile && <span className="text-[11px] text-[#2D6A2D] ml-1">✓ {previewFile.name}</span>}
-                  </label>
+
+                  <p className="text-[11px] text-ink-3 text-center">— or —</p>
+                  <input
+                    value={driveLink}
+                    onChange={(e) => setDriveLink(e.target.value)}
+                    placeholder="Paste an image link instead"
+                    className="w-full px-2 py-1.5 border border-border text-[12px]"
+                  />
+
                   <button disabled={busy || (!pdfFile && !driveLink.trim())} onClick={addVariantFile} className="w-full py-1.5 bg-[#4A5A3E] text-white text-[12px] disabled:opacity-50">
-                    {busy ? "Uploading…" : "Upload version"}
+                    {busy ? "Uploading…" : "Add version"}
                   </button>
                 </div>
               </div>
