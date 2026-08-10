@@ -190,13 +190,91 @@ export default function AdminDownloadsPage() {
   };
 
   const bundleItems = items.filter((i) => i.bundle_id === activeBundle);
+
+  // ---- New simple upload modal (Category + Name + up to 4 character
+  // images + Language checkboxes, one Save) ----
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const CHAR_SLOTS: { key: "neutral" | "boy" | "girl" | "brown"; label: string }[] = [
+    { key: "neutral", label: "Neutral" },
+    { key: "boy", label: "Boy" },
+    { key: "girl", label: "Girl" },
+    { key: "brown", label: "Brown" },
+  ];
+  const [uCategory, setUCategory] = useState("");
+  const [uName, setUName] = useState("");
+  const [uImages, setUImages] = useState<Record<string, File | null>>({});
+  const [uLangs, setULangs] = useState<{ english: boolean; hindi: boolean }>({ english: true, hindi: false });
+  const [uBusy, setUBusy] = useState(false);
+
+  const resetUploadModal = () => {
+    setUCategory(""); setUName(""); setUImages({}); setULangs({ english: true, hindi: false });
+  };
+
+  const saveUploadModal = async () => {
+    const chosenImages = CHAR_SLOTS.filter((c) => uImages[c.key]);
+    const chosenLangs = (["english", "hindi"] as const).filter((l) => uLangs[l]);
+    if (!uCategory || !uName.trim() || chosenImages.length === 0 || chosenLangs.length === 0) {
+      alert("Pick a category, a name, at least one image, and at least one language.");
+      return;
+    }
+    setUBusy(true);
+    try {
+      // Find or create the "item" (Name) under the chosen category
+      let itemId = items.find((i) => i.bundle_id === uCategory && i.title.toLowerCase() === uName.trim().toLowerCase())?.id;
+      if (!itemId) {
+        const res = await fetch("/api/admin/downloads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "item", bundleId: uCategory, title: uName.trim(), sortOrder: items.filter((i) => i.bundle_id === uCategory).length }),
+        });
+        const d = await res.json().catch(() => null);
+        itemId = d?.id;
+        if (!itemId) throw new Error("Could not create the item");
+      }
+      // One row per image × per selected language
+      for (const c of chosenImages) {
+        const file = uImages[c.key]!;
+        const fileUrl = await uploadFile(file);
+        const previewUrl = fileUrl ? await uploadPreview(file) : null;
+        if (!fileUrl) continue;
+        for (const lang of chosenLangs) {
+          await fetch("/api/admin/downloads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              kind: "file",
+              itemId,
+              character: c.key,
+              language: lang,
+              fileUrl,
+              previewUrl,
+            }),
+          });
+        }
+      }
+      resetUploadModal();
+      setShowUploadModal(false);
+      load();
+    } catch {
+      alert("Something went wrong saving — please try again.");
+    }
+    setUBusy(false);
+  };
   const itemFiles = files.filter((f) => f.item_id === activeItem);
 
   return (
     <>
       <div className="h-[52px] bg-card border-b border-border flex items-center justify-between px-6 shrink-0">
         <span className="text-sm text-ink">Downloads</span>
-        <span className="text-[12px] text-ink-3">{bundles.length} bundles · {items.length} items · {files.length} files</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[12px] text-ink-3">{bundles.length} bundles · {items.length} items · {files.length} files</span>
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="text-[12px] font-semibold px-3 py-1.5 bg-[#4A5A3E] text-white rounded"
+          >
+            + Upload Images
+          </button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
         <div className="grid md:grid-cols-3 gap-4">
@@ -331,6 +409,118 @@ export default function AdminDownloadsPage() {
           For each version, either paste a Google Drive share link or upload a file. Everything appears on the public Downloads page immediately, filterable by all of these.
         </p>
       </div>
+
+      {/* Simple upload modal — Category, Name, up to 4 character images
+          (optional, any combination), Language checkboxes, one Save. */}
+      {showUploadModal && (
+        <div
+          className="fixed inset-0 z-[300] bg-ink/50 flex items-center justify-center p-4"
+          onClick={() => setShowUploadModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-[440px] w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="font-serif text-[20px] text-ink">Upload Images</h2>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-ink-3 font-sans block mb-1">Category</label>
+                <select
+                  value={uCategory}
+                  onChange={(e) => setUCategory(e.target.value)}
+                  className="w-full px-2 py-2 border border-border text-[13px] bg-white"
+                >
+                  <option value="">Select a category…</option>
+                  {bundles.map((b) => (
+                    <option key={b.id} value={b.id}>{b.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-ink-3 font-sans block mb-1">
+                  Images <span className="normal-case text-ink-3">(1–4, any combination — optional beyond one)</span>
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {CHAR_SLOTS.map((c) => (
+                    <label
+                      key={c.key}
+                      className={`aspect-square border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer text-center px-1 ${
+                        uImages[c.key] ? "border-[#7A8F5E] bg-[#EAF5EA]" : "border-input-border bg-[#FBFAF7]"
+                      }`}
+                    >
+                      {uImages[c.key] ? (
+                        <span className="text-[11px] text-[#2D6A2D] font-semibold leading-tight">✓ {c.label}</span>
+                      ) : (
+                        <span className="text-[11px] text-ink-3 leading-tight">{c.label}</span>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => setUImages((m) => ({ ...m, [c.key]: e.target.files?.[0] || null }))}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-ink-3 font-sans block mb-1">Name</label>
+                <input
+                  value={uName}
+                  onChange={(e) => setUName(e.target.value)}
+                  placeholder="e.g. Brushing Teeth"
+                  className="w-full px-2 py-2 border border-border text-[13px]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-ink-3 font-sans block mb-2">Language</label>
+                <div className="flex gap-5">
+                  <label className="flex items-center gap-1.5 text-[13px] text-ink cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={uLangs.english}
+                      onChange={(e) => setULangs((l) => ({ ...l, english: e.target.checked }))}
+                      className="accent-[#7A8F5E] w-4 h-4"
+                    />
+                    English
+                  </label>
+                  <label className="flex items-center gap-1.5 text-[13px] text-ink cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={uLangs.hindi}
+                      onChange={(e) => setULangs((l) => ({ ...l, hindi: e.target.checked }))}
+                      className="accent-[#7A8F5E] w-4 h-4"
+                    />
+                    Hindi
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-border flex gap-2">
+              <button
+                onClick={saveUploadModal}
+                disabled={uBusy}
+                className="flex-1 py-2 bg-[#4A5A3E] text-white text-[13px] font-semibold rounded disabled:opacity-50"
+              >
+                {uBusy ? "Saving…" : "Save"}
+              </button>
+              <button
+                onClick={() => { setShowUploadModal(false); resetUploadModal(); }}
+                className="px-4 py-2 text-[13px] text-ink-2 border border-input-border rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
