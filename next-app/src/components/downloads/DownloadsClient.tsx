@@ -13,6 +13,8 @@ type DFile = {
   preview_url: string | null;
   character: string | null;
   language: string | null;
+  view_count: number;
+  download_count: number;
 };
 type DItem = { id: string; title: string; description: string | null; files: DFile[] };
 type DBundle = { id: string; title: string; description: string | null; items: DItem[] };
@@ -153,33 +155,81 @@ export function DownloadsClient() {
           )}
           <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 [column-fill:balance]">
             {results.map(({ bundle, item, file }) => (
-              <button
-                key={file.id}
-                onClick={() => setPreview({ bundle, item, file })}
-                className="block w-full mb-3 break-inside-avoid bg-white border border-[#C7D7B8] rounded overflow-hidden text-left group"
-              >
-                <div className="bg-[#FBFAF7] flex items-center justify-center overflow-hidden relative">
-                  {file.preview_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={file.preview_url}
-                      alt={`${item.title} — ${file.variant}`}
-                      className="w-full h-auto block group-hover:opacity-90 transition-opacity"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="text-[12px] text-ink-3 px-2 py-8 text-center block">{item.title}</span>
-                  )}
-                  <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] font-sans font-semibold text-white bg-ink/70 px-2.5 py-1 rounded-full">
-                      Preview
-                    </span>
+              <div key={file.id} className="w-full mb-3 break-inside-avoid bg-white border border-[#C7D7B8] rounded overflow-hidden">
+                <button
+                  onClick={() => {
+                    setPreview({ bundle, item, file });
+                    fetch("/api/downloads/track", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ fileId: file.id, kind: "view" }),
+                    }).catch(() => {});
+                  }}
+                  className="block w-full text-left group"
+                >
+                  <div className="bg-[#FBFAF7] flex items-center justify-center overflow-hidden relative">
+                    {file.preview_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={file.preview_url}
+                        alt={`${item.title} — ${file.variant}`}
+                        className="w-full h-auto block group-hover:opacity-90 transition-opacity"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-[12px] text-ink-3 px-2 py-8 text-center block">{item.title}</span>
+                    )}
+                    <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] font-sans font-semibold text-white bg-ink/70 px-2.5 py-1 rounded-full">
+                        Preview
+                      </span>
+                    </div>
+                  </div>
+                </button>
+                <div className="px-2 py-1.5">
+                  <p className="text-[12px] font-serif text-ink truncate mb-1.5">{item.title}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 text-[11px] text-ink-3 font-sans">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        {file.view_count || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        {file.download_count || 0}
+                      </span>
+                    </div>
+                    <a
+                      href={file.file_url}
+                      download
+                      target="_blank"
+                      rel="noopener"
+                      onClick={() => {
+                        fetch("/api/downloads/track", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ fileId: file.id, kind: "download" }),
+                        }).catch(() => {});
+                      }}
+                      className="shrink-0 flex items-center gap-1 text-[11px] font-semibold bg-accent-strong text-white rounded px-2 py-1 no-underline hover:opacity-90"
+                    >
+                      <svg className="w-3 h-3 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      Download
+                    </a>
                   </div>
                 </div>
-                <div className="px-2 py-1.5">
-                  <p className="text-[12px] font-serif text-ink truncate">{item.title}</p>
-                </div>
-              </button>
+              </div>
             ))}
           </div>
 
@@ -232,6 +282,13 @@ export function DownloadsClient() {
                       download
                       target="_blank"
                       rel="noopener"
+                      onClick={() => {
+                        fetch("/api/downloads/track", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ fileId: preview.file.id, kind: "download" }),
+                        }).catch(() => {});
+                      }}
                       className="flex-1 text-center text-[13px] font-semibold bg-accent-strong text-white rounded py-2 hover:opacity-90 no-underline"
                     >
                       Download
