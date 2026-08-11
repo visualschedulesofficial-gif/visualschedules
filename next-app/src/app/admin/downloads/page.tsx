@@ -147,6 +147,26 @@ export default function AdminDownloadsPage() {
     load();
   };
 
+  // A bundle/item can end up with enabled = 0 (or unset, pre-fix) and never
+  // show on the public page even though it's sitting right here in admin.
+  // One click flips it back on — PUT overwrites the row, so title/sortOrder
+  // are passed through unchanged, only enabled changes.
+  const enableRow = async (kind: "bundle" | "item", row: Bundle | Item) => {
+    await fetch("/api/admin/downloads", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind,
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        sortOrder: row.sort_order,
+        enabled: true,
+      }),
+    });
+    load();
+  };
+
   // ---- The one upload popup: Category, Name, up to 4 character images,
   // 4 language checkboxes, one Save. No separate "add category" workflow —
   // a brand-new category can be typed right here too. ----
@@ -256,7 +276,18 @@ export default function AdminDownloadsPage() {
           return (
             <div key={b.id} className="bg-card border border-border">
               <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-                <span className="text-[13px] text-ink font-semibold">{b.title}</span>
+                <span className="text-[13px] text-ink font-semibold flex items-center gap-2">
+                  {b.title}
+                  {b.enabled !== 1 && (
+                    <button
+                      onClick={() => enableRow("bundle", b)}
+                      className="text-[11px] font-normal text-[#9A6B12] bg-[#FBF0DD] border border-[#D9B36C] rounded px-1.5 py-0.5"
+                      title="Not showing on the public site — click to show it"
+                    >
+                      Hidden — tap to show
+                    </button>
+                  )}
+                </span>
                 <button onClick={() => del("bundle", b.id, `category "${b.title}" and everything in it`)} className="text-[12px] text-[#B05555] px-2">✕</button>
               </div>
               {bundleItems.length === 0 ? (
@@ -268,7 +299,18 @@ export default function AdminDownloadsPage() {
                     return (
                       <div key={i.id} className="px-3 py-2">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[13px] text-ink">{i.title}</span>
+                          <span className="text-[13px] text-ink flex items-center gap-2">
+                            {i.title}
+                            {i.enabled !== 1 && (
+                              <button
+                                onClick={() => enableRow("item", i)}
+                                className="text-[11px] text-[#9A6B12] bg-[#FBF0DD] border border-[#D9B36C] rounded px-1.5 py-0.5"
+                                title="Not showing on the public site — click to show it"
+                              >
+                                Hidden — tap to show
+                              </button>
+                            )}
+                          </span>
                           <button onClick={() => del("item", i.id, `item "${i.title}"`)} className="text-[12px] text-[#B05555] px-2">✕</button>
                         </div>
                         <div className="flex flex-wrap gap-2">
