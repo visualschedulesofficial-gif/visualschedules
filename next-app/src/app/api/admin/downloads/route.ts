@@ -58,14 +58,18 @@ export async function POST(request: NextRequest) {
 
   if (body.kind === "bundle") {
     if (!body.title) return NextResponse.json({ error: "title required" }, { status: 400 });
+    // enabled is written explicitly (not left to the column default) because
+    // the public /api/downloads query only returns rows WHERE enabled = 1 —
+    // a brand-new category must be visible on the public page immediately.
     await env.DB.prepare(
-      "INSERT INTO download_bundles (id, title, description, sort_order) VALUES (?, ?, ?, ?)"
+      "INSERT INTO download_bundles (id, title, description, sort_order, enabled) VALUES (?, ?, ?, ?, 1)"
     ).bind(id, body.title, body.description || null, body.sortOrder ?? 0).run();
   } else if (body.kind === "item") {
     if (!body.title || !body.bundleId)
       return NextResponse.json({ error: "title and bundleId required" }, { status: 400 });
+    // Same as above — a new item must be enabled=1 to show on the public page.
     await env.DB.prepare(
-      "INSERT INTO download_items (id, bundle_id, title, description, sort_order) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO download_items (id, bundle_id, title, description, sort_order, enabled) VALUES (?, ?, ?, ?, ?, 1)"
     ).bind(id, body.bundleId, body.title, body.description || null, body.sortOrder ?? 0).run();
   } else if (body.kind === "file") {
     if (!body.itemId || !body.fileUrl)
