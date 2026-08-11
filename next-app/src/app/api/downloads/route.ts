@@ -6,25 +6,33 @@ export async function GET() {
   const env = getEnv();
   if (!env.DB) return NextResponse.json({ bundles: [] });
 
-  const bundles = await env.DB.prepare(
-    "SELECT id, title, description FROM download_bundles WHERE enabled = 1 ORDER BY sort_order, title"
-  ).all();
-  const items = await env.DB.prepare(
-    "SELECT id, bundle_id, title, description FROM download_items WHERE enabled = 1 ORDER BY sort_order, title"
-  ).all();
-  const files = await env.DB.prepare(
-    "SELECT id, item_id, variant, label, file_url, preview_url, character, language, COALESCE(view_count,0) as view_count, COALESCE(download_count,0) as download_count FROM download_files ORDER BY sort_order, variant"
-  ).all();
+  // A schema mismatch (e.g. a migration that never actually ran against the
+  // remote DB) used to throw here and get swallowed by the client's catch —
+  // the page would just silently show "No downloads yet" with no clue why.
+  // Surface the real error instead so it's never invisible again.
+  try {
+    const bundles = await env.DB.prepare(
+      "SELECT id, title, description FROM download_bundles WHERE enabled = 1 ORDER BY sort_order, title"
+    ).all();
+    const items = await env.DB.prepare(
+      "SELECT id, bundle_id, title, description FROM download_items WHERE enabled = 1 ORDER BY sort_order, title"
+    ).all();
+    const files = await env.DB.prepare(
+      "SELECT id, item_id, variant, label, file_url, preview_url, character, language, COALESCE(view_count,0) as view_count, COALESCE(download_count,0) as download_count FROM download_files ORDER BY sort_order, variant"
+    ).all();
 
-  return NextResponse.json({
-    bundles: (bundles.results || []).map((b: any) => ({
-      ...b,
-      items: (items.results || [])
-        .filter((i: any) => i.bundle_id === b.id)
-        .map((i: any) => ({
-          ...i,
-          files: (files.results || []).filter((f: any) => f.item_id === i.id),
-        })),
-    })),
-  });
+    return NextResponse.json({
+      bundles: (bundles.results || []).map((b: any) => ({
+        ...b,
+        items: (items.results || [])
+          .filter((i: any) => i.bundle_id === b.id)
+          .map((i: any) => ({
+            ...i,
+            files: (files.results || []).filter((f: any) => f.item_id === i.id),
+          })),
+      })),
+    });
+  } catch (err: any) {
+    return NextResponse.json({ bundles: [], error: String(err?.message || err) }, { status: 500 });
+  }
 }
