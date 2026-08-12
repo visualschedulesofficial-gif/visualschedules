@@ -1,24 +1,22 @@
 "use client";
 
-// Mobile-only linear builder (compact).
-// Row 1: Language + Category, then search.
-// Row 2: Schedule type + contextual grid size.
-// Canvas preview (updates live as the user changes type/cards).
-// Row 3: Character — shown only when the selection includes character cards.
-// Cards: 5 × 2 quick grid + "View all" full-page picker with added-counter.
-// Export at the bottom.
+// Mobile-only builder — ONE scrolling page (no wizard steps).
+//
+// Order down the page, matching the design sketch:
+//   1. Your schedule  — live preview of what's been built so far
+//   2. Layouts        — tap a tile to switch layout
+//   3. Visuals        — cards grouped by category (Daily, OT, …), tap to add
+//   4. Create         — sticky button at the bottom, opens the download sheet
+//
+// Everything is visible at once, so there's no "next step" to find and no
+// state to lose by going back. Language and character controls sit in the
+// header and apply to the whole page.
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  GRID_SPECS,
-  getDailySpec,
-  A4_PORTRAIT,
-  A4_LANDSCAPE,
   LANGUAGES,
   type Language,
-  type ScheduleType,
   type Gender,
-  type GridCols,
 } from "@/lib/constants";
 import {
   CATEGORIES,
@@ -33,16 +31,15 @@ import {
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useExport } from "@/hooks/useExport";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
+import { A4_PORTRAIT } from "@/lib/constants";
 import type { CardImageMap } from "@/lib/card-data";
+import { LAYOUTS, isActiveLayout, type LayoutId } from "@/lib/layouts";
+import { LayoutIcon } from "@/components/schedule/LayoutIcon";
 
-// Landscape schedules (weekly/custom) don't suit phone screens — mobile
-// offers the two portrait types only.
-const SCHEDULE_TYPE_OPTIONS: { value: ScheduleType; label: string }[] = [
-  { value: "mini", label: "My Schedule" },
-  { value: "daily", label: "Daily Schedule" },
-  { value: "firstthen", label: "First/Then Board" },
-  { value: "iwant", label: "I Want (communication)" },
-];
+// Kept in the signature so ScheduleBuilder.tsx doesn't need changing — the
+// page no longer has steps, so this only decides whether to jump the user
+// down to the cards on open.
+type Step = "layout" | "cards" | "final";
 
 const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
   { value: "neutral", label: "Neutral" },
@@ -51,16 +48,20 @@ const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
   { value: "brown", label: "Brown" },
 ];
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <div className="text-[14px] tracking-wide uppercase text-[#3A3733] font-semibold mb-1">
-      {children}
+    <div className="flex items-end justify-between gap-2 mb-1.5">
+      <div className="text-[14px] tracking-wide uppercase text-[#3A3733] font-semibold">
+        {children}
+      </div>
+      {right}
     </div>
   );
 }
 
-const inputCls =
-  "w-full py-2 px-2.5 border border-border bg-white font-sans text-[14px] text-ink rounded";
+function Divider() {
+  return <div className="border-t border-[#D8D4CC] my-4" />;
+}
 
 function CardTile({
   card,
@@ -68,7 +69,6 @@ function CardTile({
   gender,
   isLocked,
   onAdd,
-  size,
   placed,
 }: {
   card: ParsedCard;
@@ -76,7 +76,6 @@ function CardTile({
   gender: Gender;
   isLocked: boolean;
   onAdd: (cardId: string) => void;
-  size: "small" | "large";
   placed?: boolean;
 }) {
   const variant = getCardGender(card, gender);
@@ -126,14 +125,86 @@ function CardTile({
           </svg>
         )}
       </div>
-      <div
-        className={`px-0.5 border-t border-[#F0F0F0] font-serif text-ink text-center leading-tight truncate ${
-          size === "small" ? "py-0.5 text-[12px]" : "py-1.5 text-[12px]"
-        }`}
-      >
+      <div className="px-0.5 py-1.5 border-t border-[#F0F0F0] font-serif text-ink text-center leading-tight truncate text-[12px]">
         {getCardLabel(card, language)}
       </div>
     </button>
+  );
+}
+
+// One category block: a heading, then its cards. Long categories start as a
+// single swipeable row and expand to a full grid on demand, so a category
+// with 80 cards never buries the rest of the page.
+function CategoryRow({
+  name,
+  cards,
+  language,
+  gender,
+  placedIds,
+  isLockedCard,
+  onAddCard,
+}: {
+  name: string;
+  cards: ParsedCard[];
+  language: Language;
+  gender: Gender;
+  placedIds: Set<string>;
+  isLockedCard: (c: ParsedCard) => boolean;
+  onAddCard: (cardId: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const COLLAPSED = 9;
+  const tooMany = cards.length > COLLAPSED;
+  const shown = expanded || !tooMany ? cards : cards.slice(0, COLLAPSED);
+
+  return (
+    <div className="pt-1">
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <span className="text-[13px] font-sans font-semibold text-ink">
+          {name} <span className="text-ink-3 font-medium">({cards.length})</span>
+        </span>
+        {tooMany && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="text-[12px] font-sans font-semibold text-accent-strong shrink-0"
+          >
+            {expanded ? "Show less" : `See all ${cards.length}`}
+          </button>
+        )}
+      </div>
+
+      {expanded || !tooMany ? (
+        <div className="grid grid-cols-3 gap-2">
+          {shown.map((card) => (
+            <CardTile
+              key={card.id}
+              card={card}
+              language={language}
+              gender={gender}
+              isLocked={isLockedCard(card)}
+              placed={placedIds.has(card.id)}
+              onAdd={onAddCard}
+            />
+          ))}
+        </div>
+      ) : (
+        // Swipeable row — matches the sketch and keeps each category to one line
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 snap-x">
+          {shown.map((card) => (
+            <div key={card.id} className="w-[30%] shrink-0 snap-start">
+              <CardTile
+                card={card}
+                language={language}
+                gender={gender}
+                isLocked={isLockedCard(card)}
+                placed={placedIds.has(card.id)}
+                onAdd={onAddCard}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -142,36 +213,37 @@ export function MobileScheduleBuilder({
   cardsLoaded,
   justDroppedSlot,
   cardImages,
+  loading = false,
+  initialStep,
 }: {
   onAddCard: (cardId: string) => void;
   cardsLoaded: boolean;
   justDroppedSlot: string | null;
   cardImages: CardImageMap;
+  loading?: boolean;
+  initialStep?: Step;
 }) {
   const language = useScheduleState((s) => s.language);
   const setLanguage = useScheduleState((s) => s.setLanguage);
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const setScheduleType = useScheduleState((s) => s.setScheduleType);
-  const gridCols = useScheduleState((s) => s.gridCols);
-  const setGridCols = useScheduleState((s) => s.setGridCols);
-  const weekMode = useScheduleState((s) => s.weekMode);
-  const setWeekMode = useScheduleState((s) => s.setWeekMode);
   const cardType = useScheduleState((s) => s.cardType);
-  const setCardType = useScheduleState((s) => s.setCardType);
   const miniCardCount = useScheduleState((s) => s.miniCardCount);
-  const setMiniCardCount = useScheduleState((s) => s.setMiniCardCount);
-  // A weekly/custom schedule opened on mobile falls back to daily
-  useEffect(() => {
-    if (scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "timetable") setScheduleType("daily");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduleType]);
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
   const pages = useScheduleState((s) => s.pages);
 
-  const { exportPDF, exportJPEG, exporting } = useExport();
+  const { exportPNG, exportJPEG, exporting } = useExport();
 
-  const [category, setCategory] = useState("");
+  // Landscape schedules (weekly/custom/timetable) don't suit phone screens —
+  // if one was opened here (e.g. edited earlier on desktop), fall back to Daily.
+  useEffect(() => {
+    if (scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "timetable") {
+      setScheduleType("daily");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleType]);
+
   const [orgBanner, setOrgBanner] = useState<{ name: string; code: string } | null>(null);
   useEffect(() => {
     fetch("/api/me/org")
@@ -183,25 +255,8 @@ export function MobileScheduleBuilder({
     await fetch("/api/me/org", { method: "DELETE" });
     window.location.reload();
   };
-  // Daily Schedule defaults to the "Daily Routine" category so the quick
-  // row shows everyday activity cards, not unrelated ones (AI, Art-Colour...)
-  // that happen to sort early in the full 286-card catalog. Only sets the
-  // default once, when landing on Daily with nothing chosen yet — a
-  // deliberate switch to "All categories" afterward is left alone.
-  useEffect(() => {
-    if (scheduleType === "daily" && category === "") {
-      const dailyCat = CATEGORIES.find((c: any) => /daily/i.test(c.name));
-      if (dailyCat) setCategory(dailyCat.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduleType]);
-  const search = useScheduleState((s) => s.uiSearch);
+
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
-  const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [freeOnly, setFreeOnly] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
@@ -216,25 +271,13 @@ export function MobileScheduleBuilder({
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const map: Record<string, string> = {};
-        const flags: Record<string, boolean> = {};
         (data?.categories || []).forEach((c: any) => {
           map[c.id] = c.name;
-          flags[c.id] = !!c.hasCharacters;
         });
         setAdminCatNames(map);
-        setCatFlags(flags);
-        setFlagsLoaded(true);
       })
       .catch(() => {});
   }, []);
-
-  // Lock body scroll while the full-page picker is open
-  useEffect(() => {
-    document.body.style.overflow = showAll ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [showAll]);
 
   const cards: ParsedCard[] = useMemo(() => {
     const db = getRuntimeCards();
@@ -245,76 +288,45 @@ export function MobileScheduleBuilder({
 
   const catName = (id: string) => adminCatNames[id] || id;
 
-  const categoryOptions = useMemo(() => {
+  // Every category that actually has cards, in a stable order, each with its
+  // cards attached — this drives the whole Visuals section.
+  const groupedCategories = useMemo(() => {
+    const order: string[] = [];
     const seen = new Set<string>();
-    const opts: { id: string; name: string }[] = [];
     CATEGORIES.forEach((c: any) => {
-      if (!seen.has(c.id)) {
-        seen.add(c.id);
-        opts.push({ id: c.id, name: adminCatNames[c.id] || c.name || c.id });
-      }
+      if (!seen.has(c.id)) { seen.add(c.id); order.push(c.id); }
     });
     cards.forEach((c) => {
-      if (c.categoryId && !seen.has(c.categoryId)) {
-        seen.add(c.categoryId);
-        opts.push({ id: c.categoryId, name: catName(c.categoryId) });
-      }
+      if (c.categoryId && !seen.has(c.categoryId)) { seen.add(c.categoryId); order.push(c.categoryId); }
     });
-    return opts;
+
+    const byCat = new Map<string, ParsedCard[]>();
+    cards.forEach((card) => {
+      const key = card.categoryId || "other";
+      if (!byCat.has(key)) byCat.set(key, []);
+      byCat.get(key)!.push(card);
+    });
+
+    const groups = order
+      .filter((id) => (byCat.get(id) || []).length > 0)
+      .map((id) => ({ id, name: catName(id), cards: byCat.get(id)! }));
+
+    // Anything with no known category still needs somewhere to live
+    const orphans = byCat.get("other");
+    if (orphans?.length) groups.push({ id: "other", name: "Other", cards: orphans });
+    return groups;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, adminCatNames]);
 
-  const filteredCards = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return cards.filter((card) => {
-      const matchesCategory = !category || card.categoryId === category;
-      const matchesSearch = q === "" || getCardLabel(card, language).toLowerCase().includes(q);
-      return matchesCategory && matchesSearch;
-    });
-  }, [cards, category, search, language]);
-
-  // Character row shows when the cards currently being browsed actually
-  // include character variants — judged directly from the filtered list, so
-  // it can never mismatch a category-id lookup (admin categories vs. card
-  // categoryId aren't guaranteed to share the same key).
-  const showCharacters = useMemo(
-    () => filteredCards.some((c) => isCharacterCard(c)),
-    [filteredCards]
-  );
+  const showCharacters = useMemo(() => cards.some((c) => isCharacterCard(c)), [cards]);
   useEffect(() => {
     if (!showCharacters && gender !== "neutral") setGender("neutral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCharacters]);
 
-  // How many cards are placed (for the picker counter)
-  const { placedCount, totalSlots } = useMemo(() => {
-    if (scheduleType === "daily") {
-      let placed = 0;
-      let total = 0;
-      const spec = getDailySpec(cardType, gridCols);
-      const perPage = spec.slots;
-      pages.forEach((p: any) => {
-        total += perPage;
-        (p.slots || []).forEach((s: any) => {
-          if (s) placed++;
-        });
-      });
-      return { placedCount: placed, totalSlots: total };
-    }
-    let placed = 0;
-    pages.forEach((p: any) => {
-      Object.values(p.columns || {}).forEach((col: any) => {
-        placed += (col || []).length;
-      });
-    });
-    return { placedCount: placed, totalSlots: 0 };
-  }, [pages, scheduleType, gridCols, cardType]);
-
   const isLockedCard = (card: ParsedCard) =>
     (card as any).isFree === false && !hasSubscription;
 
-  // Cards currently placed anywhere in the schedule (for the ✓ badge)
-  // A character card whose variant images serve as the face avatars
   const faceCard = useMemo(() => cards.find((c) => isCharacterCard(c)) || null, [cards]);
 
   const placedIds = useMemo(() => {
@@ -328,15 +340,28 @@ export function MobileScheduleBuilder({
     return ids;
   }, [pages]);
 
-  // Canvas preview zoom (zoom must be 1 while exporting — the capture engine
-  // mis-renders fonts inside CSS zoom)
-  const baseW =
-    scheduleType === "weekly" || scheduleType === "custom"
-      ? A4_LANDSCAPE.width
-      : A4_PORTRAIT.width;
-  const [zoom, setZoom] = useState(0.42);
+  const { placedCount, totalSlots } = useMemo(() => {
+    const p = pages[0] as any;
+    if (scheduleType === "daily") {
+      const placed = (p?.slots || []).filter((s: any) => !!s).length;
+      return { placedCount: placed, totalSlots: p?.slots?.length || 0 };
+    }
+    if (scheduleType === "mini") {
+      return { placedCount: (p?.columns?.["0"] || []).length, totalSlots: miniCardCount };
+    }
+    if (scheduleType === "iwant") {
+      return { placedCount: (p?.columns?.["cutout"] || []).length, totalSlots: 6 };
+    }
+    if (scheduleType === "firstthen") {
+      return { placedCount: (p?.columns?.["cutout"] || []).length, totalSlots: 0 };
+    }
+    return { placedCount: 0, totalSlots: 0 };
+  }, [pages, scheduleType, miniCardCount]);
+
+  // Preview zoom — the canvas is A4-wide, the phone is not.
+  const [zoom, setZoom] = useState(0.5);
   useEffect(() => {
-    const update = () => setZoom(Math.min(1, (window.innerWidth - 26) / baseW));
+    const update = () => setZoom(Math.min(1, (window.innerWidth - 26) / A4_PORTRAIT.width));
     update();
     window.addEventListener("resize", update);
     window.addEventListener("orientationchange", update);
@@ -344,12 +369,42 @@ export function MobileScheduleBuilder({
       window.removeEventListener("resize", update);
       window.removeEventListener("orientationchange", update);
     };
-  }, [baseW]);
+  }, []);
+
+  // Opened from a saved schedule or ?start=cards — skip past the preview and
+  // layouts straight to the cards, since the layout is already chosen.
+  useEffect(() => {
+    if (initialStep === "cards") {
+      const el = document.getElementById("visuals-section");
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const activeLayoutState = { scheduleType, cardType, miniCardCount };
+
+  const pickLayout = (apply: () => void, id: LayoutId) => {
+    if (!isActiveLayout(id, activeLayoutState) && placedIds.size > 0) {
+      const ok = window.confirm("Changing layout clears the cards you've added. Continue?");
+      if (!ok) return;
+    }
+    apply();
+  };
+
+  const [showDownload, setShowDownload] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-full py-24">
+        <div className="w-6 h-6 border-2 border-border border-t-accent-strong rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="px-3 pb-8 pt-2.5 space-y-3 bg-bg min-h-full">
+    <div className="px-3 pb-24 pt-2.5 bg-bg min-h-full">
       {orgBanner && (
-        <div className="flex items-center justify-between gap-2 bg-accent-soft border border-weekly-accent rounded px-3 py-2">
+        <div className="flex items-center justify-between gap-2 bg-accent-soft border border-weekly-accent rounded px-3 py-2 mb-3">
           <span className="text-[12px] text-accent-strong font-sans">
             Branding: <span className="font-semibold">{orgBanner.name}</span> (code {orgBanner.code})
           </span>
@@ -358,146 +413,33 @@ export function MobileScheduleBuilder({
           </button>
         </div>
       )}
-      {/* Row 1: Language + Category, then search */}
-      <section>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <SectionLabel>Language</SectionLabel>
-            <select value={language} onChange={(e) => setLanguage(e.target.value as Language)} className={inputCls}>
-              {Object.entries(LANGUAGES).map(([code, name]) => (
-                <option key={code} value={code}>{name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <SectionLabel>Category</SectionLabel>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
-              <option value="">All categories</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-      </section>
+      {/* Header — language applies to the whole page */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h1 className="font-serif text-[20px] text-ink">Visual Schedule</h1>
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value as Language)}
+          className="py-1.5 px-2 border border-border bg-white font-sans text-[13px] text-ink rounded shrink-0"
+          aria-label="Language"
+        >
+          {Object.entries(LANGUAGES).map(([code, name]) => (
+            <option key={code} value={code}>{name}</option>
+          ))}
+        </select>
+      </div>
 
-      {/* Row 2: Schedule type + contextual grid */}
+      {/* 1 · Your schedule so far */}
       <section>
-        <div className={`grid gap-2 ${scheduleType === "daily" ? "grid-cols-2" : "grid-cols-1"}`}>
-          <div>
-            <SectionLabel>Schedule type</SectionLabel>
-            <select
-              value={scheduleType}
-              onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
-              className={inputCls}
-            >
-              {SCHEDULE_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-          {scheduleType === "daily" && (
-            <div>
-              <SectionLabel>Card Type</SectionLabel>
-              <select
-                value={cardType}
-                onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
-                className={inputCls}
-              >
-                <option value="visual">Visual Focus</option>
-                <option value="equal">Equal Focus</option>
-                <option value="text">Text Focus</option>
-              </select>
-            </div>
-          )}
-          {scheduleType === "mini" && (
-            <div>
-              <SectionLabel>Cards</SectionLabel>
-              <select
-                value={miniCardCount}
-                onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)}
-                className={inputCls}
-              >
-                {[2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>{n} cards</option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Cards: 5 × 2 quick grid + View all */}
-      <section>
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="text-[12px] tracking-widest uppercase text-ink font-semibold">
-            Cards <span className="normal-case tracking-normal font-medium text-ink-2">(tap to select)</span>
-          </div>
-          {showCharacters && (
-            <div className="flex gap-1.5">
-              {CHARACTER_OPTIONS.map((o) => {
-                const active = gender === o.value;
-                const faceImg = faceCard
-                  ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
-                  : null;
-                return (
-                  <button
-                    key={o.value}
-                    onClick={() => setGender(o.value)}
-                    aria-label={o.label}
-                    title={o.label}
-                    className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 transition-all ${
-                      active ? "border-success ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
-                    }`}
-                  >
-                    {faceImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
-                    ) : (
-                      <span className="text-[12px] font-sans text-ink-3">{o.label[0]}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        {filteredCards.length === 0 ? (
-          <div className="text-[12px] text-ink-2 font-sans py-3">
-            No cards match — try another category or search.
-          </div>
-        ) : (
-          <>
-            {/* A taste of the list — one scrollable row, not a full grid */}
-            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-3 px-3 snap-x">
-              {filteredCards.slice(0, 10).map((card) => (
-                <div key={card.id} className="w-[92px] shrink-0 snap-start">
-                  <CardTile
-                    card={card}
-                    language={language}
-                    gender={gender}
-                    isLocked={isLockedCard(card)}
-                    placed={placedIds.has(card.id)}
-                    onAdd={onAddCard}
-                    size="small"
-                  />
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowAll(true)}
-              className="w-full mt-2 py-2.5 rounded bg-accent-strong text-white text-[14px] font-sans font-semibold"
-            >
-              View all {filteredCards.length} cards
-            </button>
-          </>
-        )}
-      </section>
-
-      {/* Canvas preview */}
-      <section>
-        <SectionLabel>Your schedule</SectionLabel>
+        <SectionLabel
+          right={
+            totalSlots > 0 ? (
+              <span className="text-[12px] font-sans text-ink-2">{placedCount}/{totalSlots} added</span>
+            ) : undefined
+          }
+        >
+          Your schedule
+        </SectionLabel>
         <div className={exporting ? "w-full" : "w-full overflow-hidden rounded border border-border bg-white"}>
           <div style={{ zoom: exporting ? 1 : zoom }}>
             <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
@@ -505,141 +447,140 @@ export function MobileScheduleBuilder({
         </div>
       </section>
 
-      {/* Export */}
-      <section className="space-y-2 pt-1">
-        <SectionLabel>Export</SectionLabel>
-        <button
-          onClick={exportPDF}
-          disabled={exporting}
-          className="w-full py-3 rounded bg-accent-strong text-white font-sans text-[15px] font-semibold disabled:opacity-60"
-        >
-          {exporting ? "Preparing…" : "Download PDF"}
-        </button>
-        <button
-          onClick={exportJPEG}
-          disabled={exporting}
-          className="w-full py-3 rounded border border-accent-strong text-accent-strong bg-white font-sans text-[15px] font-semibold disabled:opacity-60"
-        >
-          {exporting ? "Preparing…" : "Download JPEG"}
-        </button>
+      <Divider />
+
+      {/* 2 · Layouts */}
+      <section>
+        <SectionLabel>Layouts</SectionLabel>
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 snap-x">
+          {LAYOUTS.map((l) => {
+            const active = isActiveLayout(l.id, activeLayoutState);
+            return (
+              <button
+                key={l.id}
+                onClick={() => pickLayout(l.apply, l.id)}
+                className={`w-[30%] shrink-0 snap-start flex flex-col items-center gap-2 py-3 px-2 rounded border bg-white active:scale-95 transition-transform ${
+                  active ? "border-accent-strong ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC]"
+                }`}
+              >
+                <LayoutIcon cells={l.cells} cols={l.cols} />
+                <span className="text-[12px] font-sans font-semibold text-ink text-center leading-tight">{l.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </section>
 
-      {/* Full-page card picker */}
-      {showAll && (
-        <div className="fixed inset-0 z-50 bg-bg flex flex-col">
-          <div className="shrink-0 bg-white border-b border-border">
-          {showFilters && (
-          <div className="px-3 pt-2.5">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={inputCls}
+      <Divider />
+
+      {/* 3 · Visuals, grouped by category */}
+      <section id="visuals-section">
+        <SectionLabel
+          right={
+            showCharacters ? (
+              <div className="flex gap-1.5">
+                {CHARACTER_OPTIONS.map((o) => {
+                  const active = gender === o.value;
+                  const faceImg = faceCard
+                    ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
+                    : null;
+                  return (
+                    <button
+                      key={o.value}
+                      onClick={() => setGender(o.value)}
+                      aria-label={o.label}
+                      title={o.label}
+                      className={`w-8 h-8 rounded-full overflow-hidden border shrink-0 transition-all ${
+                        active ? "border-success ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
+                      }`}
+                    >
+                      {faceImg ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                      ) : (
+                        <span className="text-[12px] font-sans text-ink-3">{o.label[0]}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : undefined
+          }
+        >
+          Visuals <span className="normal-case tracking-normal font-medium text-ink-2 text-[12px]">(tap to add)</span>
+        </SectionLabel>
+
+        {groupedCategories.length === 0 ? (
+          <p className="text-[12px] text-ink-2 font-sans py-3">No cards available yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {groupedCategories.map((g) => (
+              <CategoryRow
+                key={g.id}
+                name={g.name}
+                cards={g.cards}
+                language={language}
+                gender={gender}
+                placedIds={placedIds}
+                isLockedCard={isLockedCard}
+                onAddCard={onAddCard}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 4 · Create — always reachable */}
+      <div className="fixed bottom-0 left-0 right-0 px-3 pb-3 pt-2 bg-gradient-to-t from-bg via-bg to-transparent">
+        <button
+          onClick={() => setShowDownload(true)}
+          className="w-full py-3 rounded bg-accent-strong text-white font-sans text-[15px] font-semibold shadow-lg"
+        >
+          Create
+        </button>
+      </div>
+
+      {/* Download sheet */}
+      {showDownload && (
+        <div
+          className="fixed inset-0 z-[300] bg-ink/50 flex items-end justify-center"
+          onClick={() => setShowDownload(false)}
+        >
+          <div
+            className="bg-white w-full rounded-t-xl p-4 space-y-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-serif text-[17px] text-ink mb-1">Download your schedule</p>
+            <button
+              onClick={exportPNG}
+              disabled={exporting}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded bg-accent-strong text-white font-sans text-[14px] font-semibold disabled:opacity-60"
             >
-              <option value="">All categories</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          )}
-          {showFilters && showCharacters && (
-            <div className="flex gap-2 px-3 pt-2.5">
-              {CHARACTER_OPTIONS.map((o) => {
-                const active = gender === o.value;
-                const faceImg = faceCard
-                  ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral")
-                  : null;
-                return (
-                  <button
-                    key={o.value}
-                    onClick={() => setGender(o.value)}
-                    aria-label={o.label}
-                    className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 ${
-                      active ? "border-success ring-2 ring-[#BCD9B4]" : "border-[#D8D4CC] opacity-75"
-                    }`}
-                  >
-                    {faceImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
-                    ) : (
-                      <span className="text-[12px] font-sans text-ink-3">{o.label[0]}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <div className="flex items-center justify-between px-3 py-2.5">
-            <span className="text-[14px] font-sans text-ink-2">
-              {scheduleType === "daily"
-                ? `${placedCount}/${totalSlots} added`
-                : `${placedCount} added`}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                aria-label="Filter by category"
-                className={`w-9 h-9 rounded-full border flex items-center justify-center shrink-0 ${
-                  showFilters || category
-                    ? "border-weekly-accent bg-[#E8EDE0] text-accent-strong"
-                    : "border-border bg-white text-ink-3"
-                }`}
-              >
-                <svg className="w-4 h-4 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setFreeOnly(!freeOnly)}
-                className={`px-3 py-1.5 rounded-full border text-[12px] font-sans ${
-                  freeOnly
-                    ? "border-weekly-accent bg-[#E8EDE0] text-accent-strong font-semibold"
-                    : "border-border bg-white text-ink-3"
-                }`}
-              >
-                {freeOnly ? "Free only" : "All cards"}
-              </button>
-              <button
-                onClick={() => setShowAll(false)}
-                className="px-4 py-1.5 rounded bg-accent-strong text-white text-[14px] font-semibold"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-          </div>
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-            {categoryOptions
-              .filter((c) => !category || c.id === category)
-              .map((c) => {
-                const catCards = filteredCards.filter(
-                  (card) =>
-                    card.categoryId === c.id &&
-                    (!freeOnly || (card as any).isFree !== false)
-                );
-                if (catCards.length === 0) return null;
-                return (
-                  <div key={c.id}>
-                    <div className="text-[12px] tracking-widest uppercase text-ink-2 font-medium mb-1.5">
-                      {c.name} ({catCards.length})
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {catCards.map((card) => (
-                        <CardTile
-                          key={card.id}
-                          card={card}
-                          language={language}
-                          gender={gender}
-                          isLocked={isLockedCard(card)}
-                          placed={placedIds.has(card.id)}
-                          onAdd={onAddCard}
-                          size="large"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+              <svg className="w-5 h-5 stroke-white stroke-[2] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {exporting ? "Preparing…" : "Download PNG"}
+            </button>
+            <button
+              onClick={exportJPEG}
+              disabled={exporting}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded border border-accent-strong text-accent-strong bg-white font-sans text-[14px] font-semibold disabled:opacity-60"
+            >
+              <svg className="w-5 h-5 stroke-accent-strong stroke-[2] fill-none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {exporting ? "Preparing…" : "Download Image"}
+            </button>
+            <button
+              onClick={() => setShowDownload(false)}
+              className="w-full py-2.5 text-[13px] font-sans text-ink-2"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
