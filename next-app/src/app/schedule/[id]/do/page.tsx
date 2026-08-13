@@ -118,7 +118,18 @@ export default function DoSchedulePage() {
     if (!id) return;
     fetch(`/api/schedules/${id}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((data) => setSched(data))
+      .then((data) => {
+        setSched(data);
+        // No usage-count column exists in the schedules table, so "most
+        // used" on the mobile home is approximated per-device here rather
+        // than with a real schema change — see vs_open_counts.
+        try {
+          const raw = localStorage.getItem("vs_open_counts");
+          const counts = raw ? JSON.parse(raw) : {};
+          counts[id] = (counts[id] || 0) + 1;
+          localStorage.setItem("vs_open_counts", JSON.stringify(counts));
+        } catch {}
+      })
       .catch((status) => setError(status === 401 ? "Sign in to view this schedule." : "This schedule couldn't be found."));
   }, [id]);
 
