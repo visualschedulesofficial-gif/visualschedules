@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { requireAdmin } from "@/lib/admin-auth";
 
 const SESSION_COOKIE = "vs_session";
 
@@ -75,13 +76,15 @@ export async function PUT(
     const body = await request.json();
     const {
       title, scheduleType, language, gender,
-      gridCols, customColNames, weekMode, cardStyle, data
+      gridCols, customColNames, weekMode, cardStyle, data, isTemplate
     } = body;
+
+    const wantsTemplate = !!isTemplate && (await requireAdmin(env));
 
     await env.DB.prepare(
       `INSERT INTO schedules (id, user_id, title, schedule_type, language, gender,
-         grid_cols, custom_col_names, week_mode, card_style, data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+         grid_cols, custom_col_names, week_mode, card_style, data, is_template, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
        ON CONFLICT(id) DO UPDATE SET
          title = excluded.title,
          schedule_type = excluded.schedule_type,
@@ -92,6 +95,7 @@ export async function PUT(
          week_mode = excluded.week_mode,
          card_style = excluded.card_style,
          data = excluded.data,
+         is_template = excluded.is_template,
          updated_at = datetime('now')
        WHERE schedules.user_id = ?`
     ).bind(
@@ -105,6 +109,7 @@ export async function PUT(
       weekMode || "week",
       cardStyle || "white",
       JSON.stringify(data || {}),
+      wantsTemplate ? 1 : 0,
       userId
     ).run();
 
