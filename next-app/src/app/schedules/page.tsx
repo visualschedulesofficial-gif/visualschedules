@@ -498,7 +498,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
           <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={tab === "home" ? GREEN : FAINT} strokeWidth={tab === "home" ? 2.4 : 1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg>
           <span className="text-[10px] font-semibold" style={{ color: tab === "home" ? GREEN : FAINT }}>Home</span>
         </button>
-        <button onClick={() => router.push("/schedule")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
+        <button onClick={() => router.push("/templates")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
           <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2" /><rect x="14" y="3" width="7" height="7" rx="1.2" /><rect x="3" y="14" width="7" height="7" rx="1.2" /><rect x="14" y="14" width="7" height="7" rx="1.2" /></svg>
           <span className="text-[10px] font-semibold" style={{ color: FAINT }}>Templates</span>
         </button>
