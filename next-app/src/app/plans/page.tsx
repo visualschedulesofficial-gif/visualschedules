@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 
 interface User {
   id: string;
-  email: string;
+  email: string | null;
   role: string;
 }
 
