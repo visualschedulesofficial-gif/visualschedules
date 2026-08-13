@@ -314,14 +314,60 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   user: User | null; schedules: Schedule[]; loading: boolean; onDelete: (id: string, title: string) => void;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"home" | "profile">("home");
-  const [seeAll, setSeeAll] = useState(false);
+  const [tab, setTab] = useState<"home" | "library" | "profile">("home");
   const [menuFor, setMenuFor] = useState<string | null>(null);
-  const shown = seeAll ? schedules : schedules.slice(0, 3);
+  const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameSaving, setRenameSaving] = useState(false);
+  const [localSchedules, setLocalSchedules] = useState(schedules);
+  useEffect(() => setLocalSchedules(schedules), [schedules]);
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.reload();
+  };
+
+  const startRename = (id: string, title: string) => {
+    setMenuFor(null);
+    setRenaming({ id, title });
+    setRenameValue(title);
+  };
+  const confirmRename = async () => {
+    if (!renaming || !renameValue.trim()) return;
+    setRenameSaving(true);
+    try {
+      // The PUT endpoint upserts the WHOLE row — sending only { title }
+      // would reset scheduleType/language/data etc. to their defaults and
+      // wipe the saved cards. Fetch the full record first, then send it
+      // all back with just the title changed.
+      const full = await fetch(`/api/schedules/${renaming.id}`).then((r) => r.json());
+      await fetch(`/api/schedules/${renaming.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: renameValue.trim(),
+          scheduleType: full.scheduleType,
+          language: full.language,
+          gender: full.gender,
+          gridCols: full.gridCols,
+          customColNames: full.customColNames,
+          weekMode: full.weekMode,
+          cardStyle: full.cardStyle,
+          data: full.data,
+        }),
+      });
+      setLocalSchedules((prev) => prev.map((s) => (s.id === renaming.id ? { ...s, title: renameValue.trim() } : s)));
+    } catch {
+      alert("Couldn't rename — please try again.");
+    } finally {
+      setRenameSaving(false);
+      setRenaming(null);
+    }
+  };
+
+  const handleDeleteLocal = (id: string, title: string) => {
+    onDelete(id, title);
+    setLocalSchedules((prev) => prev.filter((s) => s.id !== id));
   };
 
   return (
@@ -354,10 +400,8 @@ function MobileHome({ user, schedules, loading, onDelete }: {
 
             <div className="flex items-center justify-between mt-7 mb-2">
               <span className="font-bold text-[15px]" style={{ color: INK }}>My Schedules</span>
-              {schedules.length > 3 && (
-                <button onClick={() => setSeeAll((v) => !v)} className="text-[13px] font-semibold" style={{ color: GREEN }}>
-                  {seeAll ? "Show less" : "See all"}
-                </button>
+              {localSchedules.length > 3 && (
+                <button onClick={() => setTab("library")} className="text-[13px] font-semibold" style={{ color: GREEN }}>See all</button>
               )}
             </div>
 
@@ -370,29 +414,46 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                 <p className="text-[13px] mb-3" style={{ color: SUB }}>Sign in to save schedules and use them on any device.</p>
                 <Link href="/login" className="inline-block px-5 py-2.5 rounded-xl font-bold text-[13px] text-white no-underline" style={{ background: GREEN }}>Sign In</Link>
               </div>
-            ) : schedules.length === 0 ? (
+            ) : localSchedules.length === 0 ? (
               <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
                 <p className="text-[13px]" style={{ color: SUB }}>No schedules yet — create your first one above.</p>
               </div>
             ) : (
               <div className="space-y-2.5">
-                {shown.map((s) => (
-                  <div key={s.id} className="relative flex items-center gap-3 p-3 rounded-2xl" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
-                    <button onClick={() => router.push(`/schedule/${s.id}/do`)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                      <ScheduleIcon />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{s.title || "Untitled Schedule"}</div>
-                        <div className="text-[12px]" style={{ color: SUB }}>{TYPE_LABELS[s.scheduleType] || s.scheduleType} · {timeAgo(s.updatedAt)}</div>
-                      </div>
-                    </button>
-                    <button onClick={() => setMenuFor(menuFor === s.id ? null : s.id)} className="p-1"><DotsIcon /></button>
-                    {menuFor === s.id && (
-                      <div className="absolute right-2 top-12 z-10 rounded-xl overflow-hidden" style={{ background: "#fff", border: `1px solid ${BORDER}`, boxShadow: "0 8px 20px rgba(0,0,0,0.12)" }}>
-                        <Link href={`/schedule?id=${s.id}`} className="block px-4 py-2.5 text-[13px] font-semibold no-underline whitespace-nowrap" style={{ color: INK }}>Edit</Link>
-                        <button onClick={() => { setMenuFor(null); onDelete(s.id, s.title); }} className="block w-full text-left px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap" style={{ color: "#DC4C4C" }}>Delete</button>
-                      </div>
-                    )}
-                  </div>
+                {localSchedules.slice(0, 3).map((s) => (
+                  <ScheduleRow key={s.id} s={s} menuOpen={menuFor === s.id}
+                    onOpen={() => router.push(`/schedule/${s.id}/do`)}
+                    onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
+                    onRename={() => startRename(s.id, s.title)}
+                    onDelete={() => { setMenuFor(null); handleDeleteLocal(s.id, s.title); }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : tab === "library" ? (
+        <>
+          <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+            <button onClick={() => setTab("home")} className="w-8 h-8 -ml-1 flex items-center justify-center">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+            <span className="font-bold text-[18px]" style={{ color: INK }}>My Library</span>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 pb-4">
+            {localSchedules.length === 0 ? (
+              <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                <p className="text-[13px]" style={{ color: SUB }}>No schedules yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {localSchedules.map((s) => (
+                  <ScheduleRow key={s.id} s={s} menuOpen={menuFor === s.id}
+                    onOpen={() => router.push(`/schedule/${s.id}/do`)}
+                    onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
+                    onRename={() => startRename(s.id, s.title)}
+                    onDelete={() => { setMenuFor(null); handleDeleteLocal(s.id, s.title); }}
+                  />
                 ))}
               </div>
             )}
@@ -425,15 +486,62 @@ function MobileHome({ user, schedules, loading, onDelete }: {
           <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2" /><rect x="14" y="3" width="7" height="7" rx="1.2" /><rect x="3" y="14" width="7" height="7" rx="1.2" /><rect x="14" y="14" width="7" height="7" rx="1.2" /></svg>
           <span className="text-[10px] font-semibold" style={{ color: FAINT }}>Templates</span>
         </button>
-        <button onClick={() => router.push("/schedule/new")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
-          <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
-          <span className="text-[10px] font-semibold" style={{ color: FAINT }}>My Library</span>
+        <button onClick={() => setTab("library")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
+          <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={tab === "library" ? GREEN : FAINT} strokeWidth={tab === "library" ? 2.4 : 1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+          <span className="text-[10px] font-semibold" style={{ color: tab === "library" ? GREEN : FAINT }}>My Library</span>
         </button>
         <button onClick={() => setTab("profile")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
           <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={tab === "profile" ? GREEN : FAINT} strokeWidth={tab === "profile" ? 2.4 : 1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
           <span className="text-[10px] font-semibold" style={{ color: tab === "profile" ? GREEN : FAINT }}>Profile</span>
         </button>
       </div>
+
+      {/* Rename sheet */}
+      {renaming && (
+        <div className="fixed inset-0 z-[300] flex items-end justify-center" style={{ background: "rgba(28,27,25,0.5)" }} onClick={() => setRenaming(null)}>
+          <div className="bg-white w-full rounded-t-3xl p-5 pb-7" onClick={(e) => e.stopPropagation()}>
+            <p className="font-bold text-[16px] mb-3" style={{ color: INK }}>Rename schedule</p>
+            <input
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              maxLength={40}
+              autoFocus
+              className="w-full px-4 py-3 rounded-2xl text-[16px] font-semibold outline-none mb-4"
+              style={{ border: `1.5px solid ${GREEN_BORDER}`, color: INK }}
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setRenaming(null)} className="flex-1 py-3 rounded-2xl font-bold text-[14px]" style={{ background: BG, color: SUB, border: `1px solid ${BORDER}` }}>Cancel</button>
+              <button onClick={confirmRename} disabled={renameSaving || !renameValue.trim()} className="flex-1 py-3 rounded-2xl font-bold text-[14px] text-white disabled:opacity-60" style={{ background: GREEN }}>
+                {renameSaving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete }: {
+  s: Schedule; menuOpen: boolean; onOpen: () => void; onMenu: () => void; onRename: () => void; onDelete: () => void;
+}) {
+  return (
+    <div className="relative flex items-center gap-3 p-3 rounded-2xl" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+      <button onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+        <ScheduleIcon />
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{s.title || "Untitled Schedule"}</div>
+          <div className="text-[12px]" style={{ color: SUB }}>{TYPE_LABELS[s.scheduleType] || s.scheduleType} · {timeAgo(s.updatedAt)}</div>
+        </div>
+      </button>
+      <button onClick={onMenu} className="p-1"><DotsIcon /></button>
+      {menuOpen && (
+        <div className="absolute right-2 top-12 z-10 rounded-xl overflow-hidden" style={{ background: "#fff", border: `1px solid ${BORDER}`, boxShadow: "0 8px 20px rgba(0,0,0,0.12)" }}>
+          <button onClick={onRename} className="block w-full text-left px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap" style={{ color: INK }}>Rename</button>
+          <Link href={`/schedule?id=${s.id}`} className="block px-4 py-2.5 text-[13px] font-semibold no-underline whitespace-nowrap" style={{ color: INK }}>Edit</Link>
+          <button onClick={onDelete} className="block w-full text-left px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap" style={{ color: "#DC4C4C" }}>Delete</button>
+        </div>
+      )}
     </div>
   );
 }
