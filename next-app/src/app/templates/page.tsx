@@ -36,14 +36,32 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState<string | null>(null);
+  const [authed, setAuthed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.user) {
+          setAuthed(true);
+        } else {
+          router.push("/login?next=/templates");
+        }
+        setAuthChecked(true);
+      })
+      .catch(() => setAuthChecked(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!authed) return;
     fetch("/api/templates")
       .then((r) => r.json())
       .then((d) => setTemplates(d.templates || []))
       .catch(() => setTemplates([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [authed]);
 
   const startFrom = async (id: string) => {
     setStartingId(id);
@@ -63,6 +81,10 @@ export default function TemplatesPage() {
       setStartingId(null);
     }
   };
+
+  if (!authChecked || !authed) {
+    return <div className="min-h-dvh" style={{ background: BG }} />;
+  }
 
   return (
     <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
