@@ -263,9 +263,9 @@ export default function SchedulesPage() {
  *    send "My Library" to on its own.
  * ================================================================== */
 
-const GREEN = "#2E9E6A";
-const GREEN_SOFT = "#E9F6EF";
-const GREEN_BORDER = "#BFE3CF";
+const GREEN = "#4A5A3E";
+const GREEN_SOFT = "#EAF1E2";
+const GREEN_BORDER = "#C7D4B8";
 const INK = "#1E2A24";
 const SUB = "#6C7A72";
 const FAINT = "#9AA69E";
@@ -347,7 +347,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
             <button
               onClick={() => router.push("/schedule/new")}
               className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2"
-              style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}
+              style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
             >
               <span className="text-lg leading-none">+</span> Create Schedule
             </button>
