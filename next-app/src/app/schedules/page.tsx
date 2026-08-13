@@ -37,6 +37,7 @@ function timeAgo(dateStr: string) {
 }
 
 export default function SchedulesPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,12 +53,21 @@ export default function SchedulesPage() {
   }, []);
 
   useEffect(() => {
+    if (!checkedMobile) return;
     (async () => {
       try {
         const sessionRes = await fetch("/api/auth/session");
         const sessionData = await sessionRes.json();
         const currentUser = sessionData.user || null;
         setUser(currentUser);
+
+        // Mobile: nothing opens without signing in first — not just Create
+        // and Plans, the home screen itself. Desktop keeps its existing
+        // browse-without-an-account behavior.
+        if (isMobile && !currentUser) {
+          router.push("/login?next=/schedules");
+          return;
+        }
 
         if (currentUser) {
           const schedulesRes = await fetch("/api/schedules");
@@ -72,7 +82,8 @@ export default function SchedulesPage() {
         setLoading(false);
       }
     })();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkedMobile]);
 
   async function handleDelete(id: string, title: string) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
@@ -85,8 +96,10 @@ export default function SchedulesPage() {
   }
 
   // Wait for the mobile check before picking a layout, so we never flash
-  // the desktop chrome (nav/footer) on a phone for one frame.
-  if (!checkedMobile) {
+  // the desktop chrome (nav/footer) on a phone for one frame — and on
+  // mobile, never flash the home screen itself while redirecting a
+  // signed-out visitor to login.
+  if (!checkedMobile || (isMobile && !loading && !user)) {
     return <div className="min-h-dvh bg-bg" />;
   }
 
