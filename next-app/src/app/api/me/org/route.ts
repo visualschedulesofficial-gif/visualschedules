@@ -83,6 +83,8 @@ export async function DELETE() {
   return NextResponse.json({ ok: true });
 }
 
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // matches the OTP-login session
+
 // POST /api/me/org — redeem a therapist access code; sets a 90-day session.
 export async function POST(request: NextRequest) {
   try {
@@ -98,16 +100,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "That code wasn't recognized — check it with your therapist." }, { status: 404 });
     }
 
+    // Same device fingerprint used for the redemption-count log below, reused
+    // as a stable per-device id — so a code alone can still save schedules.
+    // Previously this endpoint only set vs_org (branding/plan), never
+    // vs_session (identity) — so nothing checking "who is this" (saving a
+    // schedule, /api/auth/session, My Schedules) ever recognized a code-only
+    // visitor as signed in, and nothing they built could be saved. This
+    // gives them a real, storable identity, scoped to this org + device, so
+    // the same code on the same device consistently returns to the same
+    // saved schedules.
+    const ua = request.headers.get("user-agent") || "";
+    const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "";
+    const raw = ua + "|" + ip;
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) { hash = (hash * 31 + raw.charCodeAt(i)) | 0; }
+    const deviceHash = String(hash >>> 0);
+    const userId = `org-${org.id}-${deviceHash}`;
+
     // Log the redemption for the center's usage count
     try {
-      const ua = request.headers.get("user-agent") || "";
-      const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "";
-      const raw = ua + "|" + ip;
-      let hash = 0;
-      for (let i = 0; i < raw.length; i++) { hash = (hash * 31 + raw.charCodeAt(i)) | 0; }
       await env.DB.prepare(
         "INSERT INTO org_redemptions (id, org_id, device_hash) VALUES (?, ?, ?)"
-      ).bind(crypto.randomUUID(), org.id, String(hash)).run();
+      ).bind(crypto.randomUUID(), org.id, deviceHash).run();
+    } catch {}
+
+    // Give this device a real user row so schedules can actually save
+    // against it (same upsert pattern the OTP login uses).
+    try {
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO users (id, email, role, created_at, updated_at)
+         VALUES (?, ?, 'user', datetime('now'), datetime('now'))`
+      ).bind(userId, `${userId}@code.local`).run();
     } catch {}
 
     const cookieStore = await cookies();
@@ -116,6 +139,15 @@ export async function POST(request: NextRequest) {
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 90,
+    });
+    cookieStore.set(SESSION_COOKIE, Buffer.from(JSON.stringify({
+      userId, email: null, role: "user", viaCode: true, createdAt: Date.now(),
+    })).toString("base64"), {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: SESSION_MAX_AGE,
+      path: "/",
     });
 
     return NextResponse.json({ ok: true, org: { name: org.name, logoUrl: org.logo_url } });
