@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 interface User {
@@ -39,6 +40,16 @@ export default function SchedulesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [checkedMobile, setCheckedMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => { setIsMobile(mq.matches); setCheckedMobile(true); };
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -71,6 +82,16 @@ export default function SchedulesPage() {
     } catch {
       alert("Failed to delete. Please try again.");
     }
+  }
+
+  // Wait for the mobile check before picking a layout, so we never flash
+  // the desktop chrome (nav/footer) on a phone for one frame.
+  if (!checkedMobile) {
+    return <div className="min-h-dvh bg-bg" />;
+  }
+
+  if (isMobile) {
+    return <MobileHome user={user} schedules={schedules} loading={loading} onDelete={handleDelete} />;
   }
 
   return (
@@ -220,6 +241,199 @@ export default function SchedulesPage() {
           <Link href="/refund" className="text-[#9A9690] no-underline hover:text-[#F5F2EC]">Refunds</Link>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* ================================================================== *
+ * MOBILE HOME — app-style, zero site chrome (no nav, no footer).
+ * Matches the approved screenshot. Lives at the same /schedules URL as
+ * the desktop list, so nothing about routing or sharing links changes —
+ * it's purely a different render for phones, same as MobileScheduleBuilder
+ * is to the desktop 3-panel builder.
+ *
+ * Two scoped simplifications, both easy to lift later if wanted:
+ *  - Row icons are a generic calendar glyph, not a real card image. The
+ *    list API (GET /api/schedules) only returns title/type/date, not the
+ *    saved cards, so there's no cover image to show without an extra
+ *    per-schedule fetch. Say the word and I'll add a lightweight
+ *    cover-thumbnail field to that endpoint.
+ *  - "Templates" and "My Library" tabs both open the new-schedule wizard
+ *    (/schedule/new) — there's no standalone card-browsing page yet to
+ *    send "My Library" to on its own.
+ * ================================================================== */
+
+const GREEN = "#2E9E6A";
+const GREEN_SOFT = "#E9F6EF";
+const GREEN_BORDER = "#BFE3CF";
+const INK = "#1E2A24";
+const SUB = "#6C7A72";
+const FAINT = "#9AA69E";
+const BORDER = "#E6EBE6";
+const BG = "#F5F8F5";
+
+function AppIcon() {
+  // A simple checklist/calendar glyph in a rounded green badge — not the
+  // leaf mark, per your note.
+  return (
+    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M8 3v4M16 3v4M4 10h16" />
+        <path d="M8.5 14.5l1.8 1.8L15 12.5" />
+      </svg>
+    </div>
+  );
+}
+function BellIcon() {
+  return (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+function DotsIcon() {
+  return (
+    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill={FAINT}>
+      <circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" />
+    </svg>
+  );
+}
+function ScheduleIcon() {
+  return (
+    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
+      </svg>
+    </div>
+  );
+}
+
+function MobileHome({ user, schedules, loading, onDelete }: {
+  user: User | null; schedules: Schedule[]; loading: boolean; onDelete: (id: string, title: string) => void;
+}) {
+  const router = useRouter();
+  const [tab, setTab] = useState<"home" | "profile">("home");
+  const [seeAll, setSeeAll] = useState(false);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const shown = seeAll ? schedules : schedules.slice(0, 3);
+
+  const signOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.reload();
+  };
+
+  return (
+    <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
+      {tab === "home" ? (
+        <>
+          {/* Header — no site nav, just this */}
+          <div className="flex items-center justify-between px-5 pt-4 pb-2">
+            <div className="flex items-center gap-2.5">
+              <AppIcon />
+              <span className="font-bold text-[16px]" style={{ color: INK }}>Visual Schedule</span>
+            </div>
+            <BellIcon />
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 pb-4">
+            <h1 className="text-[26px] font-extrabold leading-tight mt-3" style={{ color: INK }}>
+              Make your child&apos;s routine easier to follow.
+            </h1>
+            <p className="text-[14px] mt-2 mb-4" style={{ color: SUB }}>
+              Create simple visual schedules in under a minute.
+            </p>
+            <button
+              onClick={() => router.push("/schedule/new")}
+              className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2"
+              style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}
+            >
+              <span className="text-lg leading-none">+</span> Create Schedule
+            </button>
+
+            <div className="flex items-center justify-between mt-7 mb-2">
+              <span className="font-bold text-[15px]" style={{ color: INK }}>My Schedules</span>
+              {schedules.length > 3 && (
+                <button onClick={() => setSeeAll((v) => !v)} className="text-[13px] font-semibold" style={{ color: GREEN }}>
+                  {seeAll ? "Show less" : "See all"}
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center py-10">
+                <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${BORDER}`, borderTopColor: GREEN }} />
+              </div>
+            ) : !user ? (
+              <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                <p className="text-[13px] mb-3" style={{ color: SUB }}>Sign in to save schedules and use them on any device.</p>
+                <Link href="/login" className="inline-block px-5 py-2.5 rounded-xl font-bold text-[13px] text-white no-underline" style={{ background: GREEN }}>Sign In</Link>
+              </div>
+            ) : schedules.length === 0 ? (
+              <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                <p className="text-[13px]" style={{ color: SUB }}>No schedules yet — create your first one above.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {shown.map((s) => (
+                  <div key={s.id} className="relative flex items-center gap-3 p-3 rounded-2xl" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                    <button onClick={() => router.push(`/schedule/${s.id}/do`)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                      <ScheduleIcon />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{s.title || "Untitled Schedule"}</div>
+                        <div className="text-[12px]" style={{ color: SUB }}>{TYPE_LABELS[s.scheduleType] || s.scheduleType} · {timeAgo(s.updatedAt)}</div>
+                      </div>
+                    </button>
+                    <button onClick={() => setMenuFor(menuFor === s.id ? null : s.id)} className="p-1"><DotsIcon /></button>
+                    {menuFor === s.id && (
+                      <div className="absolute right-2 top-12 z-10 rounded-xl overflow-hidden" style={{ background: "#fff", border: `1px solid ${BORDER}`, boxShadow: "0 8px 20px rgba(0,0,0,0.12)" }}>
+                        <Link href={`/schedule?id=${s.id}`} className="block px-4 py-2.5 text-[13px] font-semibold no-underline whitespace-nowrap" style={{ color: INK }}>Edit</Link>
+                        <button onClick={() => { setMenuFor(null); onDelete(s.id, s.title); }} className="block w-full text-left px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap" style={{ color: "#DC4C4C" }}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
+          <h1 className="font-bold text-[20px] mb-4" style={{ color: INK }}>Profile</h1>
+          {user ? (
+            <>
+              <div className="rounded-2xl p-4 mb-4" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                <div className="font-bold text-[14px]" style={{ color: INK }}>{user.email}</div>
+                <div className="text-[12px] mt-0.5" style={{ color: SUB }}>Signed in</div>
+              </div>
+              <button onClick={signOut} className="w-full py-3 rounded-2xl font-bold text-[14px]" style={{ background: "#fff", color: SUB, border: `1px solid ${BORDER}` }}>Sign Out</button>
+            </>
+          ) : (
+            <Link href="/login" className="block text-center py-3 rounded-2xl font-bold text-[14px] text-white no-underline" style={{ background: GREEN }}>Sign In</Link>
+          )}
+        </div>
+      )}
+
+      {/* Bottom tab bar */}
+      <div className="flex shrink-0" style={{ background: "#fff", borderTop: `1px solid ${BORDER}` }}>
+        <button onClick={() => setTab("home")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
+          <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={tab === "home" ? GREEN : FAINT} strokeWidth={tab === "home" ? 2.4 : 1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg>
+          <span className="text-[10px] font-semibold" style={{ color: tab === "home" ? GREEN : FAINT }}>Home</span>
+        </button>
+        <button onClick={() => router.push("/schedule/new")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
+          <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2" /><rect x="14" y="3" width="7" height="7" rx="1.2" /><rect x="3" y="14" width="7" height="7" rx="1.2" /><rect x="14" y="14" width="7" height="7" rx="1.2" /></svg>
+          <span className="text-[10px] font-semibold" style={{ color: FAINT }}>Templates</span>
+        </button>
+        <button onClick={() => router.push("/schedule/new")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
+          <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+          <span className="text-[10px] font-semibold" style={{ color: FAINT }}>My Library</span>
+        </button>
+        <button onClick={() => setTab("profile")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
+          <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={tab === "profile" ? GREEN : FAINT} strokeWidth={tab === "profile" ? 2.4 : 1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+          <span className="text-[10px] font-semibold" style={{ color: tab === "profile" ? GREEN : FAINT }}>Profile</span>
+        </button>
+      </div>
     </div>
   );
 }
