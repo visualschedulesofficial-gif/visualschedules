@@ -12,7 +12,8 @@
 // real thing (D1 via getRuntimeCards, R2 images, /api/user/subscription,
 // useExport). Nothing here is placeholder.
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { LANGUAGES, GRID_SPECS, type Language, type Gender, type ScheduleType } from "@/lib/constants";
 import {
   CATEGORIES,
@@ -79,10 +80,15 @@ function CardTile({
   const variant = getCardGender(card, gender);
   const img = getCardImageUrl(card.id, variant) || getCardImageUrl(card.id, "neutral");
   const [justAdded, setJustAdded] = useState(false);
+  const [showPaidNotice, setShowPaidNotice] = useState(false);
   return (
     <button
       onClick={() => {
-        if (isLocked) { window.location.href = "/plans"; return; }
+        if (isLocked) {
+          setShowPaidNotice(true);
+          setTimeout(() => { window.location.href = "/plans"; }, 1400);
+          return;
+        }
         onAdd(card.id);
         setJustAdded(true);
         setTimeout(() => setJustAdded(false), 1000);
@@ -110,6 +116,12 @@ function CardTile({
           <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: GREEN }}>
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
           </span>
+        </span>
+      )}
+      {showPaidNotice && (
+        <span className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1 text-center px-1.5" style={{ background: "rgba(255,243,230,0.97)" }}>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#B5761F" strokeWidth="2.4" strokeLinecap="round"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+          <span className="text-[10px] font-bold leading-tight" style={{ color: "#B5761F" }}>Paid card — taking you to Plans…</span>
         </span>
       )}
       <div className="w-full aspect-square flex items-center justify-center overflow-hidden" style={{ opacity: isLocked ? 0.55 : 1 }}>
@@ -187,6 +199,10 @@ export function MobileScheduleBuilder({
   loading?: boolean;
   initialStep?: Step;
 }) {
+  const router = useRouter();
+  const title = useScheduleState((s) => s.title);
+  const setTitle = useScheduleState((s) => s.setTitle);
+  const placeCard = useScheduleState((s) => s.placeCard);
   const language = useScheduleState((s) => s.language);
   const setLanguage = useScheduleState((s) => s.setLanguage);
   const scheduleType = useScheduleState((s) => s.scheduleType);
@@ -324,6 +340,87 @@ export function MobileScheduleBuilder({
   const [showAddStep, setShowAddStep] = useState(false);
   const [addStepCat, setAddStepCat] = useState<string>("all");
 
+  // Save / Download — Save posts/updates this schedule; once it succeeds the
+  // sticky button becomes Download. Editing anything after that reverts it
+  // to Save, so Download never offers a stale export.
+  const DRAFT_KEY = "vs_draft_mobile_schedule";
+  const [scheduleId] = useState<string>(() => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (raw) { const d = JSON.parse(raw); if (d.id) return d.id; }
+    } catch {}
+    return crypto.randomUUID();
+  });
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const mountedRef = useRef(false);
+
+  // Restore a draft if Save had to send us to sign in — rebuilds the pages
+  // via the store's own placeCard so no new store method is needed.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.title) setTitle(d.title);
+      if (d.scheduleType) setScheduleType(d.scheduleType);
+      if (d.language) setLanguage(d.language);
+      if (d.gender) setGender(d.gender);
+      if (d.gridCols) setGridCols(d.gridCols);
+      if (d.miniCardCount) setMiniCardCount(d.miniCardCount);
+      (d.pages || []).forEach((p: any, pageIdx: number) => {
+        (p.slots || []).forEach((c: any, i: number) => { if (c) placeCard(pageIdx, String(i), c); });
+        Object.entries(p.columns || {}).forEach(([key, arr]: [string, any]) => {
+          (arr || []).forEach((c: any) => placeCard(pageIdx, key, c));
+        });
+      });
+      sessionStorage.removeItem(DRAFT_KEY);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Any change after a successful save means Download would be stale —
+  // fall back to Save. Skips the very first render (the mount itself, and
+  // the draft-restore above, both touch pages/title).
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return; }
+    setSaved(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages, title]);
+
+  const save = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/schedules/${scheduleId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title, scheduleType, language, gender, gridCols,
+          weekMode: "week", cardStyle: "white",
+          data: { pages },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.saved) {
+        setSaved(true);
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+        return;
+      }
+      // Not signed in — keep the draft (including this id, so the same
+      // schedule keeps building on return) and send them to sign in.
+      try {
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ id: scheduleId, title, scheduleType, language, gender, gridCols, miniCardCount, pages }));
+      } catch {}
+      router.push("/login?next=/schedule");
+    } catch {
+      setSaveError("Couldn't save — check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-full py-24" style={{ background: "#F5F8F5" }}>
@@ -346,7 +443,7 @@ export function MobileScheduleBuilder({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">🌱</span>
           <h1 className="font-bold text-[17px]" style={{ color: INK }}>Visual Schedule</h1>
@@ -364,27 +461,34 @@ export function MobileScheduleBuilder({
         </select>
       </div>
 
-      {/* 1 · Type — above the canvas, per your note */}
+      {/* Name — inline, no separate screen */}
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        maxLength={40}
+        placeholder="Name this schedule"
+        className="w-full px-3.5 py-2.5 rounded-xl text-[15px] font-bold outline-none mb-4"
+        style={{ border: `1.5px solid ${GREEN_BORDER}`, color: INK, background: "#fff" }}
+        aria-label="Schedule name"
+      />
+
+      {/* 1 · Type — a dropdown, above the canvas */}
       <section>
-        <SectionLabel>Schedule type</SectionLabel>
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-          {TYPES.map((t) => {
-            const active = scheduleType === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => {
-                  if (t.id !== scheduleType && placedIds.size > 0 &&
-                      !window.confirm("Changing type clears the cards you've added. Continue?")) return;
-                  setScheduleType(t.id);
-                }}
-                className="px-4 py-2.5 rounded-2xl bg-white text-[13px] font-semibold whitespace-nowrap active:scale-95 transition-transform"
-                style={active ? { border: `2px solid ${GREEN}`, color: GREEN_DARK } : { border: `1px solid ${BORDER}`, color: SUB }}
-              >
-                {t.label}
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-semibold" style={{ color: INK }}>Schedule type</span>
+          <select
+            value={scheduleType}
+            onChange={(e) => {
+              const next = e.target.value as ScheduleType;
+              if (next !== scheduleType && placedIds.size > 0 &&
+                  !window.confirm("Changing type clears the cards you've added. Continue?")) return;
+              setScheduleType(next);
+            }}
+            className="py-1.5 px-2.5 bg-white text-[13px] font-semibold rounded-xl"
+            style={{ border: `1px solid ${BORDER}`, color: INK }}
+          >
+            {TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
         </div>
       </section>
 
@@ -461,14 +565,16 @@ export function MobileScheduleBuilder({
         </div>
       </section>
 
-      {/* 5 · Create — sticky */}
+      {/* 5 · Save, then Download once it's actually saved */}
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3" style={{ background: "linear-gradient(to top, #F5F8F5 60%, transparent)" }}>
+        {saveError && <p className="text-[12px] text-center mb-2" style={{ color: "#DC4C4C" }}>{saveError}</p>}
         <button
-          onClick={() => setShowDownload(true)}
-          className="w-full py-3.5 rounded-2xl text-white text-[15px] font-bold"
+          onClick={() => (saved ? setShowDownload(true) : save())}
+          disabled={saving}
+          className="w-full py-3.5 rounded-2xl text-white text-[15px] font-bold disabled:opacity-60"
           style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
         >
-          Print / Download
+          {saving ? "Saving…" : saved ? "Download" : "Save"}
         </button>
       </div>
 
