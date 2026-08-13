@@ -30,10 +30,10 @@ import {
 } from "@/lib/card-data";
 import { DAY_KEYS } from "@/lib/constants";
 
-const GREEN = "#2E9E6A";
-const GREEN_DARK = "#24845A";
-const GREEN_SOFT = "#E9F6EF";
-const GREEN_BORDER = "#BFE3CF";
+const GREEN = "#4A5A3E";
+const GREEN_DARK = "#3A4830";
+const GREEN_SOFT = "#EAF1E2";
+const GREEN_BORDER = "#C7D4B8";
 const INK = "#1E2A24";
 const SUB = "#6C7A72";
 const FAINT = "#9AA69E";
