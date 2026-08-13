@@ -183,7 +183,7 @@ function useLocalizedTitle() {
   return title;
 }
 
-function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pageIdx: number; justDropped: boolean }) {
+function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slotIdx: number; pageIdx: number; justDropped: boolean; onEmptySlotTap?: () => void }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const cardStyle = useScheduleState((s) => s.cardStyle);
@@ -269,6 +269,15 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped }: { slotIdx: number; pag
             &times;
           </button>
         </>
+      ) : onEmptySlotTap ? (
+        <button
+          onClick={onEmptySlotTap}
+          aria-label="Add step"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xl font-bold"
+          style={{ background: "#4A5A3E" }}
+        >
+          +
+        </button>
       ) : (
         <div className={`dz-hint flex flex-col items-center gap-[5px] transition-transform duration-200 ${isOver ? "scale-125" : ""}`}>
           <svg className={`w-[18px] h-[18px] stroke-[1.5] fill-none transition-[stroke] duration-200 ${isOver ? "stroke-[#7A8F5E]" : isDragging ? "stroke-[#7A8F5E]" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
@@ -349,7 +358,7 @@ function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: s
   );
 }
 
-function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+function DailyPage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
   const isPaid = useIsPaid();
   const gridCols = useScheduleState((s) => s.gridCols);
   const cardType = useScheduleState((s) => s.cardType);
@@ -381,7 +390,7 @@ function DailyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
       <div className="flex-1 min-h-0 overflow-hidden">
         <div className="grid gap-2 h-full" style={{ gridTemplateColumns: `repeat(${spec.cols}, 1fr)`, gridTemplateRows: `repeat(${spec.rows}, 1fr)` }}>
           {Array.from({ length: spec.slots }).map((_, i) => (
-            <DailyDropSlot key={i} slotIdx={i} pageIdx={pageIdx} justDropped={justDroppedSlot === `${pageIdx}-${i}`} />
+            <DailyDropSlot key={i} slotIdx={i} pageIdx={pageIdx} justDropped={justDroppedSlot === `${pageIdx}-${i}`} onEmptySlotTap={onEmptySlotTap} />
           ))}
         </div>
       </div>
@@ -543,7 +552,7 @@ function TimetablePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
   );
 }
 
-function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+function MiniSchedulePage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
   const shownTitle = useLocalizedTitle();
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
@@ -622,9 +631,20 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justD
               key={`empty-${i}`}
               className="flex-1 min-h-0 flex items-center justify-center border-2 border-dashed border-[#C5D2B8] rounded-[12px]"
             >
-              <p className="text-[14px] text-weekly-accent font-sans text-center px-4 leading-snug">
-                Click or drag &amp; drop to add
-              </p>
+              {onEmptySlotTap ? (
+                <button
+                  onClick={onEmptySlotTap}
+                  aria-label="Add step"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl font-bold"
+                  style={{ background: "#4A5A3E" }}
+                >
+                  +
+                </button>
+              ) : (
+                <p className="text-[14px] text-weekly-accent font-sans text-center px-4 leading-snug">
+                  Click or drag &amp; drop to add
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -834,7 +854,7 @@ const FT_LABELS: Record<string, string[]> = {
   sequencing: ["First", "Next", "Then", "Last"],
 };
 
-function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+function FirstThenPage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
   const isPaid = useIsPaid();
   const title = useScheduleState((s) => s.title);
   const scheduleType = useScheduleState((s) => s.scheduleType);
@@ -899,6 +919,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
         count={labels.length === 4 ? 16 : 9}
         cols={labels.length === 4 ? 4 : 3}
         justDroppedSlot={justDroppedSlot}
+        onEmptySlotTap={onEmptySlotTap}
       />
 
       <CanvasFooter show />
@@ -909,7 +930,7 @@ function FirstThenPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDrop
 // "I want" communication board: big editable phrase on the left, one target
 // slot on the right (same size as the cut cards, so a cut card fits it), and
 // a 3×3 grid of cut-out cards below. Used for pointing/handing, not scheduling.
-function IWantPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
+function IWantPage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
   const isPaid = useIsPaid();
   const shownTitle = useLocalizedTitle();
   const pages = useScheduleState((s) => s.pages);
@@ -974,7 +995,7 @@ function IWantPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
 
       {/* Body: cut-out cards + footer, in the page's normal padding */}
       <div className="flex-1 min-h-0 flex flex-col px-8 pt-8 pb-6">
-        <CutoutStrip pageIdx={pageIdx} dims={IW_DIM} count={9} cols={3} justDroppedSlot={justDroppedSlot} />
+        <CutoutStrip pageIdx={pageIdx} dims={IW_DIM} count={9} cols={3} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
         <div className="flex-1" />
         <CanvasFooter show />
       </div>
@@ -982,7 +1003,7 @@ function IWantPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedS
   );
 }
 
-function CutoutStrip({ pageIdx, dims, count, cols, justDroppedSlot }: { pageIdx: number; dims: { w: number; h: number }; count: number; cols: number; justDroppedSlot: string | null }) {
+function CutoutStrip({ pageIdx, dims, count, cols, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; dims: { w: number; h: number }; count: number; cols: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
   const pages = useScheduleState((s) => s.pages);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
@@ -1013,10 +1034,21 @@ function CutoutStrip({ pageIdx, dims, count, cols, justDroppedSlot }: { pageIdx:
               style={{ width: dims.w, height: dims.h }}
               className={`border-2 border-dashed rounded-[10px] flex items-center justify-center ${isOver ? "border-[#7A8F5E]" : "border-[#C5D2B8]"}`}
             >
-              <svg className="w-[26px] h-[26px] stroke-[#D8DFCB] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              {onEmptySlotTap ? (
+                <button
+                  onClick={onEmptySlotTap}
+                  aria-label="Add step"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                  style={{ background: "#4A5A3E" }}
+                >
+                  +
+                </button>
+              ) : (
+                <svg className="w-[26px] h-[26px] stroke-[#D8DFCB] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              )}
             </div>
           );
         }
@@ -1058,9 +1090,13 @@ function CutoutStrip({ pageIdx, dims, count, cols, justDroppedSlot }: { pageIdx:
 interface ScheduleCanvasProps {
   justDroppedSlot: string | null;
   cardImages?: Record<string, Record<string, string>>;
+  // Mobile-only: renders a green "+" inside each empty slot that calls this
+  // instead of drag-and-drop. Undefined (desktop's default) changes nothing
+  // — every slot renders exactly as before.
+  onEmptySlotTap?: () => void;
 }
 
-export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
+export function ScheduleCanvas({ justDroppedSlot, onEmptySlotTap }: ScheduleCanvasProps) {
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const pages = useScheduleState((s) => s.pages);
 
@@ -1076,7 +1112,7 @@ export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
               Page {pageIdx + 1}
             </div>
             {scheduleType === "daily" && (
-              <DailyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+              <DailyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
             )}
             {scheduleType === "weekly" && (
               <WeeklyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
@@ -1085,16 +1121,16 @@ export function ScheduleCanvas({ justDroppedSlot }: ScheduleCanvasProps) {
               <CustomPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
             )}
             {scheduleType === "firstthen" && (
-              <FirstThenPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+              <FirstThenPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
             )}
             {scheduleType === "iwant" && (
-              <IWantPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+              <IWantPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
             )}
             {scheduleType === "timetable" && (
               <TimetablePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
             )}
             {scheduleType === "mini" && (
-              <MiniSchedulePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
+              <MiniSchedulePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
             )}
           </div>
           {pageIdx < pages.length - 1 && (
