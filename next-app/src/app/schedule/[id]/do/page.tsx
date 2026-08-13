@@ -130,7 +130,10 @@ export default function DoSchedulePage() {
           localStorage.setItem("vs_open_counts", JSON.stringify(counts));
         } catch {}
       })
-      .catch((status) => setError(status === 401 ? "Sign in to view this schedule." : "This schedule couldn't be found."));
+      .catch((status) => {
+        if (status === 401) { router.push(`/login?next=/schedule/${id}/do`); return; }
+        setError("This schedule couldn't be found.");
+      });
   }, [id]);
 
   // Restore any previously ticked steps for this schedule, this device.
