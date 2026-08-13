@@ -1,12 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 type Step = "email" | "otp" | "done";
 type Mode = "user" | "admin";
 
+const GREEN = "#2E9E6A";
+const GREEN_DARK = "#24845A";
+const GREEN_SOFT = "#E9F6EF";
+const GREEN_BORDER = "#BFE3CF";
+const INK = "#1E2A24";
+const SUB = "#6C7A72";
+const BORDER = "#E6EBE6";
+const BG = "#F5F8F5";
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-bg" />}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
+  const searchParams = useSearchParams();
+  // ?next=/plans etc. — previously read nowhere, so /plans sending signed-out
+  // users to /login?next=/plans always dropped them on the grid builder
+  // instead of back where they meant to go. Fixed for both layouts below.
+  const next = searchParams.get("next");
+
+  const [isMobile, setIsMobile] = useState(false);
+  const [checkedMobile, setCheckedMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => { setIsMobile(mq.matches); setCheckedMobile(true); };
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
   const [loginMode, setLoginMode] = useState<"email" | "code">("email");
   const [orgCode, setOrgCode] = useState("");
   const [orgMsg, setOrgMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -23,8 +57,8 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        setOrgMsg({ ok: true, text: `Welcome! You're connected to ${data.org.name}. Taking you to the builder…` });
-        setTimeout(() => { window.location.href = "/schedule"; }, 1200);
+        setOrgMsg({ ok: true, text: `Welcome! You're connected to ${data.org.name}. Taking you in…` });
+        setTimeout(() => { window.location.href = next || (isMobile ? "/schedules" : "/schedule"); }, 1200);
       } else {
         setOrgMsg({ ok: false, text: data.error || "That code wasn't recognized." });
       }
@@ -79,7 +113,7 @@ export default function LoginPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setStep("done");
-        setTimeout(() => { window.location.href = "/schedule"; }, 800);
+        setTimeout(() => { window.location.href = next || (isMobile ? "/schedules" : "/schedule"); }, 800);
       } else {
         setError(data.error || "Invalid code");
       }
@@ -114,6 +148,21 @@ export default function LoginPage() {
     }
   }
 
+  if (!checkedMobile) return <div className="min-h-dvh bg-bg" />;
+
+  if (isMobile) {
+    return (
+      <MobileLogin
+        mode={mode} setMode={setMode} loginMode={loginMode} setLoginMode={setLoginMode}
+        step={step} setStep={setStep} email={email} setEmail={setEmail}
+        password={password} setPassword={setPassword} otp={otp} setOtp={setOtp}
+        orgCode={orgCode} setOrgCode={setOrgCode} orgMsg={orgMsg} orgBusy={orgBusy}
+        redeemOrgCode={redeemOrgCode} loading={loading} error={error} setError={setError}
+        onSendOTP={handleSendOTP} onVerifyOTP={handleVerifyOTP} onAdminLogin={handleAdminLogin}
+      />
+    );
+  }
+
   return (
     <div className="min-h-dvh flex bg-surface">
       {/* Left: brand illustration (desktop) */}
@@ -130,18 +179,6 @@ export default function LoginPage() {
 
       {/* Right: sign-in column */}
       <div className="flex-1 flex flex-col min-h-dvh">
-        {/* Mobile-only slim banner */}
-        <div className="hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/login-hero.jpg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover object-[18%_40%]"
-            fetchPriority="high"
-            decoding="async"
-          />
-        </div>
-
         <div className="px-6 pt-4 md:px-10 md:pt-8">
           <Link href="/schedule" className="font-serif text-xl md:text-2xl italic text-ink no-underline leading-none">
             Visual Schedules
@@ -154,7 +191,6 @@ export default function LoginPage() {
           {/* ── USER FLOW ── */}
           {mode === "user" && (
             <>
-              {/* Mode toggle: email sign-in vs therapist code */}
               {step === "email" && (
                 <>
                   <h1 className="font-serif text-xl italic text-ink mb-3">Sign in</h1>
@@ -163,9 +199,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => setLoginMode("email")}
                       className={`flex-1 py-2.5 text-[13px] font-sans font-semibold transition-colors ${
-                        loginMode === "email"
-                          ? "bg-accent-strong text-white"
-                          : "bg-white text-ink-2"
+                        loginMode === "email" ? "bg-accent-strong text-white" : "bg-white text-ink-2"
                       }`}
                     >
                       Login with Email
@@ -174,9 +208,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => setLoginMode("code")}
                       className={`flex-1 py-2.5 text-[13px] font-sans font-semibold transition-colors ${
-                        loginMode === "code"
-                          ? "bg-accent-strong text-white"
-                          : "bg-white text-ink-2"
+                        loginMode === "code" ? "bg-accent-strong text-white" : "bg-white text-ink-2"
                       }`}
                     >
                       Login with Code
@@ -208,7 +240,6 @@ export default function LoginPage() {
                     >
                       {loading ? "Sending..." : "Send Code"}
                     </button>
-                    {/* T&C inline — best practice, no extra screen */}
                     <p className="text-[12px] text-ink-3 text-center mt-3 leading-relaxed">
                       By continuing you agree to our{" "}
                       <Link href="/terms" className="text-ink underline">Terms</Link>
@@ -258,7 +289,6 @@ export default function LoginPage() {
                 </>
               )}
 
-              {/* Step: OTP */}
               {step === "otp" && (
                 <>
                   <h1 className="font-serif text-xl italic text-ink mb-1.5">Check your email</h1>
@@ -300,7 +330,6 @@ export default function LoginPage() {
                 </>
               )}
 
-              {/* Step: done */}
               {step === "done" && (
                 <div className="text-center py-4">
                   <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-badge-free-bg flex items-center justify-center">
@@ -309,7 +338,7 @@ export default function LoginPage() {
                     </svg>
                   </div>
                   <p className="text-sm text-ink font-medium">Signed in!</p>
-                  <p className="text-xs text-ink-2 mt-1">Taking you to the builder...</p>
+                  <p className="text-xs text-ink-2 mt-1">Taking you in...</p>
                 </div>
               )}
             </>
@@ -358,13 +387,167 @@ export default function LoginPage() {
           </div>
         </main>
 
-        {/* Quiet admin entry — user-centric by default */}
         <div className="px-6 pb-5 text-center shrink-0">
           {mode === "user" && step === "email" && (
             <button
               onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
               className="text-[12px] text-ink-3 hover:text-ink underline underline-offset-2"
             >
+              Login as admin
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== *
+ * MOBILE LOGIN — green identity, no brown/cream, no serif wordmark.
+ * Same auth logic and endpoints as desktop (OTP send/verify, org code,
+ * admin login) — only the shell differs.
+ * ================================================================== */
+function MobileLogin(props: {
+  mode: Mode; setMode: (m: Mode) => void;
+  loginMode: "email" | "code"; setLoginMode: (m: "email" | "code") => void;
+  step: Step; setStep: (s: Step) => void;
+  email: string; setEmail: (v: string) => void;
+  password: string; setPassword: (v: string) => void;
+  otp: string; setOtp: (v: string) => void;
+  orgCode: string; setOrgCode: (v: string) => void;
+  orgMsg: { ok: boolean; text: string } | null; orgBusy: boolean; redeemOrgCode: () => void;
+  loading: boolean; error: string; setError: (v: string) => void;
+  onSendOTP: (e: React.FormEvent) => void; onVerifyOTP: (e: React.FormEvent) => void; onAdminLogin: (e: React.FormEvent) => void;
+}) {
+  const {
+    mode, setMode, loginMode, setLoginMode, step, setStep, email, setEmail,
+    password, setPassword, otp, setOtp, orgCode, setOrgCode, orgMsg, orgBusy,
+    redeemOrgCode, loading, error, setError, onSendOTP, onVerifyOTP, onAdminLogin,
+  } = props;
+
+  const inputStyle = { border: `1.5px solid ${GREEN_BORDER}`, color: INK };
+
+  return (
+    <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
+      <div className="flex-1 overflow-y-auto flex flex-col justify-center px-6 py-10">
+        <div className="w-full max-w-sm mx-auto">
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: GREEN_SOFT }}>
+              <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
+              </svg>
+            </div>
+            <h1 className="font-bold text-[20px]" style={{ color: INK }}>Visual Schedule</h1>
+          </div>
+
+          {mode === "user" && step === "email" && (
+            <>
+              <div className="flex rounded-2xl p-1 mb-5" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                <button onClick={() => setLoginMode("email")} className="flex-1 py-2 rounded-xl text-[13px] font-bold transition"
+                  style={loginMode === "email" ? { background: GREEN, color: "#fff" } : { color: SUB }}>Email</button>
+                <button onClick={() => setLoginMode("code")} className="flex-1 py-2 rounded-xl text-[13px] font-bold transition"
+                  style={loginMode === "code" ? { background: GREEN, color: "#fff" } : { color: SUB }}>Coupon Code</button>
+              </div>
+
+              {loginMode === "email" && (
+                <form onSubmit={onSendOTP}>
+                  <p className="text-[13px] mb-4" style={{ color: SUB }}>We'll email you a one-time code — no password needed.</p>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" required autoFocus
+                    className="w-full px-4 py-3 rounded-xl text-[15px] outline-none mb-4" style={inputStyle} />
+                  {error && <p className="text-[12px] mb-3" style={{ color: "#DC4C4C" }}>{error}</p>}
+                  <button type="submit" disabled={loading}
+                    className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
+                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}>
+                    {loading ? "Sending…" : "Send code"}
+                  </button>
+                  <p className="text-[11px] text-center mt-3 leading-relaxed" style={{ color: "#9AA69E" }}>
+                    By continuing you agree to our{" "}
+                    <Link href="/terms" style={{ color: SUB }} className="underline">Terms</Link>{" "}and{" "}
+                    <Link href="/privacy" style={{ color: SUB }} className="underline">Privacy Policy</Link>.
+                  </p>
+                </form>
+              )}
+
+              {loginMode === "code" && (
+                <div>
+                  <p className="text-[13px] mb-4" style={{ color: SUB }}>Enter a coupon or centre access code to sign in.</p>
+                  <input value={orgCode} onChange={(e) => setOrgCode(e.target.value.toUpperCase())} placeholder="e.g. SUNSHINE24"
+                    className="w-full px-4 py-3 rounded-xl text-[15px] tracking-widest outline-none mb-4" style={inputStyle} />
+                  <button onClick={redeemOrgCode} disabled={orgBusy || !orgCode.trim()}
+                    className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
+                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}>
+                    {orgBusy ? "…" : "Apply code"}
+                  </button>
+                  {orgMsg && (
+                    <p className="text-[12px] mt-3 text-center font-semibold" style={{ color: orgMsg.ok ? GREEN_DARK : "#DC4C4C" }}>{orgMsg.text}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-5 pt-5 text-center" style={{ borderTop: `1px solid ${BORDER}` }}>
+                <p className="text-[12px] mb-2" style={{ color: SUB }}>No account needed for free cards</p>
+                <Link href="/schedule/new" className="block w-full text-center py-3 rounded-2xl font-bold text-[14px] no-underline"
+                  style={{ background: "#fff", color: GREEN_DARK, border: `1.5px solid ${GREEN}` }}>
+                  Create free schedule →
+                </Link>
+              </div>
+            </>
+          )}
+
+          {mode === "user" && step === "otp" && (
+            <form onSubmit={onVerifyOTP}>
+              <p className="text-[13px] mb-4 text-center" style={{ color: SUB }}>
+                Code sent to <b style={{ color: INK }}>{email}</b>. Enter it below.
+              </p>
+              <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="123456" required maxLength={6} autoFocus
+                className="w-full py-3 px-3 rounded-xl text-[22px] text-center tracking-[8px] font-bold outline-none mb-4" style={inputStyle} />
+              {error && <p className="text-[12px] mb-3 text-center" style={{ color: "#DC4C4C" }}>{error}</p>}
+              <button type="submit" disabled={loading || otp.length < 6}
+                className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
+                style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}>
+                {loading ? "Verifying…" : "Verify Code"}
+              </button>
+              <button type="button" onClick={() => { setStep("email"); setOtp(""); setError(""); }}
+                className="w-full text-[13px] font-semibold mt-3 py-2" style={{ color: SUB }}>
+                Use a different email
+              </button>
+            </form>
+          )}
+
+          {mode === "user" && step === "done" && (
+            <div className="text-center py-4">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: GREEN }}>
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>
+              <p className="font-bold text-[15px]" style={{ color: INK }}>Signed in!</p>
+              <p className="text-[13px] mt-1" style={{ color: SUB }}>Taking you in…</p>
+            </div>
+          )}
+
+          {mode === "admin" && step === "email" && (
+            <form onSubmit={onAdminLogin}>
+              <p className="text-[13px] mb-4 text-center" style={{ color: SUB }}>For Grow Gently team only.</p>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
+                className="w-full px-4 py-3 rounded-xl text-[15px] outline-none mb-3" style={inputStyle} />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
+                className="w-full px-4 py-3 rounded-xl text-[15px] outline-none mb-4" style={inputStyle} />
+              {error && <p className="text-[12px] mb-3 text-center" style={{ color: "#DC4C4C" }}>{error}</p>}
+              <button type="submit" disabled={loading}
+                className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
+                style={{ background: GREEN }}>
+                {loading ? "Signing in…" : "Sign In"}
+              </button>
+              <button type="button" onClick={() => { setMode("user"); setError(""); setPassword(""); }}
+                className="w-full text-[13px] font-semibold mt-3 py-2" style={{ color: SUB }}>
+                ← Back to sign in
+              </button>
+            </form>
+          )}
+
+          {mode === "user" && step === "email" && (
+            <button onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
+              className="w-full text-center text-[12px] mt-6 underline underline-offset-2" style={{ color: "#9AA69E" }}>
               Login as admin
             </button>
           )}
