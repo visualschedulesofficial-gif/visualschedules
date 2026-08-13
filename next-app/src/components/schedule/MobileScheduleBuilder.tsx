@@ -379,11 +379,25 @@ export function MobileScheduleBuilder({
   const [saved, setSaved] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authed, setAuthed] = useState(false);
   useEffect(() => {
     fetch("/api/auth/session")
       .then((r) => r.json())
-      .then((d) => setIsAdmin(d?.user?.role === "admin"))
-      .catch(() => {});
+      .then((d) => {
+        setIsAdmin(d?.user?.role === "admin");
+        if (d?.user) {
+          setAuthed(true);
+        } else {
+          // Not signed in — send straight to login before any of the
+          // create UI renders, rather than letting them build and only
+          // discovering they need an account at Save.
+          router.push("/login?next=/schedule");
+        }
+        setAuthChecked(true);
+      })
+      .catch(() => setAuthChecked(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -455,7 +469,7 @@ export function MobileScheduleBuilder({
     }
   };
 
-  if (loading) {
+  if (loading || !authChecked || !authed) {
     return (
       <div className="flex items-center justify-center min-h-full py-24" style={{ background: "#F5F8F5" }}>
         <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${BORDER}`, borderTopColor: GREEN }} />
@@ -554,32 +568,6 @@ export function MobileScheduleBuilder({
           )
         )}
       </section>
-
-      {/* 3 · Character — simple guaranteed-correct face icons, not card art.
-          These used to pull an image from whatever card in the library was
-          flagged as a "character" card — but that depends entirely on your
-          card data being right, and it wasn't: it was showing unrelated
-          card art instead of faces. A small drawn icon can't be wrong. */}
-      {showCharacters && (
-        <div className="flex gap-2 mt-3">
-          {CHARACTER_OPTIONS.map((o) => {
-            const active = gender === o.value;
-            return (
-              <button
-                key={o.value}
-                onClick={() => setGender(o.value)}
-                aria-label={o.label}
-                className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                style={active
-                  ? { background: GREEN_SOFT, border: `2.5px solid ${GREEN}` }
-                  : { background: GREEN_SOFT, border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
-              >
-                <FaceIcon variant={o.value} />
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* 4 · Your schedule — a real green + inside each empty card now,
           not one floating button on the corner */}
