@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface User {
   id: string;
@@ -322,6 +322,22 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   const [localSchedules, setLocalSchedules] = useState(schedules);
   useEffect(() => setLocalSchedules(schedules), [schedules]);
 
+  // "Most used" — approximated per-device since there's no usage-count
+  // column in the schedules table (see the counter written in
+  // /schedule/[id]/do). Falls back to recency (the order the API already
+  // returns) for anything with no recorded opens yet.
+  const [openCounts, setOpenCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("vs_open_counts");
+      if (raw) setOpenCounts(JSON.parse(raw));
+    } catch {}
+  }, []);
+  const mostUsed = useMemo(
+    () => [...localSchedules].sort((a, b) => (openCounts[b.id] || 0) - (openCounts[a.id] || 0)),
+    [localSchedules, openCounts]
+  );
+
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.reload();
@@ -391,7 +407,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
               Create simple visual schedules in under a minute.
             </p>
             <button
-              onClick={() => router.push("/schedule/new")}
+              onClick={() => router.push("/schedule")}
               className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2"
               style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
             >
@@ -399,7 +415,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
             </button>
 
             <div className="flex items-center justify-between mt-7 mb-2">
-              <span className="font-bold text-[15px]" style={{ color: INK }}>My Schedules</span>
+              <span className="font-bold text-[15px]" style={{ color: INK }}>Most Used</span>
               {localSchedules.length > 3 && (
                 <button onClick={() => setTab("library")} className="text-[13px] font-semibold" style={{ color: GREEN }}>See all</button>
               )}
@@ -420,7 +436,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
               </div>
             ) : (
               <div className="space-y-2.5">
-                {localSchedules.slice(0, 3).map((s) => (
+                {mostUsed.slice(0, 3).map((s) => (
                   <ScheduleRow key={s.id} s={s} menuOpen={menuFor === s.id}
                     onOpen={() => router.push(`/schedule/${s.id}/do`)}
                     onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
@@ -482,7 +498,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
           <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={tab === "home" ? GREEN : FAINT} strokeWidth={tab === "home" ? 2.4 : 1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg>
           <span className="text-[10px] font-semibold" style={{ color: tab === "home" ? GREEN : FAINT }}>Home</span>
         </button>
-        <button onClick={() => router.push("/schedule/new")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
+        <button onClick={() => router.push("/schedule")} className="flex-1 py-2.5 flex flex-col items-center gap-1">
           <svg className="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2" /><rect x="14" y="3" width="7" height="7" rx="1.2" /><rect x="3" y="14" width="7" height="7" rx="1.2" /><rect x="14" y="14" width="7" height="7" rx="1.2" /></svg>
           <span className="text-[10px] font-semibold" style={{ color: FAINT }}>Templates</span>
         </button>
