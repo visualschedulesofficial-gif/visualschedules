@@ -3,6 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
+import {
+  getRuntimeCards,
+  setRuntimeCards,
+  setCardImages as setCardImagesGlobal,
+  setLabelOverrides,
+  getCardImageUrl,
+  findCard,
+  type ParsedCard,
+} from "@/lib/card-data";
 
 interface User {
   id: string;
@@ -15,6 +24,7 @@ interface Schedule {
   title: string;
   scheduleType: string;
   updatedAt: string;
+  coverCardId: string | null;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -335,6 +345,30 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   const [localSchedules, setLocalSchedules] = useState(schedules);
   useEffect(() => setLocalSchedules(schedules), [schedules]);
 
+  // Loaded once so ScheduleRow can resolve each schedule's first-card
+  // thumbnail via findCard/getCardImageUrl below.
+  const [cardsLoaded, setCardsLoaded] = useState(false);
+  useEffect(() => {
+    fetch("/api/cards")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.cards?.length > 0) {
+          const cleaned = data.cards.map((c: ParsedCard) => ({
+            ...c,
+            isFree: !(c.icon || "").startsWith("paid:"),
+            icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
+          }));
+          setRuntimeCards(cleaned);
+        }
+        setCardsLoaded(true);
+      })
+      .catch(() => setCardsLoaded(true));
+    fetch("/api/cards/images")
+      .then((r) => r.json())
+      .then((data) => { if (data.images) setCardImagesGlobal(data.images); if (data.labels) setLabelOverrides(data.labels); })
+      .catch(() => {});
+  }, []);
+
   // "Most used" — approximated per-device since there's no usage-count
   // column in the schedules table (see the counter written in
   // /schedule/[id]/do). Falls back to recency (the order the API already
@@ -554,10 +588,19 @@ function MobileHome({ user, schedules, loading, onDelete }: {
 function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete }: {
   s: Schedule; menuOpen: boolean; onOpen: () => void; onMenu: () => void; onRename: () => void; onDelete: () => void;
 }) {
+  const card = s.coverCardId ? findCard(s.coverCardId) : undefined;
+  const thumb = card ? (getCardImageUrl(card.id, "neutral") || null) : null;
   return (
     <div className="relative flex items-center gap-3 p-3 rounded-2xl" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
       <button onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-        <ScheduleIcon />
+        {thumb ? (
+          <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: GREEN_SOFT }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={thumb} alt="" className="w-full h-full object-contain" />
+          </div>
+        ) : (
+          <ScheduleIcon />
+        )}
         <div className="flex-1 min-w-0">
           <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{s.title || "Untitled Schedule"}</div>
           <div className="text-[12px]" style={{ color: SUB }}>{TYPE_LABELS[s.scheduleType] || s.scheduleType} · {timeAgo(s.updatedAt)}</div>
