@@ -58,6 +58,31 @@ const INK = "#1E2A24";
 const SUB = "#6C7A72";
 const BORDER = "#E6EBE6";
 
+// Simple drawn face per character option — teal/green like the rest of the
+// app, with just enough difference (hair shape, or a warmer skin tone for
+// "brown") to tell them apart at a glance. Never wrong, unlike pulling an
+// image off whatever card in the library happened to be flagged "character."
+function FaceIcon({ variant }: { variant: Gender }) {
+  const skin = variant === "brown" ? "#B98255" : GREEN;
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="13" r="7" fill={skin} fillOpacity="0.18" stroke={skin} strokeWidth="1.6" />
+      <circle cx="9.3" cy="12.5" r="1" fill={skin} />
+      <circle cx="14.7" cy="12.5" r="1" fill={skin} />
+      <path d="M9.5 16c.8.7 1.6 1 2.5 1s1.7-.3 2.5-1" stroke={skin} strokeWidth="1.4" strokeLinecap="round" />
+      {variant === "boy" && <path d="M5.5 9.5C6.5 6.5 9 5 12 5s5.5 1.5 6.5 4.5" stroke={skin} strokeWidth="1.6" strokeLinecap="round" fill="none" />}
+      {variant === "girl" && (
+        <>
+          <path d="M5.5 9C6.5 5.8 9 4.3 12 4.3S17.5 5.8 18.5 9" stroke={skin} strokeWidth="1.6" strokeLinecap="round" fill="none" />
+          <circle cx="5.6" cy="11.5" r="1.5" fill={skin} fillOpacity="0.35" />
+          <circle cx="18.4" cy="11.5" r="1.5" fill={skin} fillOpacity="0.35" />
+        </>
+      )}
+      {variant === "brown" && <path d="M5.5 9.5C6.5 6.5 9 5 12 5s5.5 1.5 6.5 4.5" stroke={skin} strokeWidth="1.6" strokeLinecap="round" fill="none" />}
+    </svg>
+  );
+}
+
 function SectionLabel({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="flex items-end justify-between gap-2 mb-2">
@@ -226,6 +251,7 @@ export function MobileScheduleBuilder({
   }, [scheduleType]);
 
   const [orgBanner, setOrgBanner] = useState<{ name: string; code: string } | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   useEffect(() => {
     fetch("/api/me/org")
       .then((r) => r.json())
@@ -297,7 +323,6 @@ export function MobileScheduleBuilder({
   }, [showCharacters]);
 
   const isLockedCard = (card: ParsedCard) => (card as any).isFree === false && !hasSubscription;
-  const faceCard = useMemo(() => cards.find((c) => isCharacterCard(c)) || null, [cards]);
 
   const placedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -352,6 +377,14 @@ export function MobileScheduleBuilder({
     return crypto.randomUUID();
   });
   const [saved, setSaved] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(d?.user?.role === "admin"))
+      .catch(() => {});
+  }, []);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const mountedRef = useRef(false);
@@ -400,6 +433,7 @@ export function MobileScheduleBuilder({
           title, scheduleType, language, gender, gridCols,
           weekMode: "week", cardStyle: "white",
           data: { pages },
+          isTemplate: isAdmin && saveAsTemplate,
         }),
       });
       const data = await res.json();
@@ -431,27 +465,34 @@ export function MobileScheduleBuilder({
 
   return (
     <div className="px-4 pb-24 pt-3 min-h-full" style={{ background: "#F5F8F5" }}>
-      {orgBanner && (
+      {orgBanner && !bannerDismissed && (
         <div className="flex items-center justify-between gap-2 rounded-2xl px-3 py-2 mb-3" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
           <span className="text-[12px]" style={{ color: GREEN_DARK }}>
             Branding: <span className="font-semibold">{orgBanner.name}</span> (code {orgBanner.code})
           </span>
-          <button onClick={leaveOrgCode} className="text-[12px] font-semibold underline shrink-0" style={{ color: "#C53030" }}>
-            Not you? Leave
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button onClick={leaveOrgCode} className="text-[12px] font-semibold underline" style={{ color: "#C53030" }}>
+              Not you? Leave
+            </button>
+            <button onClick={() => setBannerDismissed(true)} aria-label="Dismiss">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={GREEN_DARK} strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          </div>
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🌱</span>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" /></svg>
+          </div>
           <h1 className="font-bold text-[17px]" style={{ color: INK }}>Visual Schedule</h1>
         </div>
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value as Language)}
-          className="py-1.5 px-2.5 bg-white text-[13px] rounded-xl shrink-0"
+          className="py-1.5 px-2.5 bg-white text-[13px] rounded-lg shrink-0"
           style={{ border: `1px solid ${BORDER}`, color: INK }}
           aria-label="Language"
         >
@@ -472,78 +513,68 @@ export function MobileScheduleBuilder({
         aria-label="Schedule name"
       />
 
-      {/* 1 · Type — a dropdown, above the canvas */}
-      <section>
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-semibold" style={{ color: INK }}>Schedule type</span>
-          <select
-            value={scheduleType}
-            onChange={(e) => {
-              const next = e.target.value as ScheduleType;
-              if (next !== scheduleType && placedIds.size > 0 &&
-                  !window.confirm("Changing type clears the cards you've added. Continue?")) return;
-              setScheduleType(next);
-            }}
-            className="py-1.5 px-2.5 bg-white text-[13px] font-semibold rounded-xl"
-            style={{ border: `1px solid ${BORDER}`, color: INK }}
-          >
-            {TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-          </select>
-        </div>
+      {/* 1 · Type + card count — one compact row */}
+      <section className="flex gap-2.5">
+        <select
+          value={scheduleType}
+          onChange={(e) => {
+            const next = e.target.value as ScheduleType;
+            if (next !== scheduleType && placedIds.size > 0 &&
+                !window.confirm("Changing type clears the cards you've added. Continue?")) return;
+            setScheduleType(next);
+          }}
+          className="flex-1 min-w-0 py-1.5 px-2.5 bg-white text-[13px] font-semibold rounded-lg"
+          style={{ border: `1px solid ${BORDER}`, color: INK }}
+          aria-label="Schedule type"
+        >
+          {TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+        </select>
+
+        {(scheduleType === "mini" || scheduleType === "daily") && (
+          scheduleType === "mini" ? (
+            <select
+              value={miniCardCount}
+              onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)}
+              className="flex-1 min-w-0 py-1.5 px-2.5 bg-white text-[13px] font-semibold rounded-lg"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+              aria-label="Number of cards"
+            >
+              {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} cards</option>)}
+            </select>
+          ) : (
+            <select
+              value={gridCols}
+              onChange={(e) => setGridCols(Number(e.target.value) as 2 | 3 | 4)}
+              className="flex-1 min-w-0 py-1.5 px-2.5 bg-white text-[13px] font-semibold rounded-lg"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+              aria-label="Number of cards"
+            >
+              {([2, 3, 4] as const).map((c) => <option key={c} value={c}>{GRID_SPECS[c].slots} cards</option>)}
+            </select>
+          )
+        )}
       </section>
 
-      {/* 2 · Card count — only where the store has an adjustable count.
-          My Schedule → miniCardCount (2-5), default 3. Daily → gridCols,
-          shown as its slot count (6/12/24), default 3 cols → 12 cards.
-          First/Then and I Want have fixed structural capacities, so no
-          dropdown for those. */}
-      {(scheduleType === "mini" || scheduleType === "daily") && (
-        <section className="mt-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold" style={{ color: INK }}>Number of cards</span>
-            {scheduleType === "mini" ? (
-              <select
-                value={miniCardCount}
-                onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)}
-                className="py-1.5 px-2.5 bg-white text-[13px] rounded-xl"
-                style={{ border: `1px solid ${BORDER}`, color: INK }}
-              >
-                {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} cards</option>)}
-              </select>
-            ) : (
-              <select
-                value={gridCols}
-                onChange={(e) => setGridCols(Number(e.target.value) as 2 | 3 | 4)}
-                className="py-1.5 px-2.5 bg-white text-[13px] rounded-xl"
-                style={{ border: `1px solid ${BORDER}`, color: INK }}
-              >
-                {([2, 3, 4] as const).map((c) => <option key={c} value={c}>{GRID_SPECS[c].slots} cards</option>)}
-              </select>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* 3 · Character — just the 4 faces, sitting directly above the canvas */}
+      {/* 3 · Character — simple guaranteed-correct face icons, not card art.
+          These used to pull an image from whatever card in the library was
+          flagged as a "character" card — but that depends entirely on your
+          card data being right, and it wasn't: it was showing unrelated
+          card art instead of faces. A small drawn icon can't be wrong. */}
       {showCharacters && (
         <div className="flex gap-2 mt-3">
           {CHARACTER_OPTIONS.map((o) => {
             const active = gender === o.value;
-            const faceImg = faceCard ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral") : null;
             return (
               <button
                 key={o.value}
                 onClick={() => setGender(o.value)}
                 aria-label={o.label}
                 className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                style={active ? { border: `2.5px solid ${GREEN}` } : { border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
+                style={active
+                  ? { background: GREEN_SOFT, border: `2.5px solid ${GREEN}` }
+                  : { background: GREEN_SOFT, border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
               >
-                {faceImg ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
-                ) : (
-                  <span className="text-[13px] font-semibold" style={{ color: SUB }}>{o.label[0]}</span>
-                )}
+                <FaceIcon variant={o.value} />
               </button>
             );
           })}
@@ -565,6 +596,19 @@ export function MobileScheduleBuilder({
         </div>
       </section>
 
+      {isAdmin && !saved && (
+        <label className="flex items-center gap-2.5 mt-4 p-3 rounded-2xl" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
+          <input
+            type="checkbox"
+            checked={saveAsTemplate}
+            onChange={(e) => setSaveAsTemplate(e.target.checked)}
+            className="w-[18px] h-[18px] shrink-0"
+            style={{ accentColor: GREEN }}
+          />
+          <span className="text-[13px] font-semibold" style={{ color: GREEN_DARK }}>Save as a template for everyone (Admin)</span>
+        </label>
+      )}
+
       {/* 5 · Save, then Download once it's actually saved */}
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3" style={{ background: "linear-gradient(to top, #F5F8F5 60%, transparent)" }}>
         {saveError && <p className="text-[12px] text-center mb-2" style={{ color: "#DC4C4C" }}>{saveError}</p>}
@@ -574,7 +618,7 @@ export function MobileScheduleBuilder({
           className="w-full py-3.5 rounded-2xl text-white text-[15px] font-bold disabled:opacity-60"
           style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
         >
-          {saving ? "Saving…" : saved ? "Download" : "Save"}
+          {saving ? "Saving…" : saved ? "Download" : (isAdmin && saveAsTemplate ? "Save as Template" : "Save")}
         </button>
       </div>
 
@@ -644,21 +688,17 @@ export function MobileScheduleBuilder({
               <div className="flex gap-2 mb-3">
                 {CHARACTER_OPTIONS.map((o) => {
                   const active = gender === o.value;
-                  const faceImg = faceCard ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral") : null;
                   return (
                     <button
                       key={o.value}
                       onClick={() => setGender(o.value)}
                       aria-label={o.label}
                       className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                      style={active ? { border: `2.5px solid ${GREEN}` } : { border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
+                      style={active
+                        ? { background: GREEN_SOFT, border: `2.5px solid ${GREEN}` }
+                        : { background: GREEN_SOFT, border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
                     >
-                      {faceImg ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
-                      ) : (
-                        <span className="text-[13px] font-semibold" style={{ color: SUB }}>{o.label[0]}</span>
-                      )}
+                      <FaceIcon variant={o.value} />
                     </button>
                   );
                 })}
