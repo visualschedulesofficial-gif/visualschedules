@@ -446,7 +446,8 @@ export function MobileScheduleBuilder({
         </div>
       )}
 
-      {/* 4 · Your schedule — the canvas, with one clear + to add a step */}
+      {/* 4 · Your schedule — a real green + inside each empty card now,
+          not one floating button on the corner */}
       <section className="mt-3">
         <SectionLabel right={totalSlots > 0 ? <span className="text-[12px]" style={{ color: SUB }}>{placedCount}/{totalSlots} added</span> : undefined}>
           Your schedule
@@ -454,19 +455,9 @@ export function MobileScheduleBuilder({
         <div className="relative">
           <div className={exporting ? "w-full" : "w-full overflow-hidden rounded-2xl bg-white"} style={exporting ? undefined : { border: `1px solid ${BORDER}` }}>
             <div style={{ zoom: exporting ? 1 : zoom }}>
-              <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+              <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} onEmptySlotTap={() => setShowAddStep(true)} />
             </div>
           </div>
-          {(totalSlots === 0 || placedCount < totalSlots) && (
-            <button
-              onClick={() => setShowAddStep(true)}
-              className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl font-bold z-10"
-              style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.35)" }}
-              aria-label="Add step"
-            >
-              +
-            </button>
-          )}
         </div>
       </section>
 
