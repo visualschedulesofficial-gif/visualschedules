@@ -82,7 +82,7 @@ export default function ScheduleBuilder() {
   const [cardsLoaded, setCardsLoaded] = useState(false);
   // Mobile gets its own linear layout; desktop keeps the three-panel one.
   // Only one renders at a time so the exporter always finds a single canvas.
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
   // Landscape pages (1123px) are wider than the center column — scale to fit.
   // Measure the stable #canvas-wrap main (the wrapper around children is
   // shrink-to-fit, so measuring it would collapse to zero).
@@ -324,7 +324,7 @@ export default function ScheduleBuilder() {
          {fullNotice}
        </div>
      )}
-     {orgBanner && (
+     {orgBanner && !isMobile && (
        <div className="shrink-0 flex items-center justify-center gap-2 bg-accent-soft border-b border-weekly-accent px-4 py-1.5">
          <span className="text-[12px] text-accent-strong font-sans">
            Branding this schedule as: <span className="font-semibold">{orgBanner.name}</span> (code {orgBanner.code})
