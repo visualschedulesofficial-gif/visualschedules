@@ -446,7 +446,7 @@ function MobileLogin(props: {
                 <button onClick={() => setLoginMode("email")} className="flex-1 py-2 rounded-xl text-[13px] font-bold transition"
                   style={loginMode === "email" ? { background: GREEN, color: "#fff" } : { color: SUB }}>Email</button>
                 <button onClick={() => setLoginMode("code")} className="flex-1 py-2 rounded-xl text-[13px] font-bold transition"
-                  style={loginMode === "code" ? { background: GREEN, color: "#fff" } : { color: SUB }}>Coupon Code</button>
+                  style={loginMode === "code" ? { background: GREEN, color: "#fff" } : { color: SUB }}>Free Access Code</button>
               </div>
 
               {loginMode === "email" && (
@@ -470,7 +470,7 @@ function MobileLogin(props: {
 
               {loginMode === "code" && (
                 <div>
-                  <p className="text-[13px] mb-4" style={{ color: SUB }}>Enter a coupon or centre access code to sign in.</p>
+                  <p className="text-[13px] mb-4" style={{ color: SUB }}>No email needed — enter a free access or centre code to get in.</p>
                   <input value={orgCode} onChange={(e) => setOrgCode(e.target.value.toUpperCase())} placeholder="e.g. SUNSHINE24"
                     className="w-full px-4 py-3 rounded-xl text-[15px] tracking-widest outline-none mb-4" style={inputStyle} />
                   <button onClick={redeemOrgCode} disabled={orgBusy || !orgCode.trim()}
