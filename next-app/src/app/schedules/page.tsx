@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 
 interface User {
   id: string;
-  email: string;
+  email: string | null;
   role: string;
 }
 
@@ -465,7 +465,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
           {user ? (
             <>
               <div className="rounded-2xl p-4 mb-4" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
-                <div className="font-bold text-[14px]" style={{ color: INK }}>{user.email}</div>
+                <div className="font-bold text-[14px]" style={{ color: INK }}>{user.email || "Signed in via center code"}</div>
                 <div className="text-[12px] mt-0.5" style={{ color: SUB }}>Signed in</div>
               </div>
               <button onClick={signOut} className="w-full py-3 rounded-2xl font-bold text-[14px]" style={{ background: "#fff", color: SUB, border: `1px solid ${BORDER}` }}>Sign Out</button>
