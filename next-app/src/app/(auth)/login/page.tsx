@@ -7,10 +7,10 @@ import { useSearchParams } from "next/navigation";
 type Step = "email" | "otp" | "done";
 type Mode = "user" | "admin";
 
-const GREEN = "#2E9E6A";
-const GREEN_DARK = "#24845A";
-const GREEN_SOFT = "#E9F6EF";
-const GREEN_BORDER = "#BFE3CF";
+const GREEN = "#4A5A3E";
+const GREEN_DARK = "#3A4830";
+const GREEN_SOFT = "#EAF1E2";
+const GREEN_BORDER = "#C7D4B8";
 const INK = "#1E2A24";
 const SUB = "#6C7A72";
 const BORDER = "#E6EBE6";
@@ -457,7 +457,7 @@ function MobileLogin(props: {
                   {error && <p className="text-[12px] mb-3" style={{ color: "#DC4C4C" }}>{error}</p>}
                   <button type="submit" disabled={loading}
                     className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
-                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}>
+                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}>
                     {loading ? "Sending…" : "Send code"}
                   </button>
                   <p className="text-[11px] text-center mt-3 leading-relaxed" style={{ color: "#9AA69E" }}>
@@ -475,7 +475,7 @@ function MobileLogin(props: {
                     className="w-full px-4 py-3 rounded-xl text-[15px] tracking-widest outline-none mb-4" style={inputStyle} />
                   <button onClick={redeemOrgCode} disabled={orgBusy || !orgCode.trim()}
                     className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
-                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}>
+                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}>
                     {orgBusy ? "…" : "Apply code"}
                   </button>
                   {orgMsg && (
@@ -505,7 +505,7 @@ function MobileLogin(props: {
               {error && <p className="text-[12px] mb-3 text-center" style={{ color: "#DC4C4C" }}>{error}</p>}
               <button type="submit" disabled={loading || otp.length < 6}
                 className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
-                style={{ background: GREEN, boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}>
+                style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}>
                 {loading ? "Verifying…" : "Verify Code"}
               </button>
               <button type="button" onClick={() => { setStep("email"); setOtp(""); setError(""); }}
