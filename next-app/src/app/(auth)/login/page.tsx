@@ -483,14 +483,6 @@ function MobileLogin(props: {
                   )}
                 </div>
               )}
-
-              <div className="mt-5 pt-5 text-center" style={{ borderTop: `1px solid ${BORDER}` }}>
-                <p className="text-[12px] mb-2" style={{ color: SUB }}>No account needed for free cards</p>
-                <Link href="/schedule/new" className="block w-full text-center py-3 rounded-2xl font-bold text-[14px] no-underline"
-                  style={{ background: "#fff", color: GREEN_DARK, border: `1.5px solid ${GREEN}` }}>
-                  Create free schedule →
-                </Link>
-              </div>
             </>
           )}
 
