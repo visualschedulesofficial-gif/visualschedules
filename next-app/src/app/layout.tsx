@@ -1,6 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#2E9E6A",
+};
 
 export const metadata: Metadata = {
   title: "Visual Schedules — Grow Gently",
@@ -27,6 +34,15 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/site.webmanifest",
+  appleWebApp: {
+    // The piece iOS actually needs — without this, "Add to Home Screen"
+    // still opens inside Safari with the address bar, even though the
+    // manifest already says display: standalone. Android reads the
+    // manifest directly and doesn't need this.
+    capable: true,
+    statusBarStyle: "default",
+    title: "Visual Schedule",
+  },
 };
 
 export default function RootLayout({
