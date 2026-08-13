@@ -13,7 +13,7 @@
 // useExport). Nothing here is placeholder.
 
 import { useState, useEffect, useMemo } from "react";
-import { LANGUAGES, type Language, type Gender, type ScheduleType } from "@/lib/constants";
+import { LANGUAGES, GRID_SPECS, type Language, type Gender, type ScheduleType } from "@/lib/constants";
 import {
   CATEGORIES,
   ALL_CARDS,
@@ -192,6 +192,9 @@ export function MobileScheduleBuilder({
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const setScheduleType = useScheduleState((s) => s.setScheduleType);
   const miniCardCount = useScheduleState((s) => s.miniCardCount);
+  const setMiniCardCount = useScheduleState((s) => s.setMiniCardCount);
+  const gridCols = useScheduleState((s) => s.gridCols);
+  const setGridCols = useScheduleState((s) => s.setGridCols);
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
   const pages = useScheduleState((s) => s.pages);
@@ -271,10 +274,6 @@ export function MobileScheduleBuilder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, adminCatNames]);
 
-  // Category filter — "All" plus one chip per non-empty category.
-  const [activeCat, setActiveCat] = useState<string>("all");
-  const visibleGroups = activeCat === "all" ? groupedCategories : groupedCategories.filter((g) => g.id === activeCat);
-
   const showCharacters = useMemo(() => cards.some((c) => isCharacterCard(c)), [cards]);
   useEffect(() => {
     if (!showCharacters && gender !== "neutral") setGender("neutral");
@@ -316,13 +315,14 @@ export function MobileScheduleBuilder({
 
   useEffect(() => {
     if (initialStep === "cards") {
-      const el = document.getElementById("visuals-section");
-      if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+      setTimeout(() => setShowAddStep(true), 300);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [showDownload, setShowDownload] = useState(false);
+  const [showAddStep, setShowAddStep] = useState(false);
+  const [addStepCat, setAddStepCat] = useState<string>("all");
 
   if (loading) {
     return (
@@ -364,20 +364,8 @@ export function MobileScheduleBuilder({
         </select>
       </div>
 
-      {/* 1 · Your schedule so far */}
+      {/* 1 · Type — above the canvas, per your note */}
       <section>
-        <SectionLabel right={totalSlots > 0 ? <span className="text-[12px]" style={{ color: SUB }}>{placedCount}/{totalSlots} added</span> : undefined}>
-          Your schedule
-        </SectionLabel>
-        <div className={exporting ? "w-full" : "w-full overflow-hidden rounded-2xl bg-white"} style={exporting ? undefined : { border: `1px solid ${BORDER}` }}>
-          <div style={{ zoom: exporting ? 1 : zoom }}>
-            <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
-          </div>
-        </div>
-      </section>
-
-      {/* 2 · Type */}
-      <section className="mt-5">
         <SectionLabel>Schedule type</SectionLabel>
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
           {TYPES.map((t) => {
@@ -400,77 +388,86 @@ export function MobileScheduleBuilder({
         </div>
       </section>
 
-      {/* 3 · Character selector */}
-      {showCharacters && (
-        <section className="mt-5">
-          <SectionLabel right={<span className="text-[11px]" style={{ color: SUB }}>Set default in Profile</span>}>Character</SectionLabel>
-          <div className="flex gap-2">
-            {CHARACTER_OPTIONS.map((o) => {
-              const active = gender === o.value;
-              const faceImg = faceCard ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral") : null;
-              return (
-                <button
-                  key={o.value}
-                  onClick={() => setGender(o.value)}
-                  className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl active:scale-95 transition-transform"
-                  style={active ? { background: GREEN_SOFT, border: `1.5px solid ${GREEN}` } : { background: "#fff", border: `1px solid ${BORDER}` }}
-                >
-                  <span className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center" style={{ background: GREEN_SOFT }}>
-                    {faceImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
-                    ) : (
-                      <span className="text-[12px]" style={{ color: SUB }}>{o.label[0]}</span>
-                    )}
-                  </span>
-                  <span className="text-[11px] font-semibold" style={{ color: active ? GREEN_DARK : SUB }}>{o.label}</span>
-                </button>
-              );
-            })}
+      {/* 2 · Card count — only where the store has an adjustable count.
+          My Schedule → miniCardCount (2-5), default 3. Daily → gridCols,
+          shown as its slot count (6/12/24), default 3 cols → 12 cards.
+          First/Then and I Want have fixed structural capacities, so no
+          dropdown for those. */}
+      {(scheduleType === "mini" || scheduleType === "daily") && (
+        <section className="mt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-semibold" style={{ color: INK }}>Number of cards</span>
+            {scheduleType === "mini" ? (
+              <select
+                value={miniCardCount}
+                onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)}
+                className="py-1.5 px-2.5 bg-white text-[13px] rounded-xl"
+                style={{ border: `1px solid ${BORDER}`, color: INK }}
+              >
+                {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} cards</option>)}
+              </select>
+            ) : (
+              <select
+                value={gridCols}
+                onChange={(e) => setGridCols(Number(e.target.value) as 2 | 3 | 4)}
+                className="py-1.5 px-2.5 bg-white text-[13px] rounded-xl"
+                style={{ border: `1px solid ${BORDER}`, color: INK }}
+              >
+                {([2, 3, 4] as const).map((c) => <option key={c} value={c}>{GRID_SPECS[c].slots} cards</option>)}
+              </select>
+            )}
           </div>
         </section>
       )}
 
-      {/* 4 · Visuals, category-filtered */}
-      <section id="visuals-section" className="mt-5">
-        <SectionLabel>Add steps <span className="font-medium" style={{ color: SUB }}>· tap a card</span></SectionLabel>
-
-        {groupedCategories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-            <button
-              onClick={() => setActiveCat("all")}
-              className="px-3.5 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap"
-              style={activeCat === "all" ? { background: GREEN, color: "#fff" } : { background: "#fff", color: SUB, border: `1px solid ${BORDER}` }}
-            >All</button>
-            {groupedCategories.map((g) => (
+      {/* 3 · Character — just the 4 faces, sitting directly above the canvas */}
+      {showCharacters && (
+        <div className="flex gap-2 mt-3">
+          {CHARACTER_OPTIONS.map((o) => {
+            const active = gender === o.value;
+            const faceImg = faceCard ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral") : null;
+            return (
               <button
-                key={g.id}
-                onClick={() => setActiveCat(g.id)}
-                className="px-3.5 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap"
-                style={activeCat === g.id ? { background: GREEN, color: "#fff" } : { background: "#fff", color: SUB, border: `1px solid ${BORDER}` }}
-              >{g.name}</button>
-            ))}
-          </div>
-        )}
+                key={o.value}
+                onClick={() => setGender(o.value)}
+                aria-label={o.label}
+                className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                style={active ? { border: `2.5px solid ${GREEN}` } : { border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
+              >
+                {faceImg ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                ) : (
+                  <span className="text-[13px] font-semibold" style={{ color: SUB }}>{o.label[0]}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-        {visibleGroups.length === 0 ? (
-          <p className="text-[12px] py-3" style={{ color: SUB }}>No cards available yet.</p>
-        ) : (
-          <div className="space-y-4 mt-1">
-            {visibleGroups.map((g) => (
-              <CategoryRow
-                key={g.id}
-                name={g.name}
-                cards={g.cards}
-                language={language}
-                gender={gender}
-                placedIds={placedIds}
-                isLockedCard={isLockedCard}
-                onAddCard={onAddCard}
-              />
-            ))}
+      {/* 4 · Your schedule — the canvas, with one clear + to add a step */}
+      <section className="mt-3">
+        <SectionLabel right={totalSlots > 0 ? <span className="text-[12px]" style={{ color: SUB }}>{placedCount}/{totalSlots} added</span> : undefined}>
+          Your schedule
+        </SectionLabel>
+        <div className="relative">
+          <div className={exporting ? "w-full" : "w-full overflow-hidden rounded-2xl bg-white"} style={exporting ? undefined : { border: `1px solid ${BORDER}` }}>
+            <div style={{ zoom: exporting ? 1 : zoom }}>
+              <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+            </div>
           </div>
-        )}
+          {(totalSlots === 0 || placedCount < totalSlots) && (
+            <button
+              onClick={() => setShowAddStep(true)}
+              className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl font-bold z-10"
+              style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.35)" }}
+              aria-label="Add step"
+            >
+              +
+            </button>
+          )}
+        </div>
       </section>
 
       {/* 5 · Create — sticky */}
@@ -530,6 +527,81 @@ export function MobileScheduleBuilder({
             </div>
 
             <button onClick={() => setShowDownload(false)} className="w-full py-2.5 text-[13px] font-semibold" style={{ color: SUB }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Add Step — opened by the + on the canvas. Category as a dropdown
+          and the 4 character faces up top, per your note. */}
+      {showAddStep && (
+        <div className="fixed inset-0 z-[300] flex flex-col" style={{ background: "#F5F8F5" }}>
+          <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ background: "#fff", borderBottom: `1px solid ${BORDER}` }}>
+            <span className="font-bold text-[16px]" style={{ color: INK }}>Add Step</span>
+            <button onClick={() => setShowAddStep(false)} aria-label="Close" className="w-8 h-8 flex items-center justify-center">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          </div>
+
+          <div className="px-4 pt-3">
+            {showCharacters && (
+              <div className="flex gap-2 mb-3">
+                {CHARACTER_OPTIONS.map((o) => {
+                  const active = gender === o.value;
+                  const faceImg = faceCard ? getCardImageUrl(faceCard.id, o.value) || getCardImageUrl(faceCard.id, "neutral") : null;
+                  return (
+                    <button
+                      key={o.value}
+                      onClick={() => setGender(o.value)}
+                      aria-label={o.label}
+                      className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                      style={active ? { border: `2.5px solid ${GREEN}` } : { border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
+                    >
+                      {faceImg ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={faceImg} alt={o.label} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                      ) : (
+                        <span className="text-[13px] font-semibold" style={{ color: SUB }}>{o.label[0]}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <select
+              value={addStepCat}
+              onChange={(e) => setAddStepCat(e.target.value)}
+              className="w-full py-2.5 px-3 bg-white text-[14px] font-semibold rounded-xl mb-3"
+              style={{ border: `1px solid ${BORDER}`, color: INK }}
+            >
+              <option value="all">All categories</option>
+              {groupedCategories.map((g) => (
+                <option key={g.id} value={g.id}>{g.name} ({g.cards.length})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 pb-6">
+            {(() => {
+              const groups = addStepCat === "all" ? groupedCategories : groupedCategories.filter((g) => g.id === addStepCat);
+              if (groups.length === 0) return <p className="text-[12px] py-3" style={{ color: SUB }}>No cards available yet.</p>;
+              return (
+                <div className="space-y-4">
+                  {groups.map((g) => (
+                    <CategoryRow
+                      key={g.id}
+                      name={g.name}
+                      cards={g.cards}
+                      language={language}
+                      gender={gender}
+                      placedIds={placedIds}
+                      isLockedCard={isLockedCard}
+                      onAddCard={onAddCard}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
