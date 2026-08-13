@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { A11yBar } from "./A11yBar";
 import { TopNav } from "./TopNav";
 import { MobileDrawer } from "./MobileDrawer";
@@ -14,6 +14,22 @@ interface AppShellProps {
 export function AppShell({ sidebar, rightPanel, children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
+
+  // TopNav has its own "mobile" rendering (a compact Create/Schedules/Blog/
+  // My Space tab bar), but that's still website chrome layered on top of
+  // the mobile builder's own header below — not what an app-feeling mobile
+  // experience wants. Hide TopNav entirely on mobile rather than let it
+  // render its compact variant; nothing downstream depends on it (the
+  // mobile call site below never passes sidebar/rightPanel, so TopNav's
+  // hamburger toggles have nothing to control here anyway).
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const closeAll = useCallback(() => {
     setSidebarOpen(false);
@@ -33,17 +49,19 @@ export function AppShell({ sidebar, rightPanel, children }: AppShellProps) {
         <A11yBar />
       </div>
 
-      <TopNav
-        showBuilderControls={!!(sidebar || rightPanel)}
-        onToggleSidebar={() => {
-          setRightPanelOpen(false);
-          setSidebarOpen((v) => !v);
-        }}
-        onToggleRightPanel={() => {
-          setSidebarOpen(false);
-          setRightPanelOpen((v) => !v);
-        }}
-      />
+      {!isMobile && (
+        <TopNav
+          showBuilderControls={!!(sidebar || rightPanel)}
+          onToggleSidebar={() => {
+            setRightPanelOpen(false);
+            setSidebarOpen((v) => !v);
+          }}
+          onToggleRightPanel={() => {
+            setSidebarOpen(false);
+            setRightPanelOpen((v) => !v);
+          }}
+        />
+      )}
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Desktop sidebar */}
