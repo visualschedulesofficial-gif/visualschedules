@@ -10,6 +10,7 @@ const navItems = [
   { group: "Content", items: [
     { href: "/admin/cards", label: "Schedule Cards", icon: "M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM3 9h18M9 21V9" },
     { href: "/admin/categories", label: "Categories", icon: "M4 6h16M4 12h10M4 18h14" },
+    { href: "/admin/templates", label: "Templates", icon: "M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4" },
     { href: "/admin/languages", label: "Languages", icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z" },
   ]},
   { group: "Business", items: [
