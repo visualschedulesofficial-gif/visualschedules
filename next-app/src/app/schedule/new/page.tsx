@@ -45,10 +45,10 @@ import {
   type ParsedCard,
 } from "@/lib/card-data";
 
-const GREEN = "#2E9E6A";
-const GREEN_DARK = "#24845A";
-const GREEN_SOFT = "#E9F6EF";
-const GREEN_BORDER = "#BFE3CF";
+const GREEN = "#4A5A3E";
+const GREEN_DARK = "#3A4830";
+const GREEN_SOFT = "#EAF1E2";
+const GREEN_BORDER = "#C7D4B8";
 const INK = "#1E2A24";
 const SUB = "#6C7A72";
 const FAINT = "#9AA69E";
@@ -113,7 +113,7 @@ function GreenBtn({ children, onClick, disabled, outline }: { children: React.Re
       className="w-full py-3.5 rounded-2xl font-bold text-[15px] active:opacity-90 transition disabled:opacity-50"
       style={outline
         ? { background: "#fff", color: GREEN, border: `1.5px solid ${GREEN}` }
-        : { background: GREEN, color: "#fff", boxShadow: "0 6px 16px rgba(46,158,106,0.28)" }}
+        : { background: GREEN, color: "#fff", boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
     >
       {children}
     </button>
