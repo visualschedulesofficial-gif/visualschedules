@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 const SESSION_COOKIE = "vs_session";
 const ORG_COOKIE = "vs_org";
 
+export const dynamic = "force-dynamic";
+
 // POST /api/auth/logout — sign out completely.
 //
 // Two fixes over the previous version:
@@ -28,7 +30,10 @@ export async function POST() {
   const cookieStore = await cookies();
   clear(cookieStore, SESSION_COOKIE);
   clear(cookieStore, ORG_COOKIE);
-  return NextResponse.json({ success: true });
+  return NextResponse.json(
+    { success: true },
+    { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } }
+  );
 }
 
 // Allow GET too, so a plain link can sign someone out if a fetch is blocked.
