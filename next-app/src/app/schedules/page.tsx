@@ -102,6 +102,13 @@ export default function SchedulesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkedMobile]);
 
+  async function handleSignOut() {
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
+    // Hard navigation, not reload — guarantees no cached signed-in state
+    // survives and lands the person somewhere sensible.
+    window.location.href = "/login";
+  }
+
   async function handleDelete(id: string, title: string) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     try {
@@ -134,12 +141,23 @@ export default function SchedulesPage() {
         >
           Visual Schedules
         </Link>
-        <Link
-          href="/schedule"
-          className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] bg-ink text-white border border-ink no-underline font-medium font-sans hover:bg-[#333] transition-all"
-        >
-          + New Schedule
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/schedule"
+            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] bg-ink text-white border border-ink no-underline font-medium font-sans hover:bg-[#333] transition-all"
+          >
+            + New Schedule
+          </Link>
+          {/* Desktop had no sign-out at all before — only mobile did. */}
+          {user && (
+            <button
+              onClick={handleSignOut}
+              className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-ink-2 font-medium font-sans hover:border-ink hover:text-ink transition-all"
+            >
+              Sign Out
+            </button>
+          )}
+        </div>
       </nav>
 
       <main className="flex-1 px-4 py-8 max-w-4xl mx-auto w-full">
@@ -383,8 +401,8 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   const recent = localSchedules;
 
   const signOut = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.reload();
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
+    window.location.href = "/login";
   };
 
   // Access code — read current linked centre, apply a new code, or remove it.
