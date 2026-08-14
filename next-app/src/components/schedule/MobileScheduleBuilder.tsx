@@ -379,7 +379,9 @@ export function MobileScheduleBuilder({
       await fn();
       setShowDownload(false);
       setToast(`${what} downloaded — check your Files or Photos.`);
-      setTimeout(() => setToast(null), 4000);
+      // Long enough to read the toast, then back to the home page where the
+      // schedule is now sitting at the top of Recently Added.
+      setTimeout(() => router.push("/schedules"), 2200);
     } catch {
       /* useExport already surfaces its own error */
     }
