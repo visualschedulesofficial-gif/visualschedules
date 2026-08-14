@@ -22,7 +22,7 @@ export function AppShell({ sidebar, rightPanel, children }: AppShellProps) {
   // render its compact variant; nothing downstream depends on it (the
   // mobile call site below never passes sidebar/rightPanel, so TopNav's
   // hamburger toggles have nothing to control here anyway).
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const update = () => setIsMobile(mq.matches);
