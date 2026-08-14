@@ -35,7 +35,7 @@ export function TopNav({
 
   // Read session + subscription on mount
   useEffect(() => {
-    fetch("/api/auth/session")
+    fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         setUser(data.user || null);
