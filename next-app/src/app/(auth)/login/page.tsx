@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-type Step = "email" | "otp" | "access" | "done";
+type Step = "email" | "otp" | "done";
 type Mode = "user" | "admin";
 
 const GREEN = "#4A5A3E";
@@ -82,6 +82,27 @@ function LoginPageInner() {
     setLoading(true);
     setError("");
     try {
+      // Check the access code first — no point emailing a code if theirs is
+      // wrong. Validate-only: it sets no cookies, so nobody gets signed in
+      // on a code alone. It's actually redeemed after the email is verified.
+      if (hasAccessCode) {
+        if (!orgCode.trim()) {
+          setError("Enter your access code, or untick the box.");
+          setLoading(false);
+          return;
+        }
+        const vRes = await fetch("/api/me/org/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: orgCode.trim() }),
+        });
+        const vData = await vRes.json();
+        if (!vRes.ok || !vData.ok) {
+          setError(vData.error || "That access code wasn't recognized.");
+          setLoading(false);
+          return;
+        }
+      }
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -116,10 +137,17 @@ function LoginPageInner() {
         // Signed in. If they said they have an access code, ask for it on
         // its own step — never alongside the emailed code, which was
         // confusing (two different codes on one screen).
-        if (hasAccessCode) {
-          setStep("access");
-          setLoading(false);
-          return;
+        if (hasAccessCode && orgCode.trim()) {
+          // Already validated before the OTP was sent, so this should
+          // succeed; if it somehow doesn't, they're still signed in and can
+          // add it in Profile rather than losing the login.
+          try {
+            await fetch("/api/me/org", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: orgCode.trim() }),
+            });
+          } catch {}
         }
         setStep("done");
         setTimeout(() => { window.location.href = next || (isMobile ? "/schedules" : "/schedule"); }, 800);
@@ -261,6 +289,20 @@ function LoginPageInner() {
                         I have an access code (free subscription)
                       </span>
                     </label>
+                    {hasAccessCode && (
+                      <div className="mb-4">
+                        <input
+                          type="text"
+                          value={orgCode}
+                          onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+                          placeholder="e.g. SUNSHINE24"
+                          className="w-full py-2.5 px-3 border border-input-border bg-surface-hover font-sans text-[15px] tracking-widest uppercase text-ink outline-none focus:border-accent"
+                        />
+                        <p className="text-[11px] text-ink-3 mt-1.5 leading-relaxed">
+                          Unlocks all paid cards and adds your centre&apos;s branding.
+                        </p>
+                      </div>
+                    )}
                     {error && <p className="text-xs text-[#C53030] mb-3">{error}</p>}
                     <button
                       type="submit"
@@ -330,43 +372,6 @@ function LoginPageInner() {
                 </>
               )}
 
-              {step === "access" && (
-                <>
-                  <h1 className="font-serif text-xl italic text-ink mb-1.5">Access code</h1>
-                  <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
-                    You&apos;re signed in. Enter your centre&apos;s access code to unlock all paid
-                    cards and add their branding to saved schedules.
-                  </p>
-                  <form onSubmit={handleRedeemAccessCode}>
-                    <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">
-                      Access Code
-                    </label>
-                    <input
-                      type="text"
-                      value={orgCode}
-                      onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
-                      placeholder="e.g. SUNSHINE24"
-                      autoFocus
-                      className="w-full py-2.5 px-3 border border-input-border bg-surface-hover font-sans text-[15px] tracking-widest uppercase text-ink outline-none focus:border-accent mb-4"
-                    />
-                    {error && <p className="text-xs text-[#C53030] mb-3">{error}</p>}
-                    <button
-                      type="submit"
-                      disabled={loading || !orgCode.trim()}
-                      className="w-full text-[12px] tracking-wider uppercase py-3 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333] transition-all disabled:opacity-50"
-                    >
-                      {loading ? "Checking..." : "Apply Code"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={finish}
-                      className="w-full text-[12px] text-ink-3 mt-2 py-2 hover:text-ink"
-                    >
-                      Skip for now
-                    </button>
-                  </form>
-                </>
-              )}
               {step === "done" && (
                 <div className="text-center py-4">
                   <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-badge-free-bg flex items-center justify-center">
@@ -499,6 +504,20 @@ function MobileLogin(props: {
                     I have an access code (free subscription)
                   </span>
                 </label>
+                  {hasAccessCode && (
+                    <div className="mb-4">
+                      <input
+                        value={orgCode}
+                        onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. SUNSHINE24"
+                        className="w-full px-4 py-3 rounded-xl text-[15px] tracking-widest outline-none"
+                        style={inputStyle}
+                      />
+                      <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: SUB }}>
+                        Unlocks all paid cards and adds your centre&apos;s branding.
+                      </p>
+                    </div>
+                  )}
                 {error && <p className="text-[12px] mb-3" style={{ color: "#DC4C4C" }}>{error}</p>}
                 <button type="submit" disabled={loading}
                   className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
@@ -517,7 +536,7 @@ function MobileLogin(props: {
                   code where to use it instead of leaving them stuck. */}
               <div className="mt-5 p-3 rounded-2xl text-center" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
                 <p className="text-[12px] leading-relaxed" style={{ color: GREEN_DARK }}>
-                  Have an access code from your centre? Tick the box above — we'll ask for it after you sign in.
+                  Access codes come from your therapy centre and unlock all paid cards.
                 </p>
               </div>
             </>
@@ -545,31 +564,6 @@ function MobileLogin(props: {
             </form>
           )}
 
-          {mode === "user" && step === "access" && (
-            <form onSubmit={onRedeemAccessCode}>
-              <p className="text-[13px] mb-4 text-center" style={{ color: SUB }}>
-                You&apos;re signed in. Enter your access code to unlock all paid cards.
-              </p>
-              <input
-                value={orgCode}
-                onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
-                placeholder="e.g. SUNSHINE24"
-                autoFocus
-                className="w-full px-4 py-3 rounded-xl text-[15px] tracking-widest text-center outline-none mb-4"
-                style={inputStyle}
-              />
-              {error && <p className="text-[12px] mb-3 text-center" style={{ color: "#DC4C4C" }}>{error}</p>}
-              <button type="submit" disabled={loading || !orgCode.trim()}
-                className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
-                style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}>
-                {loading ? "Checking…" : "Apply code"}
-              </button>
-              <button type="button" onClick={onSkipAccessCode}
-                className="w-full text-[13px] font-semibold mt-3 py-2" style={{ color: SUB }}>
-                Skip for now
-              </button>
-            </form>
-          )}
           {mode === "user" && step === "done" && (
             <div className="text-center py-4">
               <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: GREEN }}>
