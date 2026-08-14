@@ -68,6 +68,9 @@ export default function TemplatesPage() {
     try {
       const full = await fetch(`/api/templates/${id}`).then((r) => r.json());
       if (!full?.data) { setStartingId(null); return; }
+      // Starting from a template is a NEW schedule — clear any active id so
+      // it doesn't overwrite the last one the builder was editing.
+      sessionStorage.removeItem("vs_active_schedule_id");
       sessionStorage.setItem("vs_draft_mobile_schedule", JSON.stringify({
         title: full.title,
         scheduleType: full.scheduleType,
