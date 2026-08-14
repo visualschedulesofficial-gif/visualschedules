@@ -442,47 +442,31 @@ function MobileLogin(props: {
 
           {mode === "user" && step === "email" && (
             <>
-              <div className="flex rounded-2xl p-1 mb-5" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
-                <button onClick={() => setLoginMode("email")} className="flex-1 py-2 rounded-xl text-[13px] font-bold transition"
-                  style={loginMode === "email" ? { background: GREEN, color: "#fff" } : { color: SUB }}>Email</button>
-                <button onClick={() => setLoginMode("code")} className="flex-1 py-2 rounded-xl text-[13px] font-bold transition"
-                  style={loginMode === "code" ? { background: GREEN, color: "#fff" } : { color: SUB }}>Free Access Code</button>
+              <form onSubmit={onSendOTP}>
+                <p className="text-[13px] mb-4" style={{ color: SUB }}>We'll email you a one-time code — no password needed.</p>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" required autoFocus
+                  className="w-full px-4 py-3 rounded-xl text-[15px] outline-none mb-4" style={inputStyle} />
+                {error && <p className="text-[12px] mb-3" style={{ color: "#DC4C4C" }}>{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
+                  style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}>
+                  {loading ? "Sending…" : "Send code"}
+                </button>
+                <p className="text-[11px] text-center mt-3 leading-relaxed" style={{ color: "#9AA69E" }}>
+                  By continuing you agree to our{" "}
+                  <Link href="/terms" style={{ color: SUB }} className="underline">Terms</Link>{" "}and{" "}
+                  <Link href="/privacy" style={{ color: SUB }} className="underline">Privacy Policy</Link>.
+                </p>
+              </form>
+
+              {/* Code sign-in is desktop-only on purpose — the tab is gone
+                  from mobile, so this note tells anyone holding a centre
+                  code where to use it instead of leaving them stuck. */}
+              <div className="mt-5 p-3 rounded-2xl text-center" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
+                <p className="text-[12px] leading-relaxed" style={{ color: GREEN_DARK }}>
+                  Have an access code? Codes can only be used on the desktop version at visualschedule.app.
+                </p>
               </div>
-
-              {loginMode === "email" && (
-                <form onSubmit={onSendOTP}>
-                  <p className="text-[13px] mb-4" style={{ color: SUB }}>We'll email you a one-time code — no password needed.</p>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" required autoFocus
-                    className="w-full px-4 py-3 rounded-xl text-[15px] outline-none mb-4" style={inputStyle} />
-                  {error && <p className="text-[12px] mb-3" style={{ color: "#DC4C4C" }}>{error}</p>}
-                  <button type="submit" disabled={loading}
-                    className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
-                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}>
-                    {loading ? "Sending…" : "Send code"}
-                  </button>
-                  <p className="text-[11px] text-center mt-3 leading-relaxed" style={{ color: "#9AA69E" }}>
-                    By continuing you agree to our{" "}
-                    <Link href="/terms" style={{ color: SUB }} className="underline">Terms</Link>{" "}and{" "}
-                    <Link href="/privacy" style={{ color: SUB }} className="underline">Privacy Policy</Link>.
-                  </p>
-                </form>
-              )}
-
-              {loginMode === "code" && (
-                <div>
-                  <p className="text-[13px] mb-4" style={{ color: SUB }}>No email needed — enter a free access or centre code to get in.</p>
-                  <input value={orgCode} onChange={(e) => setOrgCode(e.target.value.toUpperCase())} placeholder="e.g. SUNSHINE24"
-                    className="w-full px-4 py-3 rounded-xl text-[15px] tracking-widest outline-none mb-4" style={inputStyle} />
-                  <button onClick={redeemOrgCode} disabled={orgBusy || !orgCode.trim()}
-                    className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
-                    style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}>
-                    {orgBusy ? "…" : "Apply code"}
-                  </button>
-                  {orgMsg && (
-                    <p className="text-[12px] mt-3 text-center font-semibold" style={{ color: orgMsg.ok ? GREEN_DARK : "#DC4C4C" }}>{orgMsg.text}</p>
-                  )}
-                </div>
-              )}
             </>
           )}
 
