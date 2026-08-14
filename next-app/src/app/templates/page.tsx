@@ -87,15 +87,15 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+    <div className="h-dvh overflow-hidden flex flex-col" style={{ background: BG }}>
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3 shrink-0">
         <button onClick={() => router.back()} className="w-8 h-8 -ml-1 flex items-center justify-center">
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         </button>
         <span className="font-bold text-[18px]" style={{ color: INK }}>Templates</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
         <p className="text-[13px] mb-4" style={{ color: SUB }}>Ready-made schedules — tap one to start building from it.</p>
 
         {loading ? (
