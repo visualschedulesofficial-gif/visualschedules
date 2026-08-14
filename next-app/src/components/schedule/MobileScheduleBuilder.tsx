@@ -65,23 +65,16 @@ const FAINT = "#9AA69E";
 // "brown") to tell them apart at a glance. Never wrong, unlike pulling an
 // image off whatever card in the library happened to be flagged "character."
 function FaceIcon({ variant }: { variant: Gender }) {
-  const skin = variant === "brown" ? "#B98255" : GREEN;
+  // Real illustrated faces (public/faces/), matching the card artwork style.
+  // Replaces the earlier drawn SVG placeholders.
   return (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="13" r="7" fill={skin} fillOpacity="0.18" stroke={skin} strokeWidth="1.6" />
-      <circle cx="9.3" cy="12.5" r="1" fill={skin} />
-      <circle cx="14.7" cy="12.5" r="1" fill={skin} />
-      <path d="M9.5 16c.8.7 1.6 1 2.5 1s1.7-.3 2.5-1" stroke={skin} strokeWidth="1.4" strokeLinecap="round" />
-      {variant === "boy" && <path d="M5.5 9.5C6.5 6.5 9 5 12 5s5.5 1.5 6.5 4.5" stroke={skin} strokeWidth="1.6" strokeLinecap="round" fill="none" />}
-      {variant === "girl" && (
-        <>
-          <path d="M5.5 9C6.5 5.8 9 4.3 12 4.3S17.5 5.8 18.5 9" stroke={skin} strokeWidth="1.6" strokeLinecap="round" fill="none" />
-          <circle cx="5.6" cy="11.5" r="1.5" fill={skin} fillOpacity="0.35" />
-          <circle cx="18.4" cy="11.5" r="1.5" fill={skin} fillOpacity="0.35" />
-        </>
-      )}
-      {variant === "brown" && <path d="M5.5 9.5C6.5 6.5 9 5 12 5s5.5 1.5 6.5 4.5" stroke={skin} strokeWidth="1.6" strokeLinecap="round" fill="none" />}
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/faces/face-${variant}.png`}
+      alt=""
+      className="w-full h-full object-cover"
+      loading="lazy"
+    />
   );
 }
 
@@ -375,6 +368,7 @@ export function MobileScheduleBuilder({
   const [showDownload, setShowDownload] = useState(false);
   const [showAddStep, setShowAddStep] = useState(false);
   const [addStepCat, setAddStepCat] = useState<string>("all");
+  const [accessFilter, setAccessFilter] = useState<"all" | "free" | "paid">("all");
 
   // Save / Download — Save posts/updates this schedule; once it succeeds the
   // sticky button becomes Download. Editing anything after that reverts it
@@ -769,26 +763,51 @@ export function MobileScheduleBuilder({
           </div>
 
           <div className="px-4 pt-3">
-            {showCharacters && (
-              <div className="flex gap-2 mb-3">
-                {CHARACTER_OPTIONS.map((o) => {
-                  const active = gender === o.value;
+            <div className="flex items-center gap-2 mb-3">
+              {showCharacters && (
+                <div className="flex gap-2">
+                  {CHARACTER_OPTIONS.map((o) => {
+                    const active = gender === o.value;
+                    return (
+                      <button
+                        key={o.value}
+                        onClick={() => setGender(o.value)}
+                        aria-label={o.label}
+                        className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                        style={active
+                          ? { background: GREEN_SOFT, border: `2.5px solid ${GREEN}` }
+                          : { background: GREEN_SOFT, border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
+                      >
+                        <FaceIcon variant={o.value} />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Free / Paid filter — sits beside the character faces */}
+              <div className="flex ml-auto rounded-xl overflow-hidden shrink-0" style={{ border: `1px solid ${BORDER}` }}>
+                {([
+                  { id: "all", label: "All" },
+                  { id: "free", label: "Free" },
+                  { id: "paid", label: "Paid" },
+                ] as const).map((o) => {
+                  const active = accessFilter === o.id;
                   return (
                     <button
-                      key={o.value}
-                      onClick={() => setGender(o.value)}
-                      aria-label={o.label}
-                      className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+                      key={o.id}
+                      onClick={() => setAccessFilter(o.id)}
+                      className="px-3 py-2 text-[12px] font-bold"
                       style={active
-                        ? { background: GREEN_SOFT, border: `2.5px solid ${GREEN}` }
-                        : { background: GREEN_SOFT, border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
+                        ? { background: GREEN, color: "#fff" }
+                        : { background: "#fff", color: SUB }}
                     >
-                      <FaceIcon variant={o.value} />
+                      {o.label}
                     </button>
                   );
                 })}
               </div>
-            )}
+            </div>
 
             <select
               value={addStepCat}
@@ -805,8 +824,18 @@ export function MobileScheduleBuilder({
 
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             {(() => {
-              const groups = addStepCat === "all" ? groupedCategories : groupedCategories.filter((g) => g.id === addStepCat);
-              if (groups.length === 0) return <p className="text-[12px] py-3" style={{ color: SUB }}>No cards available yet.</p>;
+              const byCat = addStepCat === "all" ? groupedCategories : groupedCategories.filter((g) => g.id === addStepCat);
+              // Free/paid uses the same isFree flag the padlock reads, so the
+              // filter and the lock icons can never disagree.
+              const groups = byCat
+                .map((g) => ({
+                  ...g,
+                  cards: accessFilter === "all"
+                    ? g.cards
+                    : g.cards.filter((c) => ((c as any).isFree !== false) === (accessFilter === "free")),
+                }))
+                .filter((g) => g.cards.length > 0);
+              if (groups.length === 0) return <p className="text-[12px] py-3" style={{ color: SUB }}>No cards match this filter.</p>;
               return (
                 <div className="space-y-4">
                   {groups.map((g) => (
