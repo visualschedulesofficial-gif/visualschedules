@@ -43,6 +43,7 @@ function LoginPageInner() {
 
   const [loginMode, setLoginMode] = useState<"email" | "code">("email");
   const [orgCode, setOrgCode] = useState("");
+  const [hasAccessCode, setHasAccessCode] = useState(false);
   const [orgMsg, setOrgMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [orgBusy, setOrgBusy] = useState(false);
   const redeemOrgCode = async () => {
@@ -112,6 +113,30 @@ function LoginPageInner() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        // Optional access code — redeemed only after the email login has
+        // succeeded, so identity is always the email account and the code
+        // just adds centre branding + paid card access on top.
+        if (hasAccessCode && orgCode.trim()) {
+          try {
+            const orgRes = await fetch("/api/me/org", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: orgCode.trim() }),
+            });
+            const orgData = await orgRes.json();
+            if (!orgRes.ok || !orgData.ok) {
+              // Signed in fine, but the code was wrong — say so instead of
+              // silently dropping it, and let them fix or skip it.
+              setError(orgData.error || "That access code wasn't recognized. You're signed in — you can add it later in Profile.");
+              setLoading(false);
+              return;
+            }
+          } catch {
+            setError("Signed in, but the access code couldn't be checked. You can add it later in Profile.");
+            setLoading(false);
+            return;
+          }
+        }
         setStep("done");
         setTimeout(() => { window.location.href = next || (isMobile ? "/schedules" : "/schedule"); }, 800);
       } else {
@@ -157,6 +182,7 @@ function LoginPageInner() {
         step={step} setStep={setStep} email={email} setEmail={setEmail}
         password={password} setPassword={setPassword} otp={otp} setOtp={setOtp}
         orgCode={orgCode} setOrgCode={setOrgCode} orgMsg={orgMsg} orgBusy={orgBusy}
+        hasAccessCode={hasAccessCode} setHasAccessCode={setHasAccessCode}
         redeemOrgCode={redeemOrgCode} loading={loading} error={error} setError={setError}
         onSendOTP={handleSendOTP} onVerifyOTP={handleVerifyOTP} onAdminLogin={handleAdminLogin}
       />
@@ -194,28 +220,6 @@ function LoginPageInner() {
               {step === "email" && (
                 <>
                   <h1 className="font-serif text-xl italic text-ink mb-3">Sign in</h1>
-                  <div className="flex rounded border border-input-border overflow-hidden mb-5">
-                    <button
-                      type="button"
-                      onClick={() => setLoginMode("email")}
-                      className={`flex-1 py-2.5 text-[13px] font-sans font-semibold transition-colors ${
-                        loginMode === "email" ? "bg-accent-strong text-white" : "bg-white text-ink-2"
-                      }`}
-                    >
-                      Login with Email
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLoginMode("code")}
-                      className={`flex-1 py-2.5 text-[13px] font-sans font-semibold transition-colors ${
-                        loginMode === "code" ? "bg-accent-strong text-white" : "bg-white text-ink-2"
-                      }`}
-                    >
-                      Login with Code
-                    </button>
-                  </div>
-                  {loginMode === "email" && (
-                  <>
                   <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
                     Enter your email — we'll send a 6-digit code. No password needed.
                   </p>
@@ -247,36 +251,6 @@ function LoginPageInner() {
                       <Link href="/privacy" className="text-ink underline">Privacy Policy</Link>.
                     </p>
                   </form>
-                  </>
-                  )}
-                  {loginMode === "code" && (
-                    <div>
-                      <p className="text-[13px] text-ink-2 leading-relaxed mb-4">
-                        Enter the access code your therapy center gave you — no email or password needed.
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={orgCode}
-                          onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
-                          placeholder="e.g. SUNSHINE24"
-                          className="flex-1 min-w-0 px-3 py-3 border border-input-border rounded font-sans text-[15px] tracking-widest uppercase text-ink outline-none focus:ring-2 focus:ring-weekly-accent"
-                        />
-                        <button
-                          onClick={redeemOrgCode}
-                          disabled={orgBusy || !orgCode.trim()}
-                          className="px-5 py-3 bg-accent-strong text-white rounded font-sans text-[14px] font-semibold disabled:opacity-50"
-                        >
-                          {orgBusy ? "…" : "Join"}
-                        </button>
-                      </div>
-                      {orgMsg && (
-                        <p className={`mt-2 text-[12px] font-sans ${orgMsg.ok ? "text-success" : "text-[#C53030]"}`}>
-                          {orgMsg.text}
-                        </p>
-                      )}
-                    </div>
-                  )}
                   <div className="mt-4 pt-4 border-t border-border text-center">
             <p className="text-center text-[13px] text-ink-3 font-sans mb-2">No account needed for free cards</p>
             <a
@@ -311,6 +285,33 @@ function LoginPageInner() {
                       autoFocus
                       className="w-full py-3 px-3 border border-border bg-surface-hover font-sans text-[22px] text-ink text-center tracking-[8px] outline-none focus:border-accent mb-4 font-medium"
                     />
+
+                    <label className="flex items-center gap-2.5 mb-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={hasAccessCode}
+                        onChange={(e) => setHasAccessCode(e.target.checked)}
+                        className="w-4 h-4 shrink-0"
+                        style={{ accentColor: "var(--accent-strong)" }}
+                      />
+                      <span className="text-[13px] text-ink-2">I have an access code</span>
+                    </label>
+
+                    {hasAccessCode && (
+                      <div className="mb-4">
+                        <input
+                          type="text"
+                          value={orgCode}
+                          onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+                          placeholder="e.g. SUNSHINE24"
+                          className="w-full py-2.5 px-3 border border-input-border bg-surface-hover font-sans text-[15px] tracking-widest uppercase text-ink outline-none focus:border-accent"
+                        />
+                        <p className="text-[11px] text-ink-3 mt-1.5 leading-relaxed">
+                          Unlocks all paid cards and adds your centre&apos;s branding to saved schedules.
+                        </p>
+                      </div>
+                    )}
+
                     {error && <p className="text-xs text-[#C53030] mb-3">{error}</p>}
                     <button
                       type="submit"
@@ -415,6 +416,7 @@ function MobileLogin(props: {
   password: string; setPassword: (v: string) => void;
   otp: string; setOtp: (v: string) => void;
   orgCode: string; setOrgCode: (v: string) => void;
+  hasAccessCode: boolean; setHasAccessCode: (v: boolean) => void;
   orgMsg: { ok: boolean; text: string } | null; orgBusy: boolean; redeemOrgCode: () => void;
   loading: boolean; error: string; setError: (v: string) => void;
   onSendOTP: (e: React.FormEvent) => void; onVerifyOTP: (e: React.FormEvent) => void; onAdminLogin: (e: React.FormEvent) => void;
@@ -423,6 +425,7 @@ function MobileLogin(props: {
     mode, setMode, loginMode, setLoginMode, step, setStep, email, setEmail,
     password, setPassword, otp, setOtp, orgCode, setOrgCode, orgMsg, orgBusy,
     redeemOrgCode, loading, error, setError, onSendOTP, onVerifyOTP, onAdminLogin,
+    hasAccessCode, setHasAccessCode,
   } = props;
 
   const inputStyle = { border: `1.5px solid ${GREEN_BORDER}`, color: INK };
@@ -465,7 +468,7 @@ function MobileLogin(props: {
                   code where to use it instead of leaving them stuck. */}
               <div className="mt-5 p-3 rounded-2xl text-center" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
                 <p className="text-[12px] leading-relaxed" style={{ color: GREEN_DARK }}>
-                  Have an access code? Sign in with your email first, then add the code under Profile.
+                  Have an access code from your centre? You can enter it on the next step, after your email code.
                 </p>
               </div>
             </>
@@ -479,6 +482,33 @@ function MobileLogin(props: {
               <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="123456" required maxLength={6} autoFocus
                 className="w-full py-3 px-3 rounded-xl text-[22px] text-center tracking-[8px] font-bold outline-none mb-4" style={inputStyle} />
+
+              <label className="flex items-center gap-2.5 mb-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasAccessCode}
+                  onChange={(e) => setHasAccessCode(e.target.checked)}
+                  className="w-[18px] h-[18px] shrink-0"
+                  style={{ accentColor: GREEN }}
+                />
+                <span className="text-[13px] font-semibold" style={{ color: INK }}>I have an access code</span>
+              </label>
+
+              {hasAccessCode && (
+                <div className="mb-4">
+                  <input
+                    value={orgCode}
+                    onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. SUNSHINE24"
+                    className="w-full px-4 py-3 rounded-xl text-[15px] tracking-widest outline-none"
+                    style={inputStyle}
+                  />
+                  <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: SUB }}>
+                    Unlocks all paid cards and adds your centre&apos;s branding to saved schedules.
+                  </p>
+                </div>
+              )}
+
               {error && <p className="text-[12px] mb-3 text-center" style={{ color: "#DC4C4C" }}>{error}</p>}
               <button type="submit" disabled={loading || otp.length < 6}
                 className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white disabled:opacity-60"
