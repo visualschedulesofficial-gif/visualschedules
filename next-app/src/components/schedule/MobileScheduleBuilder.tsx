@@ -336,8 +336,12 @@ export function MobileScheduleBuilder({
       return { placedCount: placed, totalSlots: p?.slots?.length || 0 };
     }
     if (scheduleType === "mini") return { placedCount: (p?.columns?.["0"] || []).length, totalSlots: miniCardCount };
-    if (scheduleType === "iwant") return { placedCount: (p?.columns?.["cutout"] || []).length, totalSlots: 6 };
-    if (scheduleType === "firstthen") return { placedCount: (p?.columns?.["cutout"] || []).length, totalSlots: 0 };
+    // Both of these render CutoutStrip with 9 cards — First/Then reported 0
+    // (so no count showed at all) and I Want reported 6, neither matching
+    // what's actually on the page.
+    if (scheduleType === "iwant" || scheduleType === "firstthen") {
+      return { placedCount: (p?.columns?.["cutout"] || []).length, totalSlots: 9 };
+    }
     return { placedCount: 0, totalSlots: 0 };
   }, [pages, scheduleType, miniCardCount]);
 
@@ -366,6 +370,20 @@ export function MobileScheduleBuilder({
   }, []);
 
   const [showDownload, setShowDownload] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Downloads land silently on a phone — the file just appears in Files/
+  // Photos with no visible feedback in the browser. Tell them where it went.
+  const runExport = async (fn: () => Promise<void> | void, what: string) => {
+    try {
+      await fn();
+      setShowDownload(false);
+      setToast(`${what} downloaded — check your Files or Photos.`);
+      setTimeout(() => setToast(null), 4000);
+    } catch {
+      /* useExport already surfaces its own error */
+    }
+  };
   const [showAddStep, setShowAddStep] = useState(false);
   const [addStepCat, setAddStepCat] = useState<string>("all");
   const [accessFilter, setAccessFilter] = useState<"all" | "free" | "paid">("all");
@@ -693,11 +711,50 @@ export function MobileScheduleBuilder({
         </button>
       </div>
 
+      {/* Download confirmation */}
+      {toast && (
+        <div className="fixed left-0 right-0 bottom-24 z-[400] flex justify-center px-6 pointer-events-none">
+          <div
+            className="flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg max-w-sm"
+            style={{ background: INK, color: "#fff" }}
+          >
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#9FD6B4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span className="text-[13px] font-semibold leading-snug">{toast}</span>
+          </div>
+        </div>
+      )}
+
       {/* Download sheet */}
       {showDownload && (
         <div className="fixed inset-0 z-[300] flex items-end justify-center" style={{ background: "rgba(28,27,25,0.5)" }} onClick={() => setShowDownload(false)}>
           <div className="bg-white w-full rounded-t-3xl p-5 pb-7 space-y-2.5" onClick={(e) => e.stopPropagation()}>
             <p className="font-bold text-[16px] mb-1" style={{ color: INK }}>Print / Download</p>
+
+            <button
+              onClick={() => runExport(exportJPEG, "Image")}
+              disabled={exporting}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left disabled:opacity-60"
+              style={{ border: `1px solid ${BORDER}` }}
+            >
+              <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#E9F1FA" }}>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#3E7CB1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+              </span>
+              <span className="flex-1 font-bold text-[14px]" style={{ color: INK }}>{exporting ? "Preparing…" : "Download Image"}</span>
+            </button>
+
+            <button
+              onClick={() => runExport(exportPDF, "PDF")}
+              disabled={exporting}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left disabled:opacity-60"
+              style={{ border: `1px solid ${BORDER}` }}
+            >
+              <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#FBECEC" }}>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#D9534F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+              </span>
+              <span className="flex-1 font-bold text-[14px]" style={{ color: INK }}>{exporting ? "Preparing…" : "Download PDF"}</span>
+            </button>
 
             <button
               onClick={() => window.print()}
@@ -707,36 +764,8 @@ export function MobileScheduleBuilder({
               <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: GREEN_SOFT }}>
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
               </span>
-              <span className="flex-1"><span className="block font-bold text-[14px]" style={{ color: INK }}>Print</span><span className="block text-[12px]" style={{ color: SUB }}>Best for charts and checklists</span></span>
+              <span className="flex-1 font-bold text-[14px]" style={{ color: INK }}>Print</span>
             </button>
-
-            <button
-              onClick={exportPDF}
-              disabled={exporting}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left disabled:opacity-60"
-              style={{ border: `1px solid ${BORDER}` }}
-            >
-              <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#FBECEC" }}>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#D9534F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-              </span>
-              <span className="flex-1"><span className="block font-bold text-[14px]" style={{ color: INK }}>{exporting ? "Preparing…" : "Download PDF"}</span><span className="block text-[12px]" style={{ color: SUB }}>Save to your device</span></span>
-            </button>
-
-            <button
-              onClick={exportJPEG}
-              disabled={exporting}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left disabled:opacity-60"
-              style={{ border: `1px solid ${BORDER}` }}
-            >
-              <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#E9F1FA" }}>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#3E7CB1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-              </span>
-              <span className="flex-1"><span className="block font-bold text-[14px]" style={{ color: INK }}>{exporting ? "Preparing…" : "Download Images"}</span><span className="block text-[12px]" style={{ color: SUB }}>Save each step as images</span></span>
-            </button>
-
-            <div className="p-3 rounded-xl text-[12px] flex items-center gap-2 mt-1" style={{ background: "#FCF6E4", color: "#8A6D1F" }}>
-              <span>💡</span><span>Tip: Print on A4 and use Velcro or magnets.</span>
-            </div>
 
             <button onClick={() => setShowDownload(false)} className="w-full py-2.5 text-[13px] font-semibold" style={{ color: SUB }}>Close</button>
           </div>
