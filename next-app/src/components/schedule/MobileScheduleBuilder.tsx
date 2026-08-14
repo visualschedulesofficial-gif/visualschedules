@@ -397,12 +397,22 @@ export function MobileScheduleBuilder({
   // sticky button becomes Download. Editing anything after that reverts it
   // to Save, so Download never offers a stale export.
   const DRAFT_KEY = "vs_draft_mobile_schedule";
+  const ACTIVE_ID_KEY = "vs_active_schedule_id";
+  // The id of the row being edited. Kept in its own sessionStorage key so a
+  // remount reuses it — previously the id lived only in the draft, which is
+  // deleted on a successful save, so remounting minted a fresh id and the
+  // next Save inserted a SECOND row (the duplicate in Recently Added).
+  // Cleared by the home page's "Create Schedule" button to start fresh.
   const [scheduleId] = useState<string>(() => {
     try {
+      const active = sessionStorage.getItem(ACTIVE_ID_KEY);
+      if (active) return active;
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (raw) { const d = JSON.parse(raw); if (d.id) return d.id; }
     } catch {}
-    return crypto.randomUUID();
+    const fresh = crypto.randomUUID();
+    try { sessionStorage.setItem(ACTIVE_ID_KEY, fresh); } catch {}
+    return fresh;
   });
   const [saved, setSaved] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -514,7 +524,10 @@ export function MobileScheduleBuilder({
       const data = await res.json();
       if (res.ok && data.saved) {
         setSaved(true);
-        try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+        try {
+          sessionStorage.removeItem(DRAFT_KEY);
+          sessionStorage.setItem(ACTIVE_ID_KEY, scheduleId);
+        } catch {}
         return;
       }
       // Not signed in — keep the draft (including this id, so the same
