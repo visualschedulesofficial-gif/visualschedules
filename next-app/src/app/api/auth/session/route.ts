@@ -3,6 +3,17 @@ import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "vs_session";
 
+// Never cache who is signed in. Without these, the browser can serve a
+// stale "logged in" response after logout — the Sign In screen flashes,
+// then the cached session re-marks the person as signed in.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_STORE = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+  Pragma: "no-cache",
+} as const;
+
 // GET /api/auth/session — who is signed in right now, if anyone.
 //
 // This file had been overwritten with the /api/user/subscription logic
@@ -18,21 +29,22 @@ export async function GET() {
     const cookieStore = await cookies();
     const session = cookieStore.get(SESSION_COOKIE);
     if (!session?.value) {
-      return NextResponse.json({ user: null });
+      return NextResponse.json({ user: null }, { headers: NO_STORE });
     }
 
     const data = JSON.parse(Buffer.from(session.value, "base64").toString());
     if (Date.now() - data.createdAt > 30 * 24 * 60 * 60 * 1000) {
-      return NextResponse.json({ user: null });
+      return NextResponse.json({ user: null }, { headers: NO_STORE });
     }
     if (!data.userId) {
-      return NextResponse.json({ user: null });
+      return NextResponse.json({ user: null }, { headers: NO_STORE });
     }
 
-    return NextResponse.json({
-      user: { id: data.userId, email: data.email || null, role: data.role || "user" },
-    });
+    return NextResponse.json(
+      { user: { id: data.userId, email: data.email || null, role: data.role || "user" } },
+      { headers: NO_STORE }
+    );
   } catch {
-    return NextResponse.json({ user: null });
+    return NextResponse.json({ user: null }, { headers: NO_STORE });
   }
 }
