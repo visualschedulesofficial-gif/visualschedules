@@ -22,6 +22,7 @@ import {
   getCardLabel,
   getCardImageUrl,
   getCardGender,
+  findCard,
   isCharacterCard,
   type ParsedCard,
 } from "@/lib/card-data";
@@ -57,6 +58,7 @@ const GREEN_BORDER = "#C7D4B8";
 const INK = "#1E2A24";
 const SUB = "#6C7A72";
 const BORDER = "#E6EBE6";
+const FAINT = "#9AA69E";
 
 // Simple drawn face per character option — teal/green like the rest of the
 // app, with just enough difference (hair shape, or a warmer skin tone for
@@ -228,6 +230,7 @@ export function MobileScheduleBuilder({
   const title = useScheduleState((s) => s.title);
   const setTitle = useScheduleState((s) => s.setTitle);
   const placeCard = useScheduleState((s) => s.placeCard);
+  const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
   const setLanguage = useScheduleState((s) => s.setLanguage);
   const scheduleType = useScheduleState((s) => s.scheduleType);
@@ -452,6 +455,31 @@ export function MobileScheduleBuilder({
     }
   }, [showAddStep, placedCount, totalSlots]);
 
+  // Flatten the store's pages into a plain ordered list for the mobile UI.
+  // Keeps the store as the single source of truth (so the off-screen canvas,
+  // export and desktop all stay in sync) while showing a simple list.
+  const stepList = useMemo(() => {
+    const out: { pageIdx: number; slotKey: string; cardIdx?: number; label: string; img: string | null }[] = [];
+    const resolve = (cardId: string) => {
+      const card = findCard(cardId);
+      return {
+        label: card ? getCardLabel(card, language) : cardId,
+        img: card ? (getCardImageUrl(card.id, getCardGender(card, gender)) || getCardImageUrl(card.id, "neutral")) : null,
+      };
+    };
+    (pages as any[]).forEach((p, pageIdx) => {
+      (p?.slots || []).forEach((s: any, i: number) => {
+        if (s?.cardId) out.push({ pageIdx, slotKey: String(i), ...resolve(s.cardId) });
+      });
+      Object.entries(p?.columns || {}).forEach(([slotKey, arr]: [string, any]) => {
+        (arr || []).forEach((c: any, cardIdx: number) => {
+          if (c?.cardId) out.push({ pageIdx, slotKey, cardIdx, ...resolve(c.cardId) });
+        });
+      });
+    });
+    return out;
+  }, [pages, language, gender, cardsLoaded]);
+
   const save = async () => {
     setSaving(true);
     setSaveError(null);
@@ -585,18 +613,63 @@ export function MobileScheduleBuilder({
         )}
       </section>
 
-      {/* 4 · Your schedule — a real green + inside each empty card now,
-          not one floating button on the corner */}
+      {/* Your schedule — a plain to-do list. The A4 canvas is no longer
+          shown on mobile (it never scaled well on a phone), but it stays
+          mounted off-screen below so Download still produces the same
+          printable page. */}
       <section className="mt-3">
         <SectionLabel right={totalSlots > 0 ? <span className="text-[12px]" style={{ color: SUB }}>{placedCount}/{totalSlots} added</span> : undefined}>
           Your schedule
         </SectionLabel>
-        <div className="relative">
-          <div className={exporting ? "w-full" : "w-full overflow-hidden rounded-2xl bg-white"} style={exporting ? undefined : { border: `1px solid ${BORDER}` }}>
-            <div style={{ zoom: exporting ? 1 : zoom }}>
-              <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} onEmptySlotTap={() => setShowAddStep(true)} />
+
+        <div className="space-y-2.5">
+          {stepList.map((s, i) => (
+            <div key={`${s.pageIdx}-${s.slotKey}-${s.cardIdx}-${i}`}
+              className="flex items-center gap-3 p-3 rounded-2xl"
+              style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
+                style={{ border: `2px solid ${GREEN}`, color: GREEN }}>{i + 1}</div>
+              <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+                {s.img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.img} alt="" className="w-full h-full object-contain" />
+                ) : null}
+              </div>
+              <span className="flex-1 font-bold text-[15px]" style={{ color: INK }}>{s.label}</span>
+              <button
+                onClick={() => removeCard(s.pageIdx, s.slotKey, s.cardIdx)}
+                aria-label="Remove step"
+                className="w-8 h-8 flex items-center justify-center shrink-0"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#C0463F" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
             </div>
-          </div>
+          ))}
+
+          {stepList.length === 0 && (
+            <p className="text-center text-[13px] py-6" style={{ color: FAINT }}>No steps yet — add your first one below.</p>
+          )}
+
+          {(totalSlots === 0 || placedCount < totalSlots) && (
+            <button
+              onClick={() => setShowAddStep(true)}
+              className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2"
+              style={{ background: "#fff", color: GREEN, border: `1.5px solid ${GREEN}` }}
+            >
+              + Add Step
+              {totalSlots > 0 && <span className="text-[12px] font-medium" style={{ color: FAINT }}>({placedCount}/{totalSlots})</span>}
+            </button>
+          )}
+        </div>
+
+        {/* Off-screen printable page — only what Download/Print reads. */}
+        <div
+          aria-hidden
+          style={exporting
+            ? undefined
+            : { position: "absolute", left: -99999, top: 0, width: A4_PORTRAIT.width, pointerEvents: "none" }}
+        >
+          <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
         </div>
       </section>
 
