@@ -392,14 +392,27 @@ export function CardLibrarySidebar() {
                 onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
                 className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
               >
-                <option value="mini">My Schedule</option>
-                <option value="daily">Daily Schedule</option>
-                <option value="weekly">Weekly Schedule</option>
-                <option value="custom">Custom Schedule</option>
-                <option value="firstthen">First/Then Board</option>
-                <option value="iwant">I Want (communication)</option>
-                <option value="timetable">Timetable</option>
+                {/* Grouped by where the result is usable. The landscape types
+                    (weekly / custom / timetable) are too wide to work on a
+                    phone, so anything built with them can't be used on
+                    mobile — worth knowing before you build, not after. */}
+                <optgroup label="📱 Phone + 💻 Desktop">
+                  <option value="mini">My Schedule</option>
+                  <option value="daily">Daily Schedule</option>
+                  <option value="firstthen">First/Then Board</option>
+                  <option value="iwant">I Want (communication)</option>
+                </optgroup>
+                <optgroup label="💻 Desktop only">
+                  <option value="weekly">Weekly Schedule — desktop only</option>
+                  <option value="custom">Custom Schedule — desktop only</option>
+                  <option value="timetable">Timetable — desktop only</option>
+                </optgroup>
               </select>
+              {(scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "timetable") && (
+                <p className="text-[11px] mt-1 leading-snug text-ink-3">
+                  💻 Desktop only — this layout is too wide for a phone, so it won&apos;t appear in the mobile app.
+                </p>
+              )}
             </div>
             {scheduleType === "daily" && (
               <div>
