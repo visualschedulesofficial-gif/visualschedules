@@ -294,7 +294,7 @@ function LoginPageInner() {
                         className="w-4 h-4 shrink-0"
                         style={{ accentColor: "var(--accent-strong)" }}
                       />
-                      <span className="text-[13px] text-ink-2">I have an access code</span>
+                      <span className="text-[12px] text-ink-2">I have an access code</span>
                     </label>
 
                     {hasAccessCode && (
@@ -483,15 +483,15 @@ function MobileLogin(props: {
                 placeholder="123456" required maxLength={6} autoFocus
                 className="w-full py-3 px-3 rounded-xl text-[22px] text-center tracking-[8px] font-bold outline-none mb-4" style={inputStyle} />
 
-              <label className="flex items-center gap-2.5 mb-3 cursor-pointer select-none">
+              <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={hasAccessCode}
                   onChange={(e) => setHasAccessCode(e.target.checked)}
-                  className="w-[18px] h-[18px] shrink-0"
+                  className="w-4 h-4 shrink-0"
                   style={{ accentColor: GREEN }}
                 />
-                <span className="text-[13px] font-semibold" style={{ color: INK }}>I have an access code</span>
+                <span className="text-[12px]" style={{ color: SUB }}>I have an access code</span>
               </label>
 
               {hasAccessCode && (
