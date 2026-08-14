@@ -40,7 +40,7 @@ export default function TemplatesPage() {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/session")
+    fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (d?.user) {
