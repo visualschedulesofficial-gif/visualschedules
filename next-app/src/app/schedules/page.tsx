@@ -513,7 +513,13 @@ function MobileHome({ user, schedules, loading, onDelete }: {
               Create simple visual schedules in under a minute.
             </p>
             <button
-              onClick={() => router.push("/schedule")}
+              onClick={() => {
+                try {
+                  sessionStorage.removeItem("vs_active_schedule_id");
+                  sessionStorage.removeItem("vs_draft_mobile_schedule");
+                } catch {}
+                router.push("/schedule");
+              }}
               className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2"
               style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
             >
