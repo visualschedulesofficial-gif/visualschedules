@@ -15,7 +15,7 @@
 // needs to change to ship this. Say the word if you'd rather it sync across
 // devices and I'll add the column + a small API route.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   getRuntimeCards,
@@ -76,6 +76,51 @@ function ChevronLeft() {
 }
 function CheckIcon({ color = "#fff", size = 18 }: { color?: string; size?: number }) {
   return <svg style={{ width: size, height: size }} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>;
+}
+
+// Confetti — pure CSS/inline styles, no library. Deterministic-ish spread so
+// it looks scattered without pulling in a dependency.
+function Confetti() {
+  const COLORS = ["#4A5A3E", "#7A8F5E", "#E8B23A", "#E08A6B", "#8FB3D9", "#C48BB8"];
+  const pieces = Array.from({ length: 40 }, (_, i) => ({
+    left: (i * 37) % 100,
+    delay: (i % 10) * 0.12,
+    duration: 2 + ((i % 5) * 0.35),
+    color: COLORS[i % COLORS.length],
+    size: 7 + (i % 4) * 2,
+    rotate: (i * 53) % 360,
+  }));
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[400] overflow-hidden" aria-hidden>
+      <style>{`
+        @keyframes vs-fall {
+          0%   { transform: translateY(-12vh) rotate(0deg);   opacity: 1; }
+          100% { transform: translateY(105vh) rotate(600deg); opacity: 0.9; }
+        }
+        @keyframes vs-pop {
+          0%   { transform: scale(0.4); opacity: 0; }
+          45%  { transform: scale(1.12); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: `${p.left}%`,
+            width: p.size,
+            height: p.size * 1.6,
+            background: p.color,
+            borderRadius: 2,
+            transform: `rotate(${p.rotate}deg)`,
+            animation: `vs-fall ${p.duration}s ${p.delay}s cubic-bezier(.25,.6,.4,1) forwards`,
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 export default function DoSchedulePage() {
@@ -160,6 +205,21 @@ export default function DoSchedulePage() {
   const toggle = (key: string) => persistDone({ ...done, [key]: !done[key] });
   const reset = () => persistDone({});
 
+  // Celebrate the moment the last step is ticked — fires once per completion,
+  // and re-arms if they reset or untick something, so finishing again still
+  // feels like an event.
+  const [celebrating, setCelebrating] = useState(false);
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (allDone && !celebratedRef.current) {
+      celebratedRef.current = true;
+      setCelebrating(true);
+      const t = setTimeout(() => setCelebrating(false), 3000);
+      return () => clearTimeout(t);
+    }
+    if (!allDone) celebratedRef.current = false;
+  }, [allDone]);
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center" style={{ background: BG }}>
@@ -205,12 +265,21 @@ export default function DoSchedulePage() {
         </div>
       </div>
 
+      {celebrating && <Confetti />}
+
       {allDone && (
-        <div className="mx-5 mt-3 p-3 rounded-2xl flex items-center gap-2" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
-          <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: GREEN }}>
-            <CheckIcon />
+        <div
+          className="mx-5 mt-3 p-3.5 rounded-2xl flex items-center gap-2.5"
+          style={{
+            background: GREEN_SOFT,
+            border: `1px solid ${GREEN_BORDER}`,
+            animation: celebrating ? "vs-pop 0.5s cubic-bezier(.34,1.56,.64,1)" : undefined,
+          }}
+        >
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: GREEN }}>
+            <CheckIcon size={18} />
           </div>
-          <span className="font-bold text-[14px]" style={{ color: GREEN_DARK }}>All done for today. Great job!</span>
+          <span className="font-bold text-[15px]" style={{ color: GREEN_DARK }}>🎉 All done. Great job!</span>
         </div>
       )}
 
