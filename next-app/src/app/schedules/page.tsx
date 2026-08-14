@@ -73,7 +73,7 @@ export default function SchedulesPage() {
     if (!checkedMobile) return;
     (async () => {
       try {
-        const sessionRes = await fetch("/api/auth/session");
+        const sessionRes = await fetch("/api/auth/session", { cache: "no-store" });
         const sessionData = await sessionRes.json();
         const currentUser = sessionData.user || null;
         setUser(currentUser);
@@ -103,10 +103,10 @@ export default function SchedulesPage() {
   }, [checkedMobile]);
 
   async function handleSignOut() {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
-    // Hard navigation, not reload — guarantees no cached signed-in state
-    // survives and lands the person somewhere sensible.
-    window.location.href = "/login";
+    try { await fetch("/api/auth/logout", { method: "POST", cache: "no-store" }); } catch {}
+    // Hard navigation with a unique URL — guarantees no cached signed-in
+    // state (including iOS back-forward cache) survives.
+    window.location.replace(`/login?t=${Date.now()}`);
   }
 
   async function handleDelete(id: string, title: string) {
@@ -401,8 +401,10 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   const recent = localSchedules;
 
   const signOut = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
-    window.location.href = "/login";
+    try { await fetch("/api/auth/logout", { method: "POST", cache: "no-store" }); } catch {}
+    // Unique URL defeats iOS's back-forward cache, which can otherwise
+    // restore the signed-in page from memory after logout.
+    window.location.replace(`/login?t=${Date.now()}`);
   };
 
   // Access code — read current linked centre, apply a new code, or remove it.
