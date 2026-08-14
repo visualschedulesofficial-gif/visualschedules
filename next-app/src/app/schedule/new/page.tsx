@@ -126,7 +126,7 @@ function CheckIcon({ color = "#fff", size = 14 }: { color?: string; size?: numbe
 /* ================================================================== */
 export default function NewSchedulePage() {
   const router = useRouter();
-  const [screen, setScreen] = useState<"templates" | "steps" | "library" | "preview">("templates");
+  const [screen, setScreen] = useState<"name" | "templates" | "steps" | "library" | "preview">("name");
   const [cardsLoaded, setCardsLoaded] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
@@ -138,6 +138,27 @@ export default function NewSchedulePage() {
   const [coverKey, setCoverKey] = useState<string | null>(null);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const DRAFT_KEY = "vs_draft_new_schedule";
+
+  // If save() had to send us to sign in, the draft is waiting here —
+  // restore it and jump straight back to Preview instead of losing steps.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        setTitle(d.title || "New Schedule");
+        setLanguage(d.language || "en");
+        setGender(d.gender || "neutral");
+        setSteps(d.steps || []);
+        setCoverKey(d.coverKey ?? null);
+        if (d.steps?.length) setScreen("preview");
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Same loading sequence the rest of the app uses.
   useEffect(() => {
@@ -187,12 +208,11 @@ export default function NewSchedulePage() {
       const c = findByTerm(cards, term);
       if (c) matched.push({ key: `${c.id}-${i}-${Date.now()}`, cardId: c.id, catId: c.categoryId });
     });
-    setTitle(tpl.name);
     setSteps(matched.slice(0, MAX_STEPS));
     setCoverKey(null);
     setScreen("steps");
   };
-  const startBlank = () => { setTitle("Custom Routine"); setSteps([]); setCoverKey(null); setScreen("steps"); };
+  const startBlank = () => { setSteps([]); setCoverKey(null); setScreen("steps"); };
 
   const addCard = (card: ParsedCard) => {
     if (steps.length >= MAX_STEPS) { setScreen("steps"); return; }
@@ -204,6 +224,7 @@ export default function NewSchedulePage() {
 
   const save = async () => {
     setSaving(true);
+    setSaveError(null);
     // Cover step goes first — that's what every list/thumbnail reads.
     const ordered = coverKey ? [...steps].sort((a, b) => (a.key === coverKey ? -1 : b.key === coverKey ? 1 : 0)) : steps;
     const slots = [...ordered.map((s) => ({ cardId: s.cardId, catId: s.catId })), ...Array(Math.max(0, 12 - ordered.length)).fill(null)];
@@ -218,11 +239,24 @@ export default function NewSchedulePage() {
         }),
       });
       const data = await res.json();
-      if (res.ok && data.id) { router.push("/schedules"); return; }
-      if (!data.saved) { router.push("/login"); return; }
-      alert("Couldn't save — please try again.");
+      // IMPORTANT: the server always returns an id — it falls back to a
+      // fresh crypto.randomUUID() even when nothing was written to D1 (no
+      // session, or DB unavailable). Checking `data.id` alone always looked
+      // like success, so a not-signed-in save silently vanished and this
+      // page still navigated on as if it had worked — that's the "saves
+      // then logs me off" you saw. `data.saved` is the real signal.
+      if (res.ok && data.saved) {
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+        router.push("/schedules");
+        return;
+      }
+      // Not signed in (or session expired) — keep the draft, don't lose it.
+      try {
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ title, language, gender, steps, coverKey }));
+      } catch {}
+      router.push("/login?next=/schedule/new");
     } catch {
-      alert("Couldn't save — check your connection and try again.");
+      setSaveError("Couldn't save — check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -242,7 +276,8 @@ export default function NewSchedulePage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: BG }}>
-      {screen === "templates" && <TemplatesScreen onUse={startTemplate} onCustom={startBlank} onBack={() => router.back()} />}
+      {screen === "name" && <NameScreen title={title} setTitle={setTitle} onBack={() => router.back()} onNext={() => setScreen("templates")} />}
+      {screen === "templates" && <TemplatesScreen onUse={startTemplate} onCustom={startBlank} onBack={() => setScreen("name")} />}
       {screen === "steps" && (
         <StepsScreen
           title={title} steps={steps} setSteps={setSteps} coverKey={coverKey}
@@ -261,7 +296,7 @@ export default function NewSchedulePage() {
       {screen === "preview" && (
         <PreviewScreen
           title={title} steps={steps} coverKey={coverKey} language={language}
-          onBack={() => setScreen("steps")} onSave={save} saving={saving}
+          onBack={() => setScreen("steps")} onSave={save} saving={saving} saveError={saveError}
         />
       )}
 
@@ -275,6 +310,30 @@ export default function NewSchedulePage() {
           onClose={() => setEditingKey(null)}
         />
       )}
+    </div>
+  );
+}
+
+/* Name — asked up front, before templates, per your note */
+function NameScreen({ title, setTitle, onBack, onNext }: { title: string; setTitle: (v: string) => void; onBack: () => void; onNext: () => void }) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <StatusHeader title="Name your schedule" onBack={onBack} />
+      <div className="flex-1 px-5 py-6">
+        <p className="text-[13px] mb-4" style={{ color: SUB }}>What should we call this one? You can change it later.</p>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={40}
+          autoFocus
+          placeholder="e.g. School Morning"
+          className="w-full px-4 py-3 rounded-2xl text-[16px] font-semibold outline-none"
+          style={{ border: `1.5px solid ${GREEN_BORDER}`, color: INK }}
+        />
+      </div>
+      <div className="px-5 py-4" style={{ background: "#fff", borderTop: `1px solid ${BORDER}` }}>
+        <GreenBtn onClick={onNext} disabled={!title.trim()}>Continue</GreenBtn>
+      </div>
     </div>
   );
 }
@@ -483,8 +542,8 @@ function LibraryScreen({ groups, language, gender, showCharacters, setGender, is
 }
 
 /* Preview */
-function PreviewScreen({ title, steps, coverKey, language, onBack, onSave, saving }: {
-  title: string; steps: Step[]; coverKey: string | null; language: Language; onBack: () => void; onSave: () => void; saving: boolean;
+function PreviewScreen({ title, steps, coverKey, language, onBack, onSave, saving, saveError }: {
+  title: string; steps: Step[]; coverKey: string | null; language: Language; onBack: () => void; onSave: () => void; saving: boolean; saveError: string | null;
 }) {
   const ordered = coverKey ? [...steps].sort((a, b) => (a.key === coverKey ? -1 : b.key === coverKey ? 1 : 0)) : steps;
   return (
@@ -511,6 +570,7 @@ function PreviewScreen({ title, steps, coverKey, language, onBack, onSave, savin
             {ordered.length === 0 && <p className="text-[13px] text-center py-4" style={{ color: FAINT }}>No steps added yet.</p>}
           </div>
         </div>
+        {saveError && <p className="text-[13px] text-center mt-3" style={{ color: "#DC4C4C" }}>{saveError}</p>}
       </div>
       <div className="px-5 py-4 flex gap-3" style={{ background: "#fff", borderTop: `1px solid ${BORDER}` }}>
         <button onClick={onBack} className="flex-1 py-3.5 rounded-2xl font-bold text-[15px]" style={{ background: "#fff", color: GREEN, border: `1.5px solid ${GREEN}` }}>Edit Steps</button>
