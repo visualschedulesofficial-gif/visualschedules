@@ -42,11 +42,18 @@ const TYPE_LABELS: Record<string, string> = {
 const DESKTOP_ONLY = new Set(["weekly", "custom", "timetable"]);
 
 function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  // SQLite's datetime('now') returns UTC as "YYYY-MM-DD HH:MM:SS" with no
+  // timezone marker, so browsers parse it as LOCAL time. In IST (+5:30)
+  // that made a just-saved schedule read as "5h ago". Normalise to ISO
+  // with an explicit Z so it's correctly treated as UTC.
+  const iso = /Z|[+-]\d{2}:?\d{2}$/.test(dateStr)
+    ? dateStr
+    : dateStr.replace(" ", "T") + "Z";
+  const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  if (mins < 2) return "just now";
+  if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days === 1) return "yesterday";
