@@ -434,7 +434,8 @@ function MobileLogin(props: {
           <div className="text-center mb-8">
             <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: GREEN_SOFT }}>
               <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
+                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
             </div>
             <h1 className="font-bold text-[20px]" style={{ color: INK }}>Visual Schedule</h1>
@@ -464,7 +465,7 @@ function MobileLogin(props: {
                   code where to use it instead of leaving them stuck. */}
               <div className="mt-5 p-3 rounded-2xl text-center" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
                 <p className="text-[12px] leading-relaxed" style={{ color: GREEN_DARK }}>
-                  Have an access code? Codes can only be used on the desktop version at visualschedule.app.
+                  Have an access code? Sign in with your email first, then add the code under Profile.
                 </p>
               </div>
             </>
@@ -522,10 +523,14 @@ function MobileLogin(props: {
           )}
 
           {mode === "user" && step === "email" && (
-            <button onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
-              className="w-full text-center text-[12px] mt-6 underline underline-offset-2" style={{ color: "#9AA69E" }}>
-              Login as admin
-            </button>
+            <>
+              <button onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
+                className="w-full text-center text-[12px] mt-6 underline underline-offset-2" style={{ color: "#9AA69E" }}>
+                Login as admin
+              </button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/art/login-art.svg" alt="" className="w-full max-w-[240px] mx-auto mt-6 opacity-80" />
+            </>
           )}
         </div>
       </div>
