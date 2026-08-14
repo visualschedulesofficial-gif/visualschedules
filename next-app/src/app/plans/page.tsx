@@ -129,7 +129,7 @@ export default function PlansPage() {
 
   useEffect(() => {
     if (!checkedMobile) return;
-    fetch("/api/auth/session")
+    fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         const u = data.user || null;
