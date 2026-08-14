@@ -468,11 +468,11 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
+    <div className="h-dvh overflow-hidden flex flex-col" style={{ background: BG }}>
       {tab === "home" ? (
         <>
           {/* Header — no site nav, just this */}
-          <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
             <div className="flex items-center gap-2.5">
               <AppIcon />
               <span className="font-bold text-[16px]" style={{ color: INK }}>Visual Schedule</span>
@@ -480,7 +480,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
             <BellIcon />
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 pb-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-4">
             <h1 className="text-[26px] font-extrabold leading-tight mt-3" style={{ color: INK }}>
               Make your child&apos;s routine easier to follow.
             </h1>
@@ -533,13 +533,13 @@ function MobileHome({ user, schedules, loading, onDelete }: {
         </>
       ) : tab === "library" ? (
         <>
-          <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+          <div className="flex items-center gap-3 px-5 pt-4 pb-3 shrink-0">
             <button onClick={() => setTab("home")} className="w-8 h-8 -ml-1 flex items-center justify-center">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
             <span className="font-bold text-[18px]" style={{ color: INK }}>My Library</span>
           </div>
-          <div className="flex-1 overflow-y-auto px-5 pb-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-4">
             {localSchedules.length === 0 ? (
               <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -561,7 +561,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
           </div>
         </>
       ) : (
-        <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-4">
           <h1 className="font-bold text-[20px] mb-4" style={{ color: INK }}>Profile</h1>
           {user ? (
             <>
