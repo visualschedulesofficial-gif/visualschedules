@@ -165,15 +165,6 @@ export default function DoSchedulePage() {
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data) => {
         setSched(data);
-        // No usage-count column exists in the schedules table, so "most
-        // used" on the mobile home is approximated per-device here rather
-        // than with a real schema change — see vs_open_counts.
-        try {
-          const raw = localStorage.getItem("vs_open_counts");
-          const counts = raw ? JSON.parse(raw) : {};
-          counts[id] = (counts[id] || 0) + 1;
-          localStorage.setItem("vs_open_counts", JSON.stringify(counts));
-        } catch {}
       })
       .catch((status) => {
         if (status === 401) { router.push(`/login?next=/schedule/${id}/do`); return; }
