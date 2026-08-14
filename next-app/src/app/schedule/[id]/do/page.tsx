@@ -231,9 +231,9 @@ export default function DoSchedulePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: BG }}>
+    <div className="flex flex-col h-dvh overflow-hidden" style={{ background: BG }}>
       {/* Top bar */}
-      <div className="px-4 pt-3 pb-3" style={{ background: "#fff", borderBottom: `1px solid ${BORDER}` }}>
+      <div className="px-4 pt-3 pb-3 shrink-0" style={{ background: "#fff", borderBottom: `1px solid ${BORDER}` }}>
         <div className="flex items-center">
           <button onClick={() => router.back()} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full active:opacity-60">
             <ChevronLeft />
@@ -247,7 +247,7 @@ export default function DoSchedulePage() {
       </div>
 
       {/* Progress bar */}
-      <div className="px-5 pt-3">
+      <div className="px-5 pt-3 shrink-0">
         <div className="h-2 rounded-full overflow-hidden" style={{ background: BORDER }}>
           <div
             className="h-full rounded-full transition-all"
@@ -260,7 +260,7 @@ export default function DoSchedulePage() {
 
       {allDone && (
         <div
-          className="mx-5 mt-3 p-3.5 rounded-2xl flex items-center gap-2.5"
+          className="mx-5 mt-3 p-3.5 rounded-2xl flex items-center gap-2.5 shrink-0"
           style={{
             background: GREEN_SOFT,
             border: `1px solid ${GREEN_BORDER}`,
@@ -275,7 +275,7 @@ export default function DoSchedulePage() {
       )}
 
       {/* Steps */}
-      <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2.5 pb-8">
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-2.5 pb-10">
         {steps.length === 0 && (
           <div className="text-center text-[13px] py-16" style={{ color: FAINT }}>This schedule has no cards yet.</div>
         )}
@@ -333,7 +333,7 @@ export default function DoSchedulePage() {
         })}
       </div>
 
-      <div className="px-5 py-3 text-center text-[12px]" style={{ background: "#fff", borderTop: `1px solid ${BORDER}`, color: FAINT }}>
+      <div className="px-5 py-3 text-center text-[12px] shrink-0" style={{ background: "#fff", borderTop: `1px solid ${BORDER}`, color: FAINT }}>
         Tap a step when it's finished
       </div>
     </div>
