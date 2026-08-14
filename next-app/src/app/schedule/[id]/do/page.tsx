@@ -58,9 +58,16 @@ function flattenPages(pages: any[]): CardRef[] {
   const out: CardRef[] = [];
   const colOrder = ["0", "cutout", ...DAY_KEYS, "extra"];
   pages.forEach((p) => {
+    // Check BOTH shapes, never else-if. A page can carry an empty `slots`
+    // array *and* a populated `columns` map (e.g. after the schedule type
+    // was switched), and the old else-if took the slots branch, found
+    // nothing, and never looked at columns — so a schedule with cards
+    // reported "0 of 0". The list endpoint checks both, which is why the
+    // thumbnail showed a card while this page showed none.
     if (Array.isArray(p?.slots)) {
       p.slots.forEach((s: CardRef | null) => { if (s?.cardId) out.push(s); });
-    } else if (p?.columns) {
+    }
+    if (p?.columns) {
       const keys = Object.keys(p.columns).sort(
         (a, b) => (colOrder.indexOf(a) === -1 ? 999 : colOrder.indexOf(a)) -
                   (colOrder.indexOf(b) === -1 ? 999 : colOrder.indexOf(b))
