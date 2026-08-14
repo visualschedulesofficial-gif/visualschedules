@@ -370,21 +370,10 @@ function MobileHome({ user, schedules, loading, onDelete }: {
       .catch(() => {});
   }, []);
 
-  // "Most used" — approximated per-device since there's no usage-count
-  // column in the schedules table (see the counter written in
-  // /schedule/[id]/do). Falls back to recency (the order the API already
-  // returns) for anything with no recorded opens yet.
-  const [openCounts, setOpenCounts] = useState<Record<string, number>>({});
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("vs_open_counts");
-      if (raw) setOpenCounts(JSON.parse(raw));
-    } catch {}
-  }, []);
-  const mostUsed = useMemo(
-    () => [...localSchedules].sort((a, b) => (openCounts[b.id] || 0) - (openCounts[a.id] || 0)),
-    [localSchedules, openCounts]
-  );
+  // "Recently Added" — the API already returns newest-edited first
+  // (ORDER BY updated_at DESC), so no extra sorting or per-device tracking
+  // is needed. Replaces the old "Most Used" ranking.
+  const recent = localSchedules;
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -507,7 +496,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
             </button>
 
             <div className="flex items-center justify-between mt-7 mb-2">
-              <span className="font-bold text-[15px]" style={{ color: INK }}>Most Used</span>
+              <span className="font-bold text-[15px]" style={{ color: INK }}>Recently Added</span>
               {localSchedules.length > 3 && (
                 <button onClick={() => setTab("library")} className="text-[13px] font-semibold" style={{ color: GREEN }}>See all</button>
               )}
@@ -530,7 +519,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
               </div>
             ) : (
               <div className="space-y-2.5">
-                {mostUsed.slice(0, 3).map((s) => (
+                {recent.slice(0, 3).map((s) => (
                   <ScheduleRow key={s.id} s={s} menuOpen={menuFor === s.id}
                     onOpen={() => router.push(`/schedule/${s.id}/do`)}
                     onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
