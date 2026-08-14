@@ -28,11 +28,18 @@ interface Schedule {
 }
 
 const TYPE_LABELS: Record<string, string> = {
+  mini: "My Schedule",
   daily: "Daily",
   weekly: "Weekly",
   custom: "Custom",
+  timetable: "Timetable",
   firstthen: "First / Then",
+  iwant: "I Want",
 };
+
+// Landscape layouts built on desktop — too wide to use on a phone. They
+// still appear in the list (so nothing looks lost), just marked clearly.
+const DESKTOP_ONLY = new Set(["weekly", "custom", "timetable"]);
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -685,7 +692,14 @@ function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete }: {
         )}
         <div className="flex-1 min-w-0">
           <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{s.title || "Untitled Schedule"}</div>
-          <div className="text-[12px]" style={{ color: SUB }}>{TYPE_LABELS[s.scheduleType] || s.scheduleType} · {timeAgo(s.updatedAt)}</div>
+          <div className="text-[12px]" style={{ color: SUB }}>
+            {TYPE_LABELS[s.scheduleType] || s.scheduleType} · {timeAgo(s.updatedAt)}
+            {DESKTOP_ONLY.has(s.scheduleType) && (
+              <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: "#FFF3E6", color: "#B5761F" }}>
+                💻 Desktop
+              </span>
+            )}
+          </div>
         </div>
       </button>
       <button onClick={onMenu} className="p-1"><DotsIcon /></button>
