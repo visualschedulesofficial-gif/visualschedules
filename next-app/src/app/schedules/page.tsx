@@ -287,6 +287,7 @@ export default function SchedulesPage() {
  * ================================================================== */
 
 const GREEN = "#4A5A3E";
+const GREEN_DARK = "#3A4830";
 const GREEN_SOFT = "#EAF1E2";
 const GREEN_BORDER = "#C7D4B8";
 const INK = "#1E2A24";
@@ -390,6 +391,50 @@ function MobileHome({ user, schedules, loading, onDelete }: {
     window.location.reload();
   };
 
+  // Access code — read current linked centre, apply a new code, or remove it.
+  const [orgInfo, setOrgInfo] = useState<{ name: string } | null>(null);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeMsg, setCodeMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/me/org")
+      .then((r) => r.json())
+      .then((d) => setOrgInfo(d?.org ? { name: d.org.name } : null))
+      .catch(() => setOrgInfo(null));
+  }, []);
+
+  const applyCode = async () => {
+    if (!codeInput.trim()) return;
+    setCodeBusy(true);
+    setCodeMsg(null);
+    try {
+      const res = await fetch("/api/me/org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setOrgInfo({ name: data.org.name });
+        setCodeInput("");
+        setCodeMsg({ ok: true, text: `Connected to ${data.org.name}.` });
+      } else {
+        setCodeMsg({ ok: false, text: data.error || "That code wasn't recognized." });
+      }
+    } catch {
+      setCodeMsg({ ok: false, text: "Couldn't check the code — try again." });
+    } finally {
+      setCodeBusy(false);
+    }
+  };
+
+  const removeOrgCode = async () => {
+    await fetch("/api/me/org", { method: "DELETE" });
+    setOrgInfo(null);
+    setCodeMsg(null);
+  };
+
   const startRename = (id: string, title: string) => {
     setMenuFor(null);
     setRenaming({ id, title });
@@ -479,6 +524,8 @@ function MobileHome({ user, schedules, loading, onDelete }: {
               </div>
             ) : localSchedules.length === 0 ? (
               <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/art/empty-schedules.svg" alt="" className="w-full max-w-[180px] mx-auto mb-3 opacity-70" />
                 <p className="text-[13px]" style={{ color: SUB }}>No schedules yet — create your first one above.</p>
               </div>
             ) : (
@@ -506,6 +553,8 @@ function MobileHome({ user, schedules, loading, onDelete }: {
           <div className="flex-1 overflow-y-auto px-5 pb-4">
             {localSchedules.length === 0 ? (
               <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/art/empty-schedules.svg" alt="" className="w-full max-w-[180px] mx-auto mb-3 opacity-70" />
                 <p className="text-[13px]" style={{ color: SUB }}>No schedules yet.</p>
               </div>
             ) : (
@@ -531,7 +580,51 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                 <div className="font-bold text-[14px]" style={{ color: INK }}>{user.email || "Signed in via center code"}</div>
                 <div className="text-[12px] mt-0.5" style={{ color: SUB }}>Signed in</div>
               </div>
+
+              {/* Centre / coupon code — moved here from the login screen, so
+                  signing in is always email-first and the code is a separate
+                  step that adds access + branding to what you save. */}
+              <div className="rounded-2xl p-4 mb-4" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                <div className="font-bold text-[14px] mb-0.5" style={{ color: INK }}>Access code</div>
+                {orgInfo ? (
+                  <>
+                    <div className="text-[12px] mb-3" style={{ color: SUB }}>
+                      Linked to <span className="font-semibold" style={{ color: GREEN_DARK }}>{orgInfo.name}</span>. Schedules you save carry their branding.
+                    </div>
+                    <button onClick={removeOrgCode} className="w-full py-2.5 rounded-xl font-bold text-[13px]" style={{ background: "#fff", color: "#C0463F", border: `1px solid ${BORDER}` }}>
+                      Remove code
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-[12px] mb-3" style={{ color: SUB }}>
+                      Have a code from your therapy centre? Add it to unlock their content and branding.
+                    </div>
+                    <input
+                      value={codeInput}
+                      onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                      placeholder="e.g. SUNSHINE24"
+                      className="w-full px-4 py-2.5 rounded-xl text-[14px] tracking-widest outline-none mb-2.5"
+                      style={{ border: `1.5px solid ${GREEN_BORDER}`, color: INK }}
+                    />
+                    <button
+                      onClick={applyCode}
+                      disabled={codeBusy || !codeInput.trim()}
+                      className="w-full py-2.5 rounded-xl font-bold text-[13px] text-white disabled:opacity-60"
+                      style={{ background: GREEN }}
+                    >
+                      {codeBusy ? "Checking…" : "Apply code"}
+                    </button>
+                    {codeMsg && (
+                      <p className="text-[12px] mt-2 text-center font-semibold" style={{ color: codeMsg.ok ? GREEN_DARK : "#C0463F" }}>{codeMsg.text}</p>
+                    )}
+                  </>
+                )}
+              </div>
+
               <button onClick={signOut} className="w-full py-3 rounded-2xl font-bold text-[14px]" style={{ background: "#fff", color: SUB, border: `1px solid ${BORDER}` }}>Sign Out</button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/art/profile-art.svg" alt="" className="w-full max-w-[150px] mx-auto mt-8 opacity-70" />
             </>
           ) : (
             <Link href="/login" className="block text-center py-3 rounded-2xl font-bold text-[14px] text-white no-underline" style={{ background: GREEN }}>Sign In</Link>
