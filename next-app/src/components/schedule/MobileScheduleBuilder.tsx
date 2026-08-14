@@ -345,9 +345,17 @@ export function MobileScheduleBuilder({
     return { placedCount: 0, totalSlots: 0 };
   }, [pages, scheduleType, miniCardCount]);
 
+  // Fit the A4 page to the screen — constrained by height as well as width,
+  // so the whole schedule is visible at once instead of running off the
+  // bottom and needing a scroll. ~330px accounts for the controls above the
+  // canvas (header, name, type, count) and the sticky Save bar below.
   const [zoom, setZoom] = useState(0.5);
   useEffect(() => {
-    const update = () => setZoom(Math.min(1, (window.innerWidth - 26) / A4_PORTRAIT.width));
+    const update = () => {
+      const byWidth = (window.innerWidth - 26) / A4_PORTRAIT.width;
+      const byHeight = (window.innerHeight - 330) / A4_PORTRAIT.height;
+      setZoom(Math.max(0.2, Math.min(1, byWidth, byHeight)));
+    };
     update();
     window.addEventListener("resize", update);
     window.addEventListener("orientationchange", update);
@@ -435,6 +443,14 @@ export function MobileScheduleBuilder({
     setSaved(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pages, title]);
+
+  // Once the schedule is full there's nothing left to add — go straight
+  // back to the canvas rather than leaving them on a dead-end picker.
+  useEffect(() => {
+    if (showAddStep && totalSlots > 0 && placedCount >= totalSlots) {
+      setShowAddStep(false);
+    }
+  }, [showAddStep, placedCount, totalSlots]);
 
   const save = async () => {
     setSaving(true);
@@ -665,7 +681,15 @@ export function MobileScheduleBuilder({
       {showAddStep && (
         <div className="fixed inset-0 z-[300] flex flex-col" style={{ background: "#F5F8F5" }}>
           <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ background: "#fff", borderBottom: `1px solid ${BORDER}` }}>
-            <span className="font-bold text-[16px]" style={{ color: INK }}>Add Step</span>
+            <div>
+              <span className="font-bold text-[16px]" style={{ color: INK }}>Add Step</span>
+              {totalSlots > 0 && (
+                <span className="block text-[12px] mt-0.5" style={{ color: placedCount >= totalSlots ? GREEN_DARK : SUB }}>
+                  {placedCount} of {totalSlots} added
+                  {placedCount < totalSlots ? ` · ${totalSlots - placedCount} more to go` : " · all done"}
+                </span>
+              )}
+            </div>
             <button onClick={() => setShowAddStep(false)} aria-label="Close" className="w-8 h-8 flex items-center justify-center">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
@@ -706,7 +730,7 @@ export function MobileScheduleBuilder({
             </select>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 pb-6">
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
             {(() => {
               const groups = addStepCat === "all" ? groupedCategories : groupedCategories.filter((g) => g.id === addStepCat);
               if (groups.length === 0) return <p className="text-[12px] py-3" style={{ color: SUB }}>No cards available yet.</p>;
@@ -727,6 +751,19 @@ export function MobileScheduleBuilder({
                 </div>
               );
             })()}
+          </div>
+
+          {/* Done — tap cards to add them, then come back to the canvas. */}
+          <div className="px-4 pb-4 pt-3 shrink-0" style={{ background: "#fff", borderTop: `1px solid ${BORDER}` }}>
+            <button
+              onClick={() => setShowAddStep(false)}
+              className="w-full py-3.5 rounded-2xl text-white text-[15px] font-bold"
+              style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
+            >
+              {totalSlots > 0 && placedCount < totalSlots
+                ? `Done · ${placedCount}/${totalSlots} added`
+                : "Done"}
+            </button>
           </div>
         </div>
       )}
