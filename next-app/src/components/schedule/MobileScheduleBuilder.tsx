@@ -420,7 +420,7 @@ export function MobileScheduleBuilder({
   const [authChecked, setAuthChecked] = useState(false);
   const [authed, setAuthed] = useState(false);
   useEffect(() => {
-    fetch("/api/auth/session")
+    fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         setIsAdmin(d?.user?.role === "admin");
