@@ -65,12 +65,15 @@ const FAINT = "#9AA69E";
 // "brown") to tell them apart at a glance. Never wrong, unlike pulling an
 // image off whatever card in the library happened to be flagged "character."
 function FaceIcon({ variant }: { variant: Gender }) {
-  // Real illustrated faces (public/faces/), matching the card artwork style.
-  // Replaces the earlier drawn SVG placeholders.
+  // Real illustrated faces. Paths match exactly what's uploaded in
+  // public/face/ — note the folder is "face" (singular) and the neutral
+  // file has a double dot, so those are handled here rather than asking
+  // for the files to be renamed.
+  const file = variant === "neutral" ? "face-neutral..png" : `face-${variant}.png`;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/faces/face-${variant}.png`}
+      src={`/face/${file}`}
       alt=""
       className="w-full h-full object-cover"
       loading="lazy"
