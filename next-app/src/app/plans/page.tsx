@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 interface User {
@@ -110,16 +111,41 @@ function loadRazorpayScript(): Promise<boolean> {
 }
 
 export default function PlansPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [payMessage, setPayMessage] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [checkedMobile, setCheckedMobile] = useState(false);
+  const [gateChecked, setGateChecked] = useState(false);
 
   useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => { setIsMobile(mq.matches); setCheckedMobile(true); };
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!checkedMobile) return;
     fetch("/api/auth/session")
       .then((r) => r.json())
-      .then((data) => setUser(data.user || null))
-      .catch(() => setUser(null));
-  }, []);
+      .then((data) => {
+        const u = data.user || null;
+        setUser(u);
+        // Mobile only: desktop keeps letting people browse plans without an
+        // account (matches its existing "no account needed for free cards"
+        // flow). On mobile, always require sign-in first, same as Create.
+        if (isMobile && !u) {
+          router.push("/login?next=/plans");
+          return;
+        }
+        setGateChecked(true);
+      })
+      .catch(() => setGateChecked(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkedMobile]);
 
   async function handleSubscribeClick(planId: string) {
     if (!user) {
@@ -186,6 +212,10 @@ export default function PlansPage() {
       setPayMessage("Could not start the payment. Please check your connection and try again.");
       setPaying(null);
     }
+  }
+
+  if (checkedMobile && isMobile && !gateChecked) {
+    return <div className="h-dvh bg-bg" />;
   }
 
   return (
