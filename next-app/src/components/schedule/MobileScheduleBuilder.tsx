@@ -65,18 +65,31 @@ const FAINT = "#9AA69E";
 // "brown") to tell them apart at a glance. Never wrong, unlike pulling an
 // image off whatever card in the library happened to be flagged "character."
 function FaceIcon({ variant }: { variant: Gender }) {
-  // Real illustrated faces. Paths match exactly what's uploaded in
-  // public/face/ — note the folder is "face" (singular) and the neutral
-  // file has a double dot, so those are handled here rather than asking
-  // for the files to be renamed.
-  const file = variant === "neutral" ? "face-neutral..png" : `face-${variant}.png`;
+  // Files now live at /faces/face-<variant>.png. The onError fallback covers
+  // the older /face/ folder and the face-neutral..png double-dot name, so
+  // this keeps working whichever naming is live — no more blank circles if
+  // the files get tidied again.
+  const primary = `/faces/face-${variant}.png`;
+  const fallbacks = [
+    `/face/face-${variant}.png`,
+    variant === "neutral" ? "/face/face-neutral..png" : "",
+  ].filter(Boolean);
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/face/${file}`}
+      src={primary}
       alt=""
       className="w-full h-full object-cover"
       loading="lazy"
+      onError={(e) => {
+        const img = e.currentTarget;
+        const tried = Number(img.dataset.try || "0");
+        if (tried < fallbacks.length) {
+          img.dataset.try = String(tried + 1);
+          img.src = fallbacks[tried];
+        }
+      }}
     />
   );
 }
