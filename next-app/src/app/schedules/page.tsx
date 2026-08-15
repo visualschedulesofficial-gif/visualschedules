@@ -9,6 +9,7 @@ import {
   setCardImages as setCardImagesGlobal,
   setLabelOverrides,
   getCardImageUrl,
+  getCardGender,
   findCard,
   type ParsedCard,
 } from "@/lib/card-data";
@@ -25,6 +26,7 @@ interface Schedule {
   scheduleType: string;
   updatedAt: string;
   coverCardId: string | null;
+  gender: string;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -458,6 +460,40 @@ function MobileHome({ user, schedules, loading, onDelete }: {
     setCodeMsg(null);
   };
 
+  // Edit — pull the saved schedule and hand it to the builder through the
+  // same sessionStorage draft the builder already restores from on mount.
+  // ACTIVE_ID_KEY makes Save update THIS row instead of creating a new one.
+  const startEdit = async (id: string) => {
+    setMenuFor(null);
+    try {
+      const full = await fetch(`/api/schedules/${id}`, { cache: "no-store" }).then((r) => r.json());
+      if (!full?.id) { alert("Couldn't open that schedule — please try again."); return; }
+      sessionStorage.setItem("vs_active_schedule_id", full.id);
+      const pages = full.data?.pages || [];
+      // miniCardCount isn't a database column, so derive it from how many
+      // cards were actually saved — otherwise a 5-step "My Schedule" would
+      // reopen with only the default 3 slots and drop the last two.
+      let cardCount = 0;
+      for (const p of pages) {
+        cardCount += (p?.slots || []).filter(Boolean).length;
+        for (const col of Object.values(p?.columns || {})) cardCount += (col as any[])?.length || 0;
+      }
+      sessionStorage.setItem("vs_draft_mobile_schedule", JSON.stringify({
+        id: full.id,
+        title: full.title,
+        scheduleType: full.scheduleType,
+        language: full.language,
+        gender: full.gender,
+        gridCols: full.gridCols,
+        miniCardCount: Math.min(5, Math.max(2, cardCount)),
+        pages,
+      }));
+      router.push("/schedule");
+    } catch {
+      alert("Couldn't open that schedule — check your connection.");
+    }
+  };
+
   const startRename = (id: string, title: string) => {
     setMenuFor(null);
     setRenaming({ id, title });
@@ -564,6 +600,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                     onOpen={() => router.push(`/schedule/${s.id}/do`)}
                     onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
                     onRename={() => startRename(s.id, s.title)}
+                    onEdit={() => startEdit(s.id)}
                     onDelete={() => { setMenuFor(null); handleDeleteLocal(s.id, s.title); }}
                   />
                 ))}
@@ -593,6 +630,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                     onOpen={() => router.push(`/schedule/${s.id}/do`)}
                     onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
                     onRename={() => startRename(s.id, s.title)}
+                    onEdit={() => startEdit(s.id)}
                     onDelete={() => { setMenuFor(null); handleDeleteLocal(s.id, s.title); }}
                   />
                 ))}
@@ -707,11 +745,15 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   );
 }
 
-function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete }: {
-  s: Schedule; menuOpen: boolean; onOpen: () => void; onMenu: () => void; onRename: () => void; onDelete: () => void;
+function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete, onEdit }: {
+  s: Schedule; menuOpen: boolean; onOpen: () => void; onMenu: () => void; onRename: () => void; onDelete: () => void; onEdit: () => void;
 }) {
   const card = s.coverCardId ? findCard(s.coverCardId) : undefined;
-  const thumb = card ? (getCardImageUrl(card.id, "neutral") || null) : null;
+  // Use the character this schedule was actually saved with — this was
+  // hardcoded to "neutral", so a girl schedule showed a boy thumbnail.
+  const thumb = card
+    ? (getCardImageUrl(card.id, getCardGender(card, s.gender)) || getCardImageUrl(card.id, "neutral") || null)
+    : null;
   return (
     <div className="relative flex items-center gap-3 p-3 rounded-2xl" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
       <button onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
@@ -739,7 +781,7 @@ function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete }: {
       {menuOpen && (
         <div className="absolute right-2 top-12 z-10 rounded-xl overflow-hidden" style={{ background: "#fff", border: `1px solid ${BORDER}`, boxShadow: "0 8px 20px rgba(0,0,0,0.12)" }}>
           <button onClick={onRename} className="block w-full text-left px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap" style={{ color: INK }}>Rename</button>
-          <Link href={`/schedule?id=${s.id}`} className="block px-4 py-2.5 text-[13px] font-semibold no-underline whitespace-nowrap" style={{ color: INK }}>Edit</Link>
+          <button onClick={onEdit} className="block w-full text-left px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap" style={{ color: INK }}>Edit</button>
           <button onClick={onDelete} className="block w-full text-left px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap" style={{ color: "#DC4C4C" }}>Delete</button>
         </div>
       )}
