@@ -400,6 +400,15 @@ export function useExport() {
   const saveToDatabase = async () => {
     try {
       const state = useScheduleState.getState();
+      // Fall back to the mobile builder's id if the store hasn't got one yet.
+      // The mobile builder owns its schedule id and keeps it in sessionStorage;
+      // without this, exporting POSTs with no id, the server mints a new one,
+      // and the schedule is written a SECOND time — the duplicate-row bug.
+      let effectiveId = state.id;
+      if (!effectiveId) {
+        try { effectiveId = sessionStorage.getItem("vs_active_schedule_id") || null; } catch {}
+        if (effectiveId) useScheduleState.setState({ id: effectiveId });
+      }
       // Save on export. The id is sent when we have one so the same row is
       // updated; when it's null (a brand-new desktop schedule) the server
       // mints one and we adopt it below — otherwise every later save would
@@ -408,7 +417,7 @@ export function useExport() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: state.id ?? undefined,
+          id: effectiveId ?? undefined,
           title: state.title,
           scheduleType: state.scheduleType,
           language: state.language,
@@ -424,7 +433,7 @@ export function useExport() {
         const data = await res.json().catch(() => null);
         // Adopt the server-assigned id so this schedule now has a stable
         // identity — later saves and autosave update it instead of inserting.
-        if (!state.id && data?.id) {
+        if (!effectiveId && data?.id) {
           useScheduleState.setState({ id: data.id });
         }
         setLastSaved(new Date());
