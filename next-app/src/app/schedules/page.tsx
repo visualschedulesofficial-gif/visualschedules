@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LANGUAGES } from "@/lib/constants";
 import { useState, useEffect, useMemo } from "react";
 import {
   getRuntimeCards,
@@ -27,6 +28,7 @@ interface Schedule {
   updatedAt: string;
   coverCardId: string | null;
   gender: string;
+  language: string;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -69,6 +71,15 @@ export default function SchedulesPage() {
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [checkedMobile, setCheckedMobile] = useState(false);
+  const [showCentre, setShowCentre] = useState(false);
+  const [centreName, setCentreName] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/me/org")
+      .then((r) => r.json())
+      .then((d) => setCentreName(d?.org?.name || null))
+      .catch(() => setCentreName(null));
+  }, [showCentre]);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -144,6 +155,12 @@ export default function SchedulesPage() {
           Visual Schedules
         </Link>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCentre(true)}
+            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-ink-2 font-medium font-sans hover:border-ink hover:text-ink transition-all"
+          >
+            {centreName ? `Centre: ${centreName}` : "Centre code"}
+          </button>
           <Link
             href="/schedule"
             className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] bg-ink text-white border border-ink no-underline font-medium font-sans hover:bg-[#333] transition-all"
@@ -209,7 +226,6 @@ export default function SchedulesPage() {
               </span>
             </div>
 
-            <DesktopAccessCode />
 
             {schedules.length === 0 ? (
               // Empty state
@@ -237,52 +253,98 @@ export default function SchedulesPage() {
               </div>
 
             ) : (
-              // Schedule grid
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {schedules.map((s) => (
-                  <div
-                    key={s.id}
-                    className="bg-surface border border-border hover:shadow-md hover:border-[#C8C4BC] transition-all flex flex-col"
-                  >
-                    {/* Type badge */}
-                    <div className="px-4 pt-4 pb-2">
-                      <span className="text-[10px] tracking-wider uppercase font-medium text-ink-3">
-                        {TYPE_LABELS[s.scheduleType] || s.scheduleType}
-                      </span>
-                    </div>
+              // Schedule grid — taller cards, 3 per row, with the first card
+              // as a thumbnail and tags for type / language / created date.
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {schedules.map((s) => {
+                  const card = s.coverCardId ? findCard(s.coverCardId) : undefined;
+                  const thumb = card
+                    ? (getCardImageUrl(card.id, getCardGender(card, s.gender)) || getCardImageUrl(card.id, "neutral") || null)
+                    : null;
+                  const desktopOnly = DESKTOP_ONLY.has(s.scheduleType);
+                  return (
+                    <div
+                      key={s.id}
+                      className="bg-surface border border-border hover:shadow-md hover:border-[#C8C4BC] transition-all flex flex-col overflow-hidden"
+                    >
+                      {/* Thumbnail — first card of the schedule */}
+                      <div className="h-[150px] flex items-center justify-center bg-bg-muted border-b border-border">
+                        {thumb ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={thumb} alt="" className="h-full w-full object-contain p-3" />
+                        ) : (
+                          <svg className="w-9 h-9 stroke-ink-3 stroke-[1.4] fill-none" viewBox="0 0 24 24">
+                            <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
+                          </svg>
+                        )}
+                      </div>
 
-                    {/* Title */}
-                    <div className="px-4 pb-3 flex-1">
-                      <h2 className="font-serif text-lg italic text-ink leading-snug">
-                        {s.title || "Untitled Schedule"}
-                      </h2>
-                      <p className="text-[11px] text-ink-3 mt-1">
-                        Edited {timeAgo(s.updatedAt)}
-                      </p>
-                    </div>
+                      <div className="px-4 pt-3 pb-3 flex-1">
+                        <h2 className="font-serif text-lg italic text-ink leading-snug">
+                          {s.title || "Untitled Schedule"}
+                        </h2>
 
-                    {/* Actions */}
-                    <div className="flex border-t border-border">
-                      <Link
-                        href={`/schedule?id=${s.id}`}
-                        className="flex-1 py-2.5 text-[11px] tracking-wider uppercase text-center text-ink-2 no-underline hover:bg-surface-hover hover:text-ink transition-colors border-r border-border font-medium font-sans"
-                      >
-                        Open
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(s.id, s.title)}
-                        className="flex-1 py-2.5 text-[11px] tracking-wider uppercase text-ink-3 hover:bg-[#FAF0F0] hover:text-[#B83232] transition-colors font-medium font-sans"
-                      >
-                        Delete
-                      </button>
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <span className="text-[10px] tracking-wider uppercase font-medium px-2 py-1 rounded bg-bg-muted text-ink-2">
+                            {TYPE_LABELS[s.scheduleType] || s.scheduleType}
+                          </span>
+                          <span className="text-[10px] tracking-wider uppercase font-medium px-2 py-1 rounded bg-bg-muted text-ink-2">
+                            {LANGUAGES[s.language as keyof typeof LANGUAGES] || s.language}
+                          </span>
+                          {desktopOnly && (
+                            <span className="text-[10px] tracking-wider uppercase font-medium px-2 py-1 rounded" style={{ background: "#FFF3E6", color: "#B5761F" }}>
+                              Desktop only
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-ink-3 mt-2">
+                          Edited {timeAgo(s.updatedAt)}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex border-t border-border">
+                        <Link
+                          href={`/schedule?id=${s.id}`}
+                          className="flex-1 py-2.5 text-[11px] tracking-wider uppercase text-center text-ink-2 no-underline hover:bg-surface-hover hover:text-ink transition-colors border-r border-border font-medium font-sans"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(s.id, s.title)}
+                          className="flex-1 py-2.5 text-[11px] tracking-wider uppercase text-ink-3 hover:bg-[#FAF0F0] hover:text-[#B83232] transition-colors font-medium font-sans"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
         )}
       </main>
+
+      {showCentre && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+          style={{ background: "rgba(28,27,25,0.45)" }}
+          onClick={() => setShowCentre(false)}
+        >
+          <div className="bg-surface border border-border p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <DesktopAccessCode onDone={(name) => setCentreName(name)} />
+            <button
+              onClick={() => setShowCentre(false)}
+              className="mt-5 w-full text-[11px] tracking-wider uppercase py-2.5 border border-border text-ink-2 font-medium font-sans hover:border-ink hover:text-ink transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-ink text-[#9A9690] px-7 py-4 flex items-center justify-between gap-4 flex-wrap text-xs max-md:px-4 mt-auto">
@@ -785,7 +847,7 @@ function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete, onEdit }
 }
 /* Access code panel for the desktop list page. Mirrors the mobile Profile
    version: shows the linked centre, lets you apply a code, or remove it. */
-function DesktopAccessCode() {
+function DesktopAccessCode({ onDone }: { onDone?: (name: string | null) => void }) {
   const [orgInfo, setOrgInfo] = useState<{ name: string } | null>(null);
   const [codeInput, setCodeInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -811,7 +873,8 @@ function DesktopAccessCode() {
       if (res.ok && data.ok) {
         setOrgInfo({ name: data.org.name });
         setCodeInput("");
-        setMsg({ ok: true, text: `Connected to ${data.org.name}.` });
+        setMsg({ ok: true, text: `Connected to ${data.org.name}. Branding will be applied to schedules you save.` });
+        onDone?.(data.org.name);
       } else {
         setMsg({ ok: false, text: data.error || "That code wasn't recognized." });
       }
@@ -826,14 +889,15 @@ function DesktopAccessCode() {
     try {
       await fetch("/api/me/org", { method: "DELETE" });
       setOrgInfo(null);
+      onDone?.(null);
       setMsg({ ok: true, text: "Access code removed." });
     } catch {}
     setBusy(false);
   };
 
   return (
-    <div className="bg-surface border border-border p-4 mb-6">
-      <h2 className="text-[13px] font-medium text-ink mb-1">Access code</h2>
+    <div>
+      <h2 className="font-serif text-lg italic text-ink mb-1">Centre access code</h2>
       {orgInfo ? (
         <>
           <p className="text-[12px] text-ink-2 mb-3">
