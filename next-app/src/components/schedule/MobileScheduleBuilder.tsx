@@ -193,15 +193,10 @@ function CategoryRow({
 
   return (
     <div className="pt-1">
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="mb-2">
         <span className="text-[13px] font-bold" style={{ color: INK }}>
           {name} <span className="font-medium" style={{ color: SUB }}>({cards.length})</span>
         </span>
-        {tooMany && (
-          <button onClick={() => setExpanded((v) => !v)} className="text-[12px] font-semibold shrink-0" style={{ color: GREEN }}>
-            {expanded ? "Show less" : `See all ${cards.length}`}
-          </button>
-        )}
       </div>
       <div className="grid grid-cols-3 gap-2.5">
         {shown.map((card) => (
@@ -216,6 +211,20 @@ function CategoryRow({
           />
         ))}
       </div>
+      {/* Below the cards and centred: while scrolling through a long
+          category you reach this naturally, instead of having to scroll
+          back up to the heading to expand it. */}
+      {tooMany && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="px-4 py-2 rounded-full text-[12px] font-bold"
+            style={{ background: "#fff", color: GREEN, border: `1.5px solid ${GREEN}` }}
+          >
+            {expanded ? "Show less" : `See all ${cards.length}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -327,6 +336,21 @@ export function MobileScheduleBuilder({
     return groups;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, adminCatNames]);
+
+  // Default the Add Step filter to Daily Routine (the first category), so it
+  // opens on the most-used cards rather than the whole library — matching
+  // desktop. Only applied once, and only while still on "all", so it never
+  // overrides a category the user picked themselves.
+  const catDefaultedRef = useRef(false);
+  useEffect(() => {
+    if (catDefaultedRef.current || groupedCategories.length === 0) return;
+    const daily =
+      groupedCategories.find((g) => /daily/i.test(g.name)) || groupedCategories[0];
+    if (daily) {
+      catDefaultedRef.current = true;
+      setAddStepCat((cur) => (cur === "all" ? daily.id : cur));
+    }
+  }, [groupedCategories]);
 
   const showCharacters = useMemo(() => cards.some((c) => isCharacterCard(c)), [cards]);
   useEffect(() => {
