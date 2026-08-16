@@ -416,6 +416,7 @@ export function MobileScheduleBuilder({
   // deleted on a successful save, so remounting minted a fresh id and the
   // next Save inserted a SECOND row (the duplicate in Recently Added).
   // Cleared by the home page's "Create Schedule" button to start fresh.
+  const isNewScheduleRef = useRef(false);
   const [scheduleId] = useState<string>(() => {
     try {
       const active = sessionStorage.getItem(ACTIVE_ID_KEY);
@@ -423,6 +424,11 @@ export function MobileScheduleBuilder({
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (raw) { const d = JSON.parse(raw); if (d.id) return d.id; }
     } catch {}
+    // Nothing stored -> this is a brand-new schedule (Create Schedule clears
+    // both keys). Flag it so the store gets wiped below; the store survives
+    // client-side navigation, so without this the new schedule opened
+    // pre-filled with the previous one's steps.
+    isNewScheduleRef.current = true;
     const fresh = crypto.randomUUID();
     try { sessionStorage.setItem(ACTIVE_ID_KEY, fresh); } catch {}
     return fresh;
@@ -458,6 +464,11 @@ export function MobileScheduleBuilder({
   // download; without this the store id would be null there, the server would
   // mint a different id, and the schedule would appear twice.
   useEffect(() => {
+    if (isNewScheduleRef.current) {
+      // Blank slate: clears title, pages, type, language and character.
+      useScheduleState.getState().reset();
+      isNewScheduleRef.current = false;
+    }
     useScheduleState.setState({ id: scheduleId });
     // Persist on every path (fresh id, restored draft, or edit), so the
     // export hook's sessionStorage fallback always finds it.
