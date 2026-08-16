@@ -238,7 +238,10 @@ export const useScheduleState = create<ScheduleState>((set, get) => ({
       title: "My Schedule",
       scheduleType: "mini",
       language: "en",
-      gender: "neutral",
+      // Match the app's initial state ("boy"). reset() previously dropped to
+      // "neutral", so a NEW schedule silently used a different character than
+      // a freshly loaded page.
+      gender: "boy",
       gridCols: 3,
       cardStyle: "white",
       customColNames: ["Column 1", "Column 2", "Column 3", "Column 4"],
