@@ -454,6 +454,16 @@ export function MobileScheduleBuilder({
   const [saveError, setSaveError] = useState<string | null>(null);
   const mountedRef = useRef(false);
 
+  // Share this id with the global store. The export hook also saves on
+  // download; without this the store id would be null there, the server would
+  // mint a different id, and the schedule would appear twice.
+  useEffect(() => {
+    useScheduleState.setState({ id: scheduleId });
+    // Persist on every path (fresh id, restored draft, or edit), so the
+    // export hook's sessionStorage fallback always finds it.
+    try { sessionStorage.setItem(ACTIVE_ID_KEY, scheduleId); } catch {}
+  }, [scheduleId]);
+
   // Restore a draft if Save had to send us to sign in — rebuilds the pages
   // via the store's own placeCard so no new store method is needed.
   useEffect(() => {
