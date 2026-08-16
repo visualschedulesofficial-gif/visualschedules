@@ -138,7 +138,19 @@ function mergeCards(dbCards: ParsedCard[]): ParsedCard[] {
   return [...dbCards, ...ALL_CARDS.filter((c) => !dbIds.has(c.id))];
 }
 
+function useIsEditingSaved() {
+  // True when the builder was opened as /schedule?id=... Changing the
+  // schedule type then would throw away the saved layout, so the picker is
+  // locked in that case.
+  const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    try { setEditing(new URLSearchParams(window.location.search).has("id")); } catch {}
+  }, []);
+  return editing;
+}
+
 export function CardLibrarySidebar() {
+  const isEditingSaved = useIsEditingSaved();
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
   const language = useScheduleState((s) => s.language);
@@ -390,7 +402,9 @@ export function CardLibrarySidebar() {
               <select
                 value={scheduleType}
                 onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
-                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
+                disabled={isEditingSaved}
+                title={isEditingSaved ? "Schedule type can't be changed when editing a saved schedule" : undefined}
+                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {/* Grouped by where the result is usable. The landscape types
                     (weekly / custom / timetable) are too wide to work on a
