@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { DAY_KEYS, getDailySpec } from "@/lib/constants";
 import {
   DndContext,
@@ -106,6 +107,40 @@ export default function ScheduleBuilder() {
   }, [scheduleTypeForFit, isMobile]);
   const placeCard = useScheduleState((s) => s.placeCard);
   const language = useScheduleState((s) => s.language);
+
+  // Load an existing schedule when opened as /schedule?id=... Nothing read
+  // this parameter before, so Open/Edit from My Schedules always landed on an
+  // empty builder. `editingId` also locks the schedule-type picker, since
+  // changing type would discard the saved layout.
+  const searchParams = useSearchParams();
+  const editingId = searchParams.get("id");
+  const loadSchedule = useScheduleState((s) => s.loadSchedule);
+  const [loadingSchedule, setLoadingSchedule] = useState(!!editingId);
+
+  useEffect(() => {
+    if (!editingId) return;
+    let cancelled = false;
+    fetch(`/api/schedules/${editingId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((full) => {
+        if (cancelled || !full?.id) return;
+        loadSchedule({
+          id: full.id,
+          title: full.title,
+          scheduleType: full.scheduleType,
+          language: full.language,
+          gender: full.gender,
+          gridCols: full.gridCols,
+          customColNames: full.customColNames || undefined,
+          weekMode: full.weekMode,
+          cardStyle: full.cardStyle,
+          pages: full.data?.pages || [],
+        } as any);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoadingSchedule(false); });
+    return () => { cancelled = true; };
+  }, [editingId, loadSchedule]);
 
   useAutoSave();
 
