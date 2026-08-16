@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "vs_session";
 const ORG_COOKIE = "vs_org";
@@ -6,20 +6,10 @@ const ORG_COOKIE = "vs_org";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// POST /api/auth/logout — sign out completely.
-//
-// Previous version mutated the cookies() store. That works in Server Actions
-// but is unreliable inside Route Handlers on the Cloudflare/OpenNext runtime:
-// the mutation isn't always attached to the outgoing response, so the browser
-// never receives the Set-Cookie header and the session survives. That's the
-// "login flashes for a split second, then I'm back in" behaviour.
-//
-// Setting the cookies on the NextResponse itself guarantees the Set-Cookie
-// headers are sent. We also expire them three ways (empty value, maxAge 0 and
-// an epoch expires) because Safari and Chrome disagree on which one alone is
-// sufficient.
-function buildLogoutResponse(body: unknown, status = 200) {
-  const res = NextResponse.json(body, { status });
+// Sign out. Cookies are set on the response object (not via the cookies()
+// store), which is the only reliable way to guarantee Set-Cookie headers are
+// emitted from a Route Handler on the Cloudflare/OpenNext runtime.
+function expire(res: NextResponse) {
   for (const name of [SESSION_COOKIE, ORG_COOKIE]) {
     res.cookies.set({
       name,
@@ -32,19 +22,20 @@ function buildLogoutResponse(body: unknown, status = 200) {
       expires: new Date(0),
     });
   }
-  // Belt and braces: an explicit delete after the expiry set.
-  res.cookies.delete(SESSION_COOKIE);
-  res.cookies.delete(ORG_COOKIE);
-  // Never let a proxy or the browser serve this from cache.
   res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   return res;
 }
 
-export async function POST() {
-  return buildLogoutResponse({ success: true });
+// GET — a real browser navigation, then a redirect. Use this from a plain
+// link. A fetch() response can have its Set-Cookie quietly ignored depending
+// on how it's handled, which is why desktop sign-out appeared to do nothing;
+// a navigation forces the browser to apply the headers.
+export async function GET(request: NextRequest) {
+  const url = new URL("/login?signedout=1", request.url);
+  return expire(NextResponse.redirect(url, { status: 303 }));
 }
 
-// GET works too, so a plain link can sign someone out if fetch is blocked.
-export async function GET() {
-  return buildLogoutResponse({ success: true });
+// POST kept for any existing callers.
+export async function POST() {
+  return expire(NextResponse.json({ success: true }));
 }
