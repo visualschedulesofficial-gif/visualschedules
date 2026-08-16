@@ -400,17 +400,15 @@ export function useExport() {
   const saveToDatabase = async () => {
     try {
       const state = useScheduleState.getState();
-      // Only auto-save when the store actually owns a schedule id. On mobile
-      // the store id is null (the mobile builder tracks its own id and saves
-      // via PUT), so POSTing here made the server mint a NEW uuid on every
-      // export — creating a duplicate row each time a schedule was
-      // downloaded. That's the "showing twice" bug.
-      if (!state.id) return;
+      // Save on export. The id is sent when we have one so the same row is
+      // updated; when it's null (a brand-new desktop schedule) the server
+      // mints one and we adopt it below — otherwise every later save would
+      // create ANOTHER row, which was the duplicate-schedule bug.
       const res = await fetch("/api/schedules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: state.id,
+          id: state.id ?? undefined,
           title: state.title,
           scheduleType: state.scheduleType,
           language: state.language,
@@ -423,8 +421,14 @@ export function useExport() {
         }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => null);
+        // Adopt the server-assigned id so this schedule now has a stable
+        // identity — later saves and autosave update it instead of inserting.
+        if (!state.id && data?.id) {
+          useScheduleState.setState({ id: data.id });
+        }
         setLastSaved(new Date());
-        state.markClean?.();
+        useScheduleState.getState().markClean?.();
       }
     } catch {}
   };
