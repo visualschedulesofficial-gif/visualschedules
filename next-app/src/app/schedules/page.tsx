@@ -111,13 +111,6 @@ export default function SchedulesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkedMobile]);
 
-  async function handleSignOut() {
-    try { await fetch("/api/auth/logout", { method: "POST", cache: "no-store" }); } catch {}
-    // Hard navigation with a unique URL — guarantees no cached signed-in
-    // state (including iOS back-forward cache) survives.
-    window.location.replace(`/login?t=${Date.now()}`);
-  }
-
   async function handleDelete(id: string, title: string) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     try {
@@ -159,12 +152,12 @@ export default function SchedulesPage() {
           </Link>
           {/* Desktop had no sign-out at all before — only mobile did. */}
           {user && (
-            <button
-              onClick={handleSignOut}
-              className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-ink-2 font-medium font-sans hover:border-ink hover:text-ink transition-all"
+            <a
+              href="/api/auth/logout"
+              className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] border border-border text-ink-2 font-medium font-sans no-underline hover:border-ink hover:text-ink transition-all"
             >
               Sign Out
-            </button>
+            </a>
           )}
         </div>
       </nav>
@@ -215,6 +208,8 @@ export default function SchedulesPage() {
                 {schedules.length} schedule{schedules.length !== 1 ? "s" : ""} saved
               </span>
             </div>
+
+            <DesktopAccessCode />
 
             {schedules.length === 0 ? (
               // Empty state
@@ -410,10 +405,10 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   const recent = localSchedules;
 
   const signOut = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST", cache: "no-store" }); } catch {}
-    // Unique URL defeats iOS's back-forward cache, which can otherwise
-    // restore the signed-in page from memory after logout.
-    window.location.replace(`/login?t=${Date.now()}`);
+    // Same navigation-based sign-out as desktop: let the browser follow the
+    // redirect so Set-Cookie is always applied. Cache-buster defeats iOS's
+    // back-forward cache restoring the signed-in page from memory.
+    window.location.href = `/api/auth/logout?t=${Date.now()}`;
   };
 
   // Access code — read current linked centre, apply a new code, or remove it.
@@ -788,3 +783,96 @@ function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete, onEdit }
     </div>
   );
 }
+/* Access code panel for the desktop list page. Mirrors the mobile Profile
+   version: shows the linked centre, lets you apply a code, or remove it. */
+function DesktopAccessCode() {
+  const [orgInfo, setOrgInfo] = useState<{ name: string } | null>(null);
+  const [codeInput, setCodeInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/me/org")
+      .then((r) => r.json())
+      .then((d) => setOrgInfo(d?.org ? { name: d.org.name } : null))
+      .catch(() => setOrgInfo(null));
+  }, []);
+
+  const apply = async () => {
+    if (!codeInput.trim()) return;
+    setBusy(true); setMsg(null);
+    try {
+      const res = await fetch("/api/me/org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setOrgInfo({ name: data.org.name });
+        setCodeInput("");
+        setMsg({ ok: true, text: `Connected to ${data.org.name}.` });
+      } else {
+        setMsg({ ok: false, text: data.error || "That code wasn't recognized." });
+      }
+    } catch {
+      setMsg({ ok: false, text: "Couldn't check the code — try again." });
+    }
+    setBusy(false);
+  };
+
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await fetch("/api/me/org", { method: "DELETE" });
+      setOrgInfo(null);
+      setMsg({ ok: true, text: "Access code removed." });
+    } catch {}
+    setBusy(false);
+  };
+
+  return (
+    <div className="bg-surface border border-border p-4 mb-6">
+      <h2 className="text-[13px] font-medium text-ink mb-1">Access code</h2>
+      {orgInfo ? (
+        <>
+          <p className="text-[12px] text-ink-2 mb-3">
+            Linked to <strong className="text-ink">{orgInfo.name}</strong>. Schedules you save carry their branding, and all paid cards are unlocked.
+          </p>
+          <button
+            onClick={remove}
+            disabled={busy}
+            className="text-[11px] tracking-wider uppercase px-4 py-2 border border-border text-ink-3 font-medium font-sans hover:text-[#C53030] hover:border-[#C53030] transition-all disabled:opacity-50"
+          >
+            Remove code
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-[12px] text-ink-2 mb-3">
+            Have a code from your therapy centre? Add it to unlock all paid cards and apply their branding.
+          </p>
+          <div className="flex gap-2 max-w-sm">
+            <input
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+              placeholder="e.g. SUNSHINE24"
+              className="flex-1 min-w-0 px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] tracking-widest uppercase text-ink outline-none focus:border-accent"
+            />
+            <button
+              onClick={apply}
+              disabled={busy || !codeInput.trim()}
+              className="text-[11px] tracking-wider uppercase px-4 py-2 bg-accent text-white border border-accent font-medium font-sans hover:bg-accent-hover transition-all disabled:opacity-50 shrink-0"
+            >
+              {busy ? "…" : "Apply"}
+            </button>
+          </div>
+        </>
+      )}
+      {msg && (
+        <p className={`mt-2 text-[12px] ${msg.ok ? "text-ink-2" : "text-[#C53030]"}`}>{msg.text}</p>
+      )}
+    </div>
+  );
+}
+
