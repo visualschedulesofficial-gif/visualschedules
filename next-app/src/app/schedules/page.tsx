@@ -440,6 +440,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   // Loaded once so ScheduleRow can resolve each schedule's first-card
   // thumbnail via findCard/getCardImageUrl below.
   const [cardsLoaded, setCardsLoaded] = useState(false);
+  const [assetsVersion, setAssetsVersion] = useState(0);
   useEffect(() => {
     fetch("/api/cards")
       .then((r) => r.json())
@@ -455,10 +456,18 @@ function MobileHome({ user, schedules, loading, onDelete }: {
         setCardsLoaded(true);
       })
       .catch(() => setCardsLoaded(true));
+    // The image map lives in a module-level store, not React state, so
+    // nothing re-rendered when it finished loading — the rows had already
+    // painted with no image and never tried again. Bumping this counter
+    // forces the list to re-render once images are available.
     fetch("/api/cards/images")
       .then((r) => r.json())
-      .then((data) => { if (data.images) setCardImagesGlobal(data.images); if (data.labels) setLabelOverrides(data.labels); })
-      .catch(() => {});
+      .then((data) => {
+        if (data.images) setCardImagesGlobal(data.images);
+        if (data.labels) setLabelOverrides(data.labels);
+      })
+      .catch(() => {})
+      .finally(() => setAssetsVersion((v) => v + 1));
   }, []);
 
   // "Recently Added" — the API already returns newest-edited first
@@ -653,7 +662,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
             ) : (
               <div className="space-y-2.5">
                 {recent.slice(0, 3).map((s) => (
-                  <ScheduleRow key={s.id} s={s} menuOpen={menuFor === s.id}
+                  <ScheduleRow key={`${s.id}-${cardsLoaded}-${assetsVersion}`} s={s} menuOpen={menuFor === s.id}
                     onOpen={() => router.push(`/schedule/${s.id}/do`)}
                     onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
                     onRename={() => startRename(s.id, s.title)}
@@ -683,7 +692,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
             ) : (
               <div className="space-y-2.5">
                 {localSchedules.map((s) => (
-                  <ScheduleRow key={s.id} s={s} menuOpen={menuFor === s.id}
+                  <ScheduleRow key={`${s.id}-${cardsLoaded}-${assetsVersion}`} s={s} menuOpen={menuFor === s.id}
                     onOpen={() => router.push(`/schedule/${s.id}/do`)}
                     onMenu={() => setMenuFor(menuFor === s.id ? null : s.id)}
                     onRename={() => startRename(s.id, s.title)}
