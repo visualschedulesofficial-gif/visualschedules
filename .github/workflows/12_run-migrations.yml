@@ -1,39 +1,46 @@
-name: Run Database Migrations
+name: Add Missing Subscription Column
 
-# Adds a manual "Run workflow" button in the Actions tab, so migrations can be
-# applied from the GitHub website — no laptop or terminal needed.
+# Manual "Run workflow" button in the Actions tab — no laptop needed.
+#
+# Why this instead of "d1 migrations apply":
+# This database was created directly from setup-database.sql, so Cloudflare has
+# no record of any migration ever running. "migrations apply" therefore tries to
+# replay EVERY migration from the beginning, starting with CREATE TABLE
+# statements for tables that already exist — which fails immediately.
+#
+# So this runs the single statement that's actually missing: the expires_at
+# column on subscriptions. Without it, saving a paid subscription fails, which
+# is why a successful payment never unlocked anything.
 on:
   workflow_dispatch:
 
 jobs:
-  migrate:
+  add-column:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code
         uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        working-directory: next-app
-        run: npm ci
-
-      - name: Apply pending migrations to the live database
+      - name: Show subscriptions columns BEFORE
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: next-app
-          command: d1 migrations apply visual-schedules-db --remote
+          command: d1 execute visual-schedules-db --remote --command "PRAGMA table_info(subscriptions);" --yes
 
-      - name: Show the subscriptions table afterwards
+      - name: Add the expires_at column
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: next-app
-          # Prints the table's columns so you can confirm expires_at now exists.
+          command: d1 execute visual-schedules-db --remote --command "ALTER TABLE subscriptions ADD COLUMN expires_at text;" --yes
+
+      - name: Show subscriptions columns AFTER
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: next-app
           command: d1 execute visual-schedules-db --remote --command "PRAGMA table_info(subscriptions);" --yes
