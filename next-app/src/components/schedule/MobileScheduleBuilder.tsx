@@ -285,6 +285,7 @@ export function MobileScheduleBuilder({
   };
 
   const [adminCatNames, setAdminCatNames] = useState<Record<string, string>>({});
+  const [adminCatOrder, setAdminCatOrder] = useState<string[]>([]);
   const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
@@ -295,12 +296,17 @@ export function MobileScheduleBuilder({
   }, []);
 
   useEffect(() => {
+    // The admin API returns categories in your configured sort_order, so use
+    // that as the ordering instead of the static bundled list (which is why
+    // the wrong category was appearing first).
     fetch("/api/admin/categories")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const map: Record<string, string> = {};
-        (data?.categories || []).forEach((c: any) => { map[c.id] = c.name; });
+        const ordered: string[] = [];
+        (data?.categories || []).forEach((c: any) => { map[c.id] = c.name; ordered.push(c.id); });
         setAdminCatNames(map);
+        setAdminCatOrder(ordered);
       })
       .catch(() => {});
   }, []);
@@ -317,6 +323,9 @@ export function MobileScheduleBuilder({
   const groupedCategories = useMemo(() => {
     const order: string[] = [];
     const seen = new Set<string>();
+    // Admin sort_order wins; the bundled list is only a fallback for
+    // anything the admin API didn't return.
+    adminCatOrder.forEach((id) => { if (!seen.has(id)) { seen.add(id); order.push(id); } });
     CATEGORIES.forEach((c: any) => { if (!seen.has(c.id)) { seen.add(c.id); order.push(c.id); } });
     cards.forEach((c) => { if (c.categoryId && !seen.has(c.categoryId)) { seen.add(c.categoryId); order.push(c.categoryId); } });
 
@@ -335,22 +344,7 @@ export function MobileScheduleBuilder({
     if (orphans?.length) groups.push({ id: "other", name: "Other", cards: orphans });
     return groups;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cards, adminCatNames]);
-
-  // Default the Add Step filter to Daily Routine (the first category), so it
-  // opens on the most-used cards rather than the whole library — matching
-  // desktop. Only applied once, and only while still on "all", so it never
-  // overrides a category the user picked themselves.
-  const catDefaultedRef = useRef(false);
-  useEffect(() => {
-    if (catDefaultedRef.current || groupedCategories.length === 0) return;
-    const daily =
-      groupedCategories.find((g) => /daily/i.test(g.name)) || groupedCategories[0];
-    if (daily) {
-      catDefaultedRef.current = true;
-      setAddStepCat((cur) => (cur === "all" ? daily.id : cur));
-    }
-  }, [groupedCategories]);
+  }, [cards, adminCatNames, adminCatOrder]);
 
   const showCharacters = useMemo(() => cards.some((c) => isCharacterCard(c)), [cards]);
   useEffect(() => {
