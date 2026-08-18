@@ -1,0 +1,39 @@
+name: Run Database Migrations
+
+# Adds a manual "Run workflow" button in the Actions tab, so migrations can be
+# applied from the GitHub website — no laptop or terminal needed.
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: next-app
+        run: npm ci
+
+      - name: Apply pending migrations to the live database
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: next-app
+          command: d1 migrations apply visual-schedules-db --remote
+
+      - name: Show the subscriptions table afterwards
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: next-app
+          # Prints the table's columns so you can confirm expires_at now exists.
+          command: d1 execute visual-schedules-db --remote --command "PRAGMA table_info(subscriptions);" --yes
