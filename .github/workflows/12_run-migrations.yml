@@ -1,46 +1,24 @@
-name: Add Missing Subscription Column
+name: Check Payment Status
 
-# Manual "Run workflow" button in the Actions tab — no laptop needed.
+# Manual "Run workflow" button — READ ONLY, changes nothing.
 #
-# Why this instead of "d1 migrations apply":
-# This database was created directly from setup-database.sql, so Cloudflare has
-# no record of any migration ever running. "migrations apply" therefore tries to
-# replay EVERY migration from the beginning, starting with CREATE TABLE
-# statements for tables that already exist — which fails immediately.
-#
-# So this runs the single statement that's actually missing: the expires_at
-# column on subscriptions. Without it, saving a paid subscription fails, which
-# is why a successful payment never unlocked anything.
+# Uses --file rather than an inline --command: quoted SQL passed inline gets
+# mangled by the action's argument splitting, which is why the previous
+# attempt failed before it ever reached the database.
 on:
   workflow_dispatch:
 
 jobs:
-  add-column:
+  inspect:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code
         uses: actions/checkout@v4
 
-      - name: Show subscriptions columns BEFORE
+      - name: Show payment and account data
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: next-app
-          command: d1 execute visual-schedules-db --remote --command "PRAGMA table_info(subscriptions);" --yes
-
-      - name: Add the expires_at column
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: next-app
-          command: d1 execute visual-schedules-db --remote --command "ALTER TABLE subscriptions ADD COLUMN expires_at text;" --yes
-
-      - name: Show subscriptions columns AFTER
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: next-app
-          command: d1 execute visual-schedules-db --remote --command "PRAGMA table_info(subscriptions);" --yes
+          command: d1 execute visual-schedules-db --remote --file=../check-payment.sql --yes
