@@ -438,6 +438,16 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   // Loaded once so ScheduleRow can resolve each schedule's first-card
   // thumbnail via findCard/getCardImageUrl below.
   const [cardsLoaded, setCardsLoaded] = useState(false);
+  // Ready-made schedules to offer when someone has none of their own. An
+  // empty screen is a dead end for a first-time visitor — this gives them
+  // something to open in one tap.
+  const [starters, setStarters] = useState<{ id: string; title: string; scheduleType: string }[]>([]);
+  useEffect(() => {
+    fetch("/api/templates")
+      .then((r) => r.json())
+      .then((d) => setStarters((d.templates || []).slice(0, 3)))
+      .catch(() => setStarters([]));
+  }, []);
   const [assetsVersion, setAssetsVersion] = useState(0);
   useEffect(() => {
     fetch("/api/cards")
@@ -527,6 +537,31 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   // Edit — pull the saved schedule and hand it to the builder through the
   // same sessionStorage draft the builder already restores from on mount.
   // ACTIVE_ID_KEY makes Save update THIS row instead of creating a new one.
+  const [startingTemplate, setStartingTemplate] = useState<string | null>(null);
+
+  // Open a ready-made schedule in the builder, pre-filled. Same mechanism the
+  // Templates page uses: hand it over via the draft the builder restores from.
+  const startFromTemplate = async (id: string) => {
+    setStartingTemplate(id);
+    try {
+      const full = await fetch(`/api/templates/${id}`, { cache: "no-store" }).then((r) => r.json());
+      if (!full?.data) { setStartingTemplate(null); return; }
+      // A template becomes a NEW schedule of theirs, so clear any active id.
+      sessionStorage.removeItem("vs_active_schedule_id");
+      sessionStorage.setItem("vs_draft_mobile_schedule", JSON.stringify({
+        title: full.title,
+        scheduleType: full.scheduleType,
+        language: full.language,
+        gender: full.gender,
+        gridCols: full.gridCols,
+        pages: full.data.pages || [],
+      }));
+      router.push("/schedule");
+    } catch {
+      setStartingTemplate(null);
+    }
+  };
+
   const startEdit = async (id: string) => {
     setMenuFor(null);
     try {
@@ -652,11 +687,43 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                 <Link href="/login" className="inline-block px-5 py-2.5 rounded-xl font-bold text-[13px] text-white no-underline" style={{ background: GREEN }}>Sign In</Link>
               </div>
             ) : localSchedules.length === 0 ? (
-              <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/art/empty-schedules.svg" alt="" className="w-full max-w-[180px] mx-auto mb-3 opacity-70" />
-                <p className="text-[13px]" style={{ color: SUB }}>No schedules yet — create your first one above.</p>
-              </div>
+              starters.length > 0 ? (
+                <>
+                  <p className="text-[12px] mb-2.5" style={{ color: SUB }}>
+                    Start with a ready-made one — tap to open and make it yours.
+                  </p>
+                  <div className="space-y-2.5">
+                    {starters.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => startFromTemplate(t.id)}
+                        disabled={startingTemplate === t.id}
+                        className="w-full flex items-center gap-3 p-3 rounded-2xl text-left disabled:opacity-60"
+                        style={{ background: "#fff", border: `1px solid ${BORDER}` }}
+                      >
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{t.title}</div>
+                          <div className="text-[12px]" style={{ color: SUB }}>
+                            {startingTemplate === t.id ? "Opening…" : "Ready-made · tap to use"}
+                          </div>
+                        </div>
+                        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/art/empty-schedules.svg" alt="" className="w-full max-w-[180px] mx-auto mb-3 opacity-70" />
+                  <p className="text-[13px]" style={{ color: SUB }}>No schedules yet — create your first one above.</p>
+                </div>
+              )
             ) : (
               <div className="space-y-2.5">
                 {recent.slice(0, 3).map((s) => (
@@ -682,11 +749,43 @@ function MobileHome({ user, schedules, loading, onDelete }: {
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-4">
             {localSchedules.length === 0 ? (
-              <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/art/empty-schedules.svg" alt="" className="w-full max-w-[180px] mx-auto mb-3 opacity-70" />
-                <p className="text-[13px]" style={{ color: SUB }}>No schedules yet.</p>
-              </div>
+              starters.length > 0 ? (
+                <>
+                  <p className="text-[12px] mb-2.5" style={{ color: SUB }}>
+                    Nothing saved yet — start from a ready-made schedule.
+                  </p>
+                  <div className="space-y-2.5">
+                    {starters.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => startFromTemplate(t.id)}
+                        disabled={startingTemplate === t.id}
+                        className="w-full flex items-center gap-3 p-3 rounded-2xl text-left disabled:opacity-60"
+                        style={{ background: "#fff", border: `1px solid ${BORDER}` }}
+                      >
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{t.title}</div>
+                          <div className="text-[12px]" style={{ color: SUB }}>
+                            {startingTemplate === t.id ? "Opening…" : "Ready-made · tap to use"}
+                          </div>
+                        </div>
+                        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke={FAINT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/art/empty-schedules.svg" alt="" className="w-full max-w-[180px] mx-auto mb-3 opacity-70" />
+                  <p className="text-[13px]" style={{ color: SUB }}>No schedules yet.</p>
+                </div>
+              )
             ) : (
               <div className="space-y-2.5">
                 {localSchedules.map((s) => (
