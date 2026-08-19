@@ -44,14 +44,37 @@ export async function POST(request: NextRequest) {
     // OTP valid — clear it so it can't be reused
     await env.DB.prepare(`DELETE FROM otp_codes WHERE email = ?`).bind(normalizedEmail).run();
 
-    // TODO: Upsert user in D1 (create on first login)
+    // Create the account row on first login.
+    //
+    // This was left as a TODO: a session cookie was issued but no user row was
+    // ever written. The app therefore *looked* signed in while the database
+    // had no record of the person — so checkout failed with "please sign in
+    // first", subscriptions had nothing to attach to, and paid access could
+    // never be granted. Everything downstream depends on this row existing.
     const userId = `user-${normalizedEmail.replace(/[^a-z0-9]/g, "")}`;
+
+    // Preserve an existing role (e.g. admin) — only insert when absent.
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO users (id, email, role, created_at, updated_at)
+       VALUES (?, ?, 'user', datetime('now'), datetime('now'))`
+    ).bind(userId, normalizedEmail).run();
+
+    // Keep the stored email current in case it changed casing.
+    await env.DB.prepare(
+      `UPDATE users SET email = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(normalizedEmail, userId).run();
+
+    // Carry the real role into the session so admins stay admins.
+    const existing: any = await env.DB.prepare(`SELECT role FROM users WHERE id = ?`)
+      .bind(userId)
+      .first();
+    const role = (existing?.role as string) || "user";
 
     // Set session cookie
     const sessionData = JSON.stringify({
       userId,
       email: normalizedEmail,
-      role: "user",
+      role,
       createdAt: Date.now(),
     });
     const encodedSession = Buffer.from(sessionData).toString("base64");
