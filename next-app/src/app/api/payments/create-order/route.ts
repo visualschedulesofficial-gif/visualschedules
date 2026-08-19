@@ -24,13 +24,18 @@ async function getUserId(env: any): Promise<string | null> {
 }
 
 // Amounts live SERVER-SIDE only — the client can never choose its own price.
+// Amounts are in paise (₹99 = 9900). These MUST match the prices shown on
+// /plans — the server is the source of truth for what gets charged.
 const PLAN_MAP: Record<string, { amount: number; months: number; label: string }> = {
-  "3mo": { amount: 39900, months: 3, label: "3 Months" },
-  "6mo": { amount: 69900, months: 6, label: "6 Months" },
-  "12mo": { amount: 119900, months: 12, label: "12 Months" },
+  "1mo": { amount: 9900, months: 1, label: "1 Month" },
+  "6mo": { amount: 44900, months: 6, label: "6 Months" },
+  "12mo": { amount: 79900, months: 12, label: "1 Year" },
+  // Old id kept so any checkout already in flight doesn't break. Priced at
+  // the new 6-month rate.
+  "3mo": { amount: 44900, months: 6, label: "6 Months" },
 };
 
-// POST /api/payments/create-order — body: { plan: "3mo" | "6mo" | "12mo" }
+// POST /api/payments/create-order — body: { plan: "1mo" | "6mo" | "12mo" }
 export async function POST(request: NextRequest) {
   const env = getEnv();
   const missing: string[] = [];
