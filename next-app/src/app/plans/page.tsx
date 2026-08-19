@@ -210,8 +210,16 @@ export default function PlansPage() {
               window.location.href = "/schedule";
             }, 1800);
           } else {
+            // Include the payment id and the real reason. Without these, a
+            // stranded payment can't be traced without digging through the
+            // Razorpay dashboard.
+            const why = result?.error ? ` (${result.error})` : "";
+            const ref = response?.razorpay_payment_id
+              ? ` Reference: ${response.razorpay_payment_id}`
+              : "";
             setPayMessage(
-              "Payment received but confirmation hit a snag — don't worry, your money is safe. Refresh in a minute or email us and we'll sort it immediately."
+              `Payment received — your money is safe — but activation didn't complete${why}.` +
+              ` Email visualschedulesofficial@gmail.com and we'll unlock it right away.${ref}`
             );
           }
           setPaying(null);
