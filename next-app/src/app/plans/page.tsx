@@ -34,12 +34,12 @@ const PLANS = [
     isFree: true,
   },
   {
-    id: "3mo",
-    name: "3 Months",
-    price: "₹399",
-    period: "3 months",
-    perMonth: "₹133/month",
-    description: "Great for getting started",
+    id: "1mo",
+    name: "1 Month",
+    price: "₹99",
+    period: "1 month",
+    perMonth: "₹99/month",
+    description: "Try everything, no commitment",
     features: [
       "Everything in Free",
       "All paid categories unlocked",
@@ -47,17 +47,16 @@ const PLANS = [
       "Social, Art, Home",
       "Any new categories added",
     ],
-    cta: "Subscribe — ₹399",
-    payLink: "https://rzp.io/rzp/9aCIdVf",
+    cta: "Subscribe — ₹99",
     highlight: false,
     isFree: false,
   },
   {
     id: "6mo",
     name: "6 Months",
-    price: "₹699",
+    price: "₹449",
     period: "6 months",
-    perMonth: "₹117/month",
+    perMonth: "₹75/month",
     description: "Settle into a rhythm",
     features: [
       "Everything in Free",
@@ -66,17 +65,16 @@ const PLANS = [
       "Social, Art, Home",
       "Any new categories added",
     ],
-    cta: "Subscribe — ₹699",
-    payLink: "https://rzp.io/rzp/G0d01AM",
+    cta: "Subscribe — ₹449",
     highlight: true, // Most popular
     isFree: false,
   },
   {
     id: "12mo",
-    name: "12 Months",
-    price: "₹1,199",
+    name: "1 Year",
+    price: "₹799",
     period: "12 months",
-    perMonth: "₹100/month",
+    perMonth: "₹67/month",
     badge: "Best Value",
     description: "A full year of calmer days",
     features: [
@@ -86,8 +84,7 @@ const PLANS = [
       "Social, Art, Home",
       "Any new categories added",
     ],
-    cta: "Subscribe — ₹1,199",
-    payLink: "https://rzp.io/rzp/h4nTG4O",
+    cta: "Subscribe — ₹799",
     highlight: false,
     isFree: false,
   },
@@ -115,6 +112,12 @@ export default function PlansPage() {
   const [user, setUser] = useState<User | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [payMessage, setPayMessage] = useState("");
+  const [showPartner, setShowPartner] = useState(false);
+  const [leadName, setLeadName] = useState("");
+  const [leadOrg, setLeadOrg] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadNote, setLeadNote] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [checkedMobile, setCheckedMobile] = useState(false);
   const [gateChecked, setGateChecked] = useState(false);
@@ -168,7 +171,11 @@ export default function PlansPage() {
         body: JSON.stringify({ plan: planId }),
       });
       const order = await res.json();
-      if (!res.ok) throw new Error(order?.error || "order");
+      if (!res.ok) {
+        // Show the actual reason rather than a generic failure — this is what
+        // tells us whether it's keys, plan id, or something else.
+        throw new Error(order?.error || `Could not start checkout (HTTP ${res.status})`);
+      }
 
       const rzp = new window.Razorpay({
         key: order.keyId,
@@ -177,7 +184,17 @@ export default function PlansPage() {
         order_id: order.orderId,
         name: "Visual Schedules",
         description: `${order.planLabel} plan`,
-        prefill: { email: user.email || "" },
+        // Send the email as both the prefill AND a note on the order, so the
+        // payment is identifiable in the Razorpay dashboard by the same
+        // address the app knows them by. Previously only `email` was sent and
+        // Razorpay still asked for a phone number, which became the identity
+        // on Razorpay's side — hence records that didn't match the app's.
+        prefill: {
+          email: user.email || "",
+          name: user.email ? user.email.split("@")[0] : "",
+        },
+        notes: { app_email: user.email || "", app_user_id: user.id },
+        readonly: { email: true },
         theme: { color: "#4A5A3E" },
         handler: async (response: any) => {
           // Payment done — verify on the server, then unlock
@@ -208,8 +225,12 @@ export default function PlansPage() {
         setPaying(null);
       });
       rzp.open();
-    } catch {
-      setPayMessage("Could not start the payment. Please check your connection and try again.");
+    } catch (err: any) {
+      // Show the real message. A silent generic error is why this was hard to
+      // diagnose before — now the screen says exactly what Razorpay or the
+      // server objected to.
+      const detail = err?.message ? ` (${err.message})` : "";
+      setPayMessage(`Could not start the payment${detail}. Please try again, or email us and we'll sort it.`);
       setPaying(null);
     }
   }
@@ -333,13 +354,8 @@ export default function PlansPage() {
                   </Link>
                 ) : (
                   <button
-                    onClick={() => {
-                      if (!user) {
-                        window.location.href = `/login?next=/plans`;
-                        return;
-                      }
-                      window.open(plan.payLink, "_blank", "noopener,noreferrer");
-                    }}
+                    onClick={() => handleSubscribeClick(plan.id)}
+                    disabled={paying === plan.id}
                     className={`w-full text-center text-[12px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all ${
                       plan.highlight
                         ? "bg-accent text-white border border-accent hover:bg-accent-hover"
@@ -352,6 +368,111 @@ export default function PlansPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Schools & therapy centres — a lead form, not a checkout. These are
+            negotiated deals, so it collects contact details and opens an email
+            rather than pretending there's a fixed price. */}
+        <div className="max-w-lg mx-auto mb-8">
+          <button
+            onClick={() => setShowPartner((v) => !v)}
+            className="w-full flex items-center justify-between gap-3 bg-surface border border-border px-5 py-4 text-left hover:border-ink transition-all"
+          >
+            <span>
+              <span className="block text-[14px] font-medium text-ink">Working with a school or centre?</span>
+              <span className="block text-[12px] text-ink-2 mt-0.5">Special pricing for schools, therapy centres and therapists</span>
+            </span>
+            <svg
+              className={`w-4 h-4 stroke-ink-2 stroke-[1.8] fill-none shrink-0 transition-transform ${showPartner ? "rotate-180" : ""}`}
+              viewBox="0 0 24 24"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {showPartner && (
+            <div className="border border-t-0 border-border bg-surface px-5 py-5">
+              <div className="mb-5">
+                <h3 className="text-[13px] font-medium text-ink mb-1">Schools</h3>
+                <p className="text-[12px] text-ink-2 leading-relaxed">
+                  Special pricing for inclusive and special schools. Give every teacher
+                  access, with your school&apos;s branding on every printed schedule.
+                </p>
+              </div>
+              <div className="mb-5">
+                <h3 className="text-[13px] font-medium text-ink mb-1">Therapy Centres &amp; Therapists</h3>
+                <p className="text-[12px] text-ink-2 leading-relaxed">
+                  OT, behaviour, speech or a full centre — we have good deals for
+                  practitioners. Share schedules with the families you work with,
+                  branded as yours.
+                </p>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <p className="text-[12px] text-ink-2 mb-3">
+                  Leave your details and we&apos;ll get back to you with pricing.
+                </p>
+                <div className="space-y-2">
+                  <input
+                    value={leadName}
+                    onChange={(e) => setLeadName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                  />
+                  <input
+                    value={leadOrg}
+                    onChange={(e) => setLeadOrg(e.target.value)}
+                    placeholder="School or centre name"
+                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                  />
+                  <input
+                    value={leadPhone}
+                    onChange={(e) => setLeadPhone(e.target.value)}
+                    placeholder="Phone / WhatsApp"
+                    inputMode="tel"
+                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                  />
+                  <input
+                    value={leadEmail}
+                    onChange={(e) => setLeadEmail(e.target.value)}
+                    placeholder="Email"
+                    type="email"
+                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                  />
+                  <textarea
+                    value={leadNote}
+                    onChange={(e) => setLeadNote(e.target.value)}
+                    placeholder="How many teachers or therapists? Anything else we should know?"
+                    rows={3}
+                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent resize-y"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    const subject = `Partnership enquiry — ${leadOrg || leadName || "School / Centre"}`;
+                    const body = [
+                      `Name: ${leadName}`,
+                      `School / Centre: ${leadOrg}`,
+                      `Phone / WhatsApp: ${leadPhone}`,
+                      `Email: ${leadEmail}`,
+                      "",
+                      leadNote,
+                    ].join("\n");
+                    window.location.href =
+                      `mailto:visualschedulesofficial@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  }}
+                  disabled={!leadName.trim() || !(leadPhone.trim() || leadEmail.trim())}
+                  className="w-full mt-3 text-[12px] tracking-wider uppercase py-2.5 bg-accent text-white border border-accent font-medium font-sans hover:bg-accent-hover transition-all disabled:opacity-50"
+                >
+                  Send enquiry
+                </button>
+                <p className="text-[11px] text-ink-3 mt-2 text-center leading-relaxed">
+                  This opens your email app with the details filled in. Or write to us
+                  directly at visualschedulesofficial@gmail.com
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Reassurance */}
