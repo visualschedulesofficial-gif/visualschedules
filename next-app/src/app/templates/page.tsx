@@ -43,11 +43,9 @@ export default function TemplatesPage() {
     fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
-        if (d?.user) {
-          setAuthed(true);
-        } else {
-          router.push("/login?next=/templates");
-        }
+        // Browsing templates no longer requires an account — people should
+        // be able to see what's on offer before committing an email.
+        setAuthed(!!d?.user);
         setAuthChecked(true);
       })
       .catch(() => setAuthChecked(true));
@@ -85,7 +83,7 @@ export default function TemplatesPage() {
     }
   };
 
-  if (!authChecked || !authed) {
+  if (!authChecked) {
     return <div className="min-h-dvh" style={{ background: BG }} />;
   }
 
