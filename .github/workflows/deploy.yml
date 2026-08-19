@@ -50,9 +50,12 @@ jobs:
             echo "$RAZORPAY_KEY_SECRET" | npx wrangler secret put RAZORPAY_KEY_SECRET
             echo "Razorpay keys uploaded."
           elif [ -n "$RAZORPAY_KEY_ID" ]; then
-            echo "::error::RAZORPAY_KEY_ID is set but RAZORPAY_KEY_SECRET is EMPTY."
-            echo "::error::Payments will fail. Add RAZORPAY_KEY_SECRET in Settings > Secrets and variables > Actions, then re-run."
-            exit 1
+            # WARN, don't fail. Blocking the deploy here stopped every other
+            # fix from shipping just because payments weren't configured —
+            # far worse than shipping with payments temporarily disabled.
+            echo "::warning::RAZORPAY_KEY_SECRET is empty — payments will not work."
+            echo "::warning::Add it in Settings > Secrets and variables > Actions, then deploy again."
+            echo "$RAZORPAY_KEY_ID" | npx wrangler secret put RAZORPAY_KEY_ID
           else
             echo "No RAZORPAY keys set - skipping (payments disabled)"
           fi
