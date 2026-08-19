@@ -112,12 +112,19 @@ export default function PlansPage() {
   const [user, setUser] = useState<User | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [payMessage, setPayMessage] = useState("");
-  const [showPartner, setShowPartner] = useState(false);
+  const [audience, setAudience] = useState<"parents" | "orgs">("parents");
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadKind, setLeadKind] = useState("School");
   const [leadName, setLeadName] = useState("");
   const [leadOrg, setLeadOrg] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
+  const [leadCity, setLeadCity] = useState("");
+  const [leadSeats, setLeadSeats] = useState("");
   const [leadNote, setLeadNote] = useState("");
+  const [leadBusy, setLeadBusy] = useState(false);
+  const [leadDone, setLeadDone] = useState(false);
+  const [leadError, setLeadError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [checkedMobile, setCheckedMobile] = useState(false);
   const [gateChecked, setGateChecked] = useState(false);
@@ -243,6 +250,34 @@ export default function PlansPage() {
     }
   }
 
+  const leadValid =
+    leadName.trim() && leadOrg.trim() && leadEmail.trim() && leadPhone.trim();
+
+  async function submitLead() {
+    if (!leadValid) return;
+    setLeadBusy(true);
+    setLeadError(null);
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: leadName, org: leadOrg, kind: leadKind, email: leadEmail,
+          phone: leadPhone, city: leadCity, seats: leadSeats, message: leadNote,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setLeadDone(true);
+      } else {
+        setLeadError(data?.error || "Could not send. Please try again.");
+      }
+    } catch {
+      setLeadError("Could not send — check your connection.");
+    }
+    setLeadBusy(false);
+  }
+
   if (checkedMobile && isMobile && !gateChecked) {
     return <div className="h-dvh bg-bg" />;
   }
@@ -273,13 +308,36 @@ export default function PlansPage() {
 
       <main className="flex-1 min-h-0 overflow-y-auto px-4 py-12 w-full"><div className="max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h1 className="font-serif text-3xl italic text-ink mb-3">
-            Simple, honest pricing
+            Plans and pricing
           </h1>
           <p className="text-[14px] text-ink-2 max-w-md mx-auto leading-relaxed">
-            The daily category is always free. Subscribe to unlock every category — no auto-renewal, ever.
+            The daily category is always free. Unlock every category — no auto-renewal, ever.
           </p>
+        </div>
+
+        {/* Audience toggle — parents buy a plan, organisations talk to us.
+            No monthly/yearly switch: these are fixed one-off durations. */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex bg-surface border border-border rounded-full p-1">
+            <button
+              onClick={() => setAudience("parents")}
+              className={`px-5 py-2 rounded-full text-[13px] font-medium font-sans transition-all ${
+                audience === "parents" ? "bg-accent text-white" : "text-ink-2 hover:text-ink"
+              }`}
+            >
+              Parents
+            </button>
+            <button
+              onClick={() => setAudience("orgs")}
+              className={`px-5 py-2 rounded-full text-[13px] font-medium font-sans transition-all ${
+                audience === "orgs" ? "bg-accent text-white" : "text-ink-2 hover:text-ink"
+              }`}
+            >
+              Schools &amp; Therapy Centres
+            </button>
+          </div>
         </div>
 
         {payMessage && (
@@ -288,200 +346,160 @@ export default function PlansPage() {
           </div>
         )}
 
-        {/* Plans grid */}
-        <div id="compare" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={`bg-surface border flex flex-col relative ${
-                plan.highlight
-                  ? "border-accent shadow-md"
-                  : "border-border"
-              }`}
-            >
-              {/* Most popular / best value badge */}
-              {plan.highlight && (
-                <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <span className="text-[12px] tracking-wider uppercase font-semibold bg-accent text-white px-3 py-1">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-              {plan.badge && (
-                <div className="absolute -top-3 left-0 right-0 flex justify-center">
-                  <span className="text-[12px] tracking-wider uppercase font-semibold bg-[#A8824A] text-white px-3 py-1">
-                    {plan.badge}
-                  </span>
-                </div>
-              )}
-
-              <div className="p-5 flex flex-col flex-1">
-                {/* Plan name + price */}
-                <div className="mb-4 pb-4 border-b border-border">
-                  <h2 className="text-[12px] tracking-wider uppercase font-semibold text-ink-3 mb-2">
-                    {plan.name}
-                  </h2>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-serif text-3xl italic text-ink">{plan.price}</span>
-                    <span className="text-[12px] text-ink-3">/ {plan.period}</span>
-                  </div>
-                  {plan.perMonth && (
-                    <p className="text-[12px] text-ink-3 mt-1">{plan.perMonth}</p>
+        {audience === "parents" ? (
+          <>
+            {/* Plans grid */}
+            <div id="compare" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+              {PLANS.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`bg-surface border flex flex-col relative ${
+                    plan.highlight
+                      ? "border-accent shadow-md"
+                      : "border-border"
+                  }`}
+                >
+                  {/* Most popular / best value badge */}
+                  {plan.highlight && (
+                    <div className="absolute -top-3 left-0 right-0 flex justify-center">
+                      <span className="text-[12px] tracking-wider uppercase font-semibold bg-accent text-white px-3 py-1">
+                        Most Popular
+                      </span>
+                    </div>
                   )}
-                  <p className="text-[12px] text-ink-2 mt-2">{plan.description}</p>
+                  {plan.badge && (
+                    <div className="absolute -top-3 left-0 right-0 flex justify-center">
+                      <span className="text-[12px] tracking-wider uppercase font-semibold bg-[#A8824A] text-white px-3 py-1">
+                        {plan.badge}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="p-5 flex flex-col flex-1">
+                    {/* Plan name + price */}
+                    <div className="mb-4 pb-4 border-b border-border">
+                      <h2 className="text-[12px] tracking-wider uppercase font-semibold text-ink-3 mb-2">
+                        {plan.name}
+                      </h2>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="font-serif text-3xl italic text-ink">{plan.price}</span>
+                        <span className="text-[12px] text-ink-3">/ {plan.period}</span>
+                      </div>
+                      {plan.perMonth && (
+                        <p className="text-[12px] text-ink-3 mt-1">{plan.perMonth}</p>
+                      )}
+                      <p className="text-[12px] text-ink-2 mt-2">{plan.description}</p>
+                    </div>
+
+                    {/* Features */}
+                    <ul className="space-y-2 flex-1 mb-5">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-[12px] text-ink-2">
+                          <svg className="w-3.5 h-3.5 stroke-green stroke-2 fill-none shrink-0 mt-0.5" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          {f}
+                        </li>
+                      ))}
+                      {plan.locked?.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-[12px] text-ink-3 opacity-60">
+                          <svg className="w-3.5 h-3.5 stroke-ink-3 stroke-2 fill-none shrink-0 mt-0.5" viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA */}
+                    {plan.isFree ? (
+                      <Link
+                        href="/schedule"
+                        className="w-full text-center text-[12px] tracking-wider uppercase py-2.5 border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all block"
+                      >
+                        {plan.cta}
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => handleSubscribeClick(plan.id)}
+                        disabled={paying === plan.id}
+                        className={`w-full text-center text-[12px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all ${
+                          plan.highlight
+                            ? "bg-accent text-white border border-accent hover:bg-accent-hover"
+                            : "bg-ink text-white border border-ink hover:bg-[#333]"
+                        }`}
+                      >
+                        {plan.cta}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </>
+        ) : (
+          /* Schools & therapy centres — no prices; these are quoted per
+             organisation, so both cards lead to one contact form. */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12 max-w-3xl mx-auto">
+            {[
+              {
+                kind: "School",
+                eyebrow: "Inclusive & special schools",
+                title: "Schools",
+                body: "Special pricing for inclusive and special schools. Give every teacher access, with your school's branding on every printed schedule.",
+                points: [
+                  "Access for every teacher",
+                  "Your school's logo on every schedule",
+                  "All paid categories unlocked",
+                  "One code for your whole team",
+                ],
+              },
+              {
+                kind: "Therapy centre",
+                eyebrow: "OT, behaviour, speech",
+                title: "Therapy Centres & Therapists",
+                body: "OT, behaviour, speech or a full centre — we have good deals for practitioners. Share schedules with the families you work with, branded as yours.",
+                points: [
+                  "Access for every therapist",
+                  "Your centre's branding on schedules",
+                  "All paid categories unlocked",
+                  "Share with the families you support",
+                ],
+              },
+            ].map((card) => (
+              <div key={card.kind} className="bg-surface border border-border p-6 flex flex-col">
+                <span className="text-[11px] tracking-wider uppercase text-ink-3 font-medium">{card.eyebrow}</span>
+                <h2 className="font-serif text-xl italic text-ink mt-2 mb-2">{card.title}</h2>
+                <p className="text-[13px] text-ink-2 leading-relaxed mb-4">{card.body}</p>
+
+                <div className="mb-5">
+                  <div className="font-serif text-2xl italic text-ink">Let&apos;s talk</div>
+                  <p className="text-[12px] text-ink-3 mt-1">Get in touch for pricing</p>
                 </div>
 
-                {/* Features */}
-                <ul className="space-y-2 flex-1 mb-5">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[12px] text-ink-2">
-                      <svg className="w-3.5 h-3.5 stroke-green stroke-2 fill-none shrink-0 mt-0.5" viewBox="0 0 24 24">
+                <ul className="list-none p-0 m-0 mb-5 flex-1">
+                  {card.points.map((pt) => (
+                    <li key={pt} className="flex items-start gap-2 mb-2 text-[12px] text-ink-2 leading-snug">
+                      <svg className="w-3.5 h-3.5 mt-0.5 stroke-accent stroke-[2.4] fill-none shrink-0" viewBox="0 0 24 24">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      {f}
-                    </li>
-                  ))}
-                  {plan.locked?.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[12px] text-ink-3 opacity-60">
-                      <svg className="w-3.5 h-3.5 stroke-ink-3 stroke-2 fill-none shrink-0 mt-0.5" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                      {f}
+                      {pt}
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA */}
-                {plan.isFree ? (
-                  <Link
-                    href="/schedule"
-                    className="w-full text-center text-[12px] tracking-wider uppercase py-2.5 border border-border text-[#4A4540] no-underline font-medium font-sans hover:border-ink hover:text-ink transition-all block"
-                  >
-                    {plan.cta}
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => handleSubscribeClick(plan.id)}
-                    disabled={paying === plan.id}
-                    className={`w-full text-center text-[12px] tracking-wider uppercase py-2.5 font-medium font-sans transition-all ${
-                      plan.highlight
-                        ? "bg-accent text-white border border-accent hover:bg-accent-hover"
-                        : "bg-ink text-white border border-ink hover:bg-[#333]"
-                    }`}
-                  >
-                    {plan.cta}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Schools & therapy centres — a lead form, not a checkout. These are
-            negotiated deals, so it collects contact details and opens an email
-            rather than pretending there's a fixed price. */}
-        <div className="max-w-lg mx-auto mb-8">
-          <button
-            onClick={() => setShowPartner((v) => !v)}
-            className="w-full flex items-center justify-between gap-3 bg-surface border border-border px-5 py-4 text-left hover:border-ink transition-all"
-          >
-            <span>
-              <span className="block text-[14px] font-medium text-ink">Working with a school or centre?</span>
-              <span className="block text-[12px] text-ink-2 mt-0.5">Special pricing for schools, therapy centres and therapists</span>
-            </span>
-            <svg
-              className={`w-4 h-4 stroke-ink-2 stroke-[1.8] fill-none shrink-0 transition-transform ${showPartner ? "rotate-180" : ""}`}
-              viewBox="0 0 24 24"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-
-          {showPartner && (
-            <div className="border border-t-0 border-border bg-surface px-5 py-5">
-              <div className="mb-5">
-                <h3 className="text-[13px] font-medium text-ink mb-1">Schools</h3>
-                <p className="text-[12px] text-ink-2 leading-relaxed">
-                  Special pricing for inclusive and special schools. Give every teacher
-                  access, with your school&apos;s branding on every printed schedule.
-                </p>
-              </div>
-              <div className="mb-5">
-                <h3 className="text-[13px] font-medium text-ink mb-1">Therapy Centres &amp; Therapists</h3>
-                <p className="text-[12px] text-ink-2 leading-relaxed">
-                  OT, behaviour, speech or a full centre — we have good deals for
-                  practitioners. Share schedules with the families you work with,
-                  branded as yours.
-                </p>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <p className="text-[12px] text-ink-2 mb-3">
-                  Leave your details and we&apos;ll get back to you with pricing.
-                </p>
-                <div className="space-y-2">
-                  <input
-                    value={leadName}
-                    onChange={(e) => setLeadName(e.target.value)}
-                    placeholder="Your name"
-                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
-                  />
-                  <input
-                    value={leadOrg}
-                    onChange={(e) => setLeadOrg(e.target.value)}
-                    placeholder="School or centre name"
-                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
-                  />
-                  <input
-                    value={leadPhone}
-                    onChange={(e) => setLeadPhone(e.target.value)}
-                    placeholder="Phone / WhatsApp"
-                    inputMode="tel"
-                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
-                  />
-                  <input
-                    value={leadEmail}
-                    onChange={(e) => setLeadEmail(e.target.value)}
-                    placeholder="Email"
-                    type="email"
-                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
-                  />
-                  <textarea
-                    value={leadNote}
-                    onChange={(e) => setLeadNote(e.target.value)}
-                    placeholder="How many teachers or therapists? Anything else we should know?"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent resize-y"
-                  />
-                </div>
                 <button
-                  onClick={() => {
-                    const subject = `Partnership enquiry — ${leadOrg || leadName || "School / Centre"}`;
-                    const body = [
-                      `Name: ${leadName}`,
-                      `School / Centre: ${leadOrg}`,
-                      `Phone / WhatsApp: ${leadPhone}`,
-                      `Email: ${leadEmail}`,
-                      "",
-                      leadNote,
-                    ].join("\n");
-                    window.location.href =
-                      `mailto:visualschedulesofficial@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                  }}
-                  disabled={!leadName.trim() || !(leadPhone.trim() || leadEmail.trim())}
-                  className="w-full mt-3 text-[12px] tracking-wider uppercase py-2.5 bg-accent text-white border border-accent font-medium font-sans hover:bg-accent-hover transition-all disabled:opacity-50"
+                  onClick={() => { setLeadKind(card.kind); setShowLeadForm(true); }}
+                  className="w-full text-[12px] tracking-wider uppercase py-3 bg-accent text-white border border-accent font-medium font-sans hover:bg-accent-hover transition-all"
                 >
-                  Send enquiry
+                  Contact us
                 </button>
-                <p className="text-[11px] text-ink-3 mt-2 text-center leading-relaxed">
-                  This opens your email app with the details filled in. Or write to us
-                  directly at visualschedulesofficial@gmail.com
-                </p>
               </div>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Reassurance */}
         <div className="bg-surface border border-border p-6 text-center max-w-lg mx-auto">
@@ -491,6 +509,167 @@ export default function PlansPage() {
           </p>
         </div>
       </div></main>
+
+      {/* Contact form — saved to the database so enquiries land in Admin and
+          can't be lost, rather than depending on the visitor's email app. */}
+      {showLeadForm && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4 overflow-y-auto"
+          style={{ background: "rgba(28,27,25,0.5)" }}
+          onClick={() => { setShowLeadForm(false); setLeadDone(false); }}
+        >
+          <div
+            className="bg-surface border border-border p-6 w-full max-w-md my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {leadDone ? (
+              <div className="text-center py-4">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-badge-free-bg flex items-center justify-center">
+                  <svg className="w-6 h-6 stroke-accent stroke-[2.4] fill-none" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <h2 className="font-serif text-xl italic text-ink mb-2">Thank you</h2>
+                <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
+                  We&apos;ve got your details and will be in touch shortly with pricing.
+                </p>
+                <button
+                  onClick={() => { setShowLeadForm(false); setLeadDone(false); }}
+                  className="text-[12px] tracking-wider uppercase px-6 py-2.5 bg-accent text-white border border-accent font-medium font-sans"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2 className="font-serif text-xl italic text-ink mb-1">Tell us about your {leadKind.toLowerCase()}</h2>
+                <p className="text-[12px] text-ink-2 mb-4">
+                  We&apos;ll come back with pricing and set up your branding.
+                </p>
+
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                      I am a *
+                    </label>
+                    <select
+                      value={leadKind}
+                      onChange={(e) => setLeadKind(e.target.value)}
+                      className="w-full px-3 py-2 border border-input-border bg-white font-sans text-[13px] text-ink outline-none focus:border-accent"
+                    >
+                      <option>School</option>
+                      <option>Therapy centre</option>
+                      <option>Individual therapist</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                      Your name *
+                    </label>
+                    <input
+                      value={leadName}
+                      onChange={(e) => setLeadName(e.target.value)}
+                      className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                      School / centre name *
+                    </label>
+                    <input
+                      value={leadOrg}
+                      onChange={(e) => setLeadOrg(e.target.value)}
+                      className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={leadEmail}
+                      onChange={(e) => setLeadEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                      Phone / WhatsApp *
+                    </label>
+                    <input
+                      inputMode="tel"
+                      value={leadPhone}
+                      onChange={(e) => setLeadPhone(e.target.value)}
+                      className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                        City
+                      </label>
+                      <input
+                        value={leadCity}
+                        onChange={(e) => setLeadCity(e.target.value)}
+                        className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                        How many staff
+                      </label>
+                      <input
+                        value={leadSeats}
+                        onChange={(e) => setLeadSeats(e.target.value)}
+                        placeholder="e.g. 12"
+                        className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] tracking-widest uppercase text-[#5C5855] mb-1 block font-medium">
+                      Anything else
+                    </label>
+                    <textarea
+                      value={leadNote}
+                      onChange={(e) => setLeadNote(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent resize-y"
+                    />
+                  </div>
+                </div>
+
+                {leadError && <p className="text-[12px] text-[#C53030] mt-3">{leadError}</p>}
+
+                <p className="text-[11px] text-ink-3 mt-3">* required</p>
+
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setShowLeadForm(false)}
+                    className="flex-1 text-[12px] tracking-wider uppercase py-2.5 border border-border text-ink-2 font-medium font-sans hover:border-ink hover:text-ink transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitLead}
+                    disabled={leadBusy || !leadValid}
+                    className="flex-1 text-[12px] tracking-wider uppercase py-2.5 bg-accent text-white border border-accent font-medium font-sans hover:bg-accent-hover transition-all disabled:opacity-50"
+                  >
+                    {leadBusy ? "Sending…" : "Send enquiry"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-ink text-[#9A9690] px-7 py-4 flex items-center justify-between gap-4 flex-wrap text-xs max-md:px-4">
@@ -504,3 +683,4 @@ export default function PlansPage() {
     </div>
   );
 }
+
