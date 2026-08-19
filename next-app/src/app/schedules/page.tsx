@@ -101,10 +101,8 @@ export default function SchedulesPage() {
         // Mobile: nothing opens without signing in first — not just Create
         // and Plans, the home screen itself. Desktop keeps its existing
         // browse-without-an-account behavior.
-        if (isMobile && !currentUser) {
-          router.push("/login?next=/schedules");
-          return;
-        }
+        // Signed-out visitors now see the home screen and can start
+        // creating. Sign-in is asked for at Save instead — see the builder.
 
         if (currentUser) {
           const schedulesRes = await fetch("/api/schedules");
@@ -136,7 +134,7 @@ export default function SchedulesPage() {
   // the desktop chrome (nav/footer) on a phone for one frame — and on
   // mobile, never flash the home screen itself while redirecting a
   // signed-out visitor to login.
-  if (!checkedMobile || (isMobile && !loading && !user)) {
+  if (!checkedMobile) {
     return <div className="min-h-dvh bg-bg" />;
   }
 
