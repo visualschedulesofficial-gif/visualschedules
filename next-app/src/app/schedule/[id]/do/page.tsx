@@ -29,6 +29,7 @@ import {
   type ParsedCard,
 } from "@/lib/card-data";
 import { DAY_KEYS } from "@/lib/constants";
+import { track } from "@/lib/track";
 
 const GREEN = "#4A5A3E";
 const GREEN_DARK = "#3A4830";
@@ -172,6 +173,7 @@ export default function DoSchedulePage() {
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data) => {
         setSched(data);
+        track("schedule_used", data?.scheduleType);
       })
       .catch((status) => {
         if (status === 401) { router.push(`/login?next=/schedule/${id}/do`); return; }
@@ -200,7 +202,10 @@ export default function DoSchedulePage() {
 
   const doneCount = steps.filter((s) => done[s.key]).length;
   const allDone = steps.length > 0 && doneCount === steps.length;
-  const toggle = (key: string) => persistDone({ ...done, [key]: !done[key] });
+  const toggle = (key: string) => {
+    if (!done[key]) track("step_checked");
+    persistDone({ ...done, [key]: !done[key] });
+  };
   const reset = () => persistDone({});
 
   // Celebrate the moment the last step is ticked — fires once per completion,
