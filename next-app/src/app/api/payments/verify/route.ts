@@ -6,7 +6,11 @@ function getEnv(): any {
   return ctx?.env || {};
 }
 
-const PLAN_MONTHS: Record<string, number> = { "3mo": 3, "6mo": 6, "12mo": 12 };
+// MUST stay in step with PLAN_MAP in create-order/route.ts. A plan id missing
+// here means a real payment is taken and then rejected at the final step with
+// "Order details incomplete" — money in, nothing unlocked. "3mo" is kept for
+// anyone who bought under the old pricing.
+const PLAN_MONTHS: Record<string, number> = { "1mo": 1, "3mo": 3, "6mo": 6, "12mo": 12 };
 
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
@@ -52,7 +56,16 @@ export async function POST(request: NextRequest) {
   const plan = order?.notes?.plan;
   const months = PLAN_MONTHS[plan];
   if (!userId || !months) {
-    return NextResponse.json({ error: "Order details incomplete" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: !userId
+          ? "Order is missing the account it belongs to"
+          : `Unrecognised plan "${plan}" — payment taken but not activated`,
+        plan,
+        paymentId,
+      },
+      { status: 400 }
+    );
   }
 
   // 3. Activate the subscription. The row id embeds the payment id, so a
