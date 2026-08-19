@@ -14,6 +14,7 @@ const navItems = [
     { href: "/admin/languages", label: "Languages", icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z" },
   ]},
   { group: "Business", items: [
+    { href: "/admin/insights", label: "Insights", icon: "M3 3v18h18M7 16l4-4 3 3 5-6" },
     { href: "/admin/leads", label: "Leads", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" },
     { href: "/admin/orders", label: "Unlock Orders", icon: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 5h6" },
     { href: "/admin/licenses", label: "License Keys", icon: "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zM15.5 7.5l2-2" },
