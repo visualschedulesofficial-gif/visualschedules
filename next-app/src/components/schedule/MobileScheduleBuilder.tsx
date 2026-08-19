@@ -27,6 +27,7 @@ import {
   type ParsedCard,
 } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
+import { track } from "@/lib/track";
 import { useExport } from "@/hooks/useExport";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { A4_PORTRAIT } from "@/lib/constants";
@@ -121,11 +122,13 @@ function CardTile({
     <button
       onClick={() => {
         if (isLocked) {
+          track("paywall_seen", card.id);
           setShowPaidNotice(true);
           setTimeout(() => { window.location.href = "/plans"; }, 1400);
           return;
         }
         onAdd(card.id);
+        track("card_added", card.id);
         setJustAdded(true);
         setTimeout(() => setJustAdded(false), 1000);
       }}
@@ -403,6 +406,8 @@ export function MobileScheduleBuilder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => { track("builder_opened"); }, []);
+
   const [showDownload, setShowDownload] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -411,6 +416,7 @@ export function MobileScheduleBuilder({
   const runExport = async (fn: () => Promise<void> | void, what: string) => {
     try {
       await fn();
+      track("schedule_downloaded", what);
       setShowDownload(false);
       setToast(`${what} downloaded — check your Files or Photos.`);
       // Long enough to read the toast, then back to the home page where the
@@ -461,14 +467,12 @@ export function MobileScheduleBuilder({
       .then((r) => r.json())
       .then((d) => {
         setIsAdmin(d?.user?.role === "admin");
-        if (d?.user) {
-          setAuthed(true);
-        } else {
-          // Not signed in — send straight to login before any of the
-          // create UI renders, rather than letting them build and only
-          // discovering they need an account at Save.
-          router.push("/login?next=/schedule");
-        }
+        // Anyone can build. Sign-in is only required at Save (see save()),
+        // once they've actually made something worth keeping. Demanding an
+        // email before showing the product was losing most visitors within
+        // 35 seconds — they were being asked to commit before seeing a
+        // single card.
+        setAuthed(!!d?.user);
         setAuthChecked(true);
       })
       .catch(() => setAuthChecked(true));
@@ -576,6 +580,7 @@ export function MobileScheduleBuilder({
       const data = await res.json();
       if (res.ok && data.saved) {
         setSaved(true);
+        track("schedule_saved", scheduleType);
         try {
           sessionStorage.removeItem(DRAFT_KEY);
           sessionStorage.setItem(ACTIVE_ID_KEY, scheduleId);
@@ -595,7 +600,7 @@ export function MobileScheduleBuilder({
     }
   };
 
-  if (loading || !authChecked || !authed) {
+  if (loading || !authChecked) {
     return (
       <div className="flex items-center justify-center min-h-full py-24" style={{ background: "#F5F8F5" }}>
         <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${BORDER}`, borderTopColor: GREEN }} />
