@@ -42,9 +42,17 @@ jobs:
           else
             echo "No ANTHROPIC_API_KEY secret set - skipping (translations use fallback)"
           fi
-          if [ -n "$RAZORPAY_KEY_ID" ]; then
+          # Check BOTH keys. Previously only KEY_ID was checked, so if the
+          # secret was blank an empty value got pushed with no warning — the
+          # app then failed at checkout with "missing RAZORPAY_KEY_SECRET".
+          if [ -n "$RAZORPAY_KEY_ID" ] && [ -n "$RAZORPAY_KEY_SECRET" ]; then
             echo "$RAZORPAY_KEY_ID" | npx wrangler secret put RAZORPAY_KEY_ID
             echo "$RAZORPAY_KEY_SECRET" | npx wrangler secret put RAZORPAY_KEY_SECRET
+            echo "Razorpay keys uploaded."
+          elif [ -n "$RAZORPAY_KEY_ID" ]; then
+            echo "::error::RAZORPAY_KEY_ID is set but RAZORPAY_KEY_SECRET is EMPTY."
+            echo "::error::Payments will fail. Add RAZORPAY_KEY_SECRET in Settings > Secrets and variables > Actions, then re-run."
+            exit 1
           else
             echo "No RAZORPAY keys set - skipping (payments disabled)"
           fi
