@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Playwrite+DE+Grund:wght@400&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Design Tokens Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Design Tokens â”€â”€ */
 :root {
   --ink: #1E2A24;
   --ink-2: #6C7A72;
@@ -30,7 +30,7 @@
   --badge-paid-bg: #FFF3E6;
   --badge-paid-text: #B5761F;
 
-  /* Accent green family Ã¢â‚¬â€ one edit here now reaches every button, active
+  /* Accent green family â€” one edit here now reaches every button, active
      state, and highlight across the whole app instead of hunting through
      individual component files. */
   --accent-soft: #EAF1E2;      /* light fill: soft buttons, community banner */
@@ -39,7 +39,7 @@
   --input-border: #C7D4B8;     /* every text input / select border */
   --success: #4A8A4A;          /* placed checkmarks, success ticks */
 
-  /* Dark header (TopNav) Ã¢â‚¬â€ its own small palette since it sits on a dark
+  /* Dark header (TopNav) â€” its own small palette since it sits on a dark
      background, unlike the rest of the light-background app. */
   --nav-bg: #3E4A32;
   --nav-border: #33402A;
@@ -52,7 +52,7 @@
   color-scheme: light;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Tailwind Theme Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Tailwind Theme â”€â”€ */
 @theme inline {
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
@@ -95,7 +95,7 @@
   --font-sans: var(--font-sans);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Base Styles Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Base Styles â”€â”€ */
 html {
   height: 100%;
   font-size: 14px;
@@ -116,13 +116,13 @@ body {
   }
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Focus Ã¢â‚¬â€ WCAG 2.4.7 Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Focus â€” WCAG 2.4.7 â”€â”€ */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Mobile Scale Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Mobile Scale â”€â”€ */
 @media (max-width: 768px) {
   :root { --mobile-scale: 0.45; }
 }
@@ -134,14 +134,14 @@ body {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Animations Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Animations â”€â”€ */
 @keyframes cardLand {
   0%   { transform: scale(0.85); opacity: 0.3; }
   50%  { transform: scale(1.04); opacity: 1; }
   100% { transform: scale(1);    opacity: 1; }
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Print Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Print â”€â”€ */
 @media print {
   @page { size: A4 portrait; margin: 0; }
   html, body {
@@ -163,14 +163,14 @@ body {
 .blog-content strong { color: #2C2C2C; }
 
 
-/* â”€â”€ Mobile visual language on desktop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ── Mobile visual language on desktop ────────────────────────────────
    Colour tokens above now match the mobile app. This block brings across
    the *shape* language: rounded corners, softer inputs, and buttons that
    read as friendly rather than editorial (mobile uses bold sentence-case
    pills, the desktop had small uppercase letter-spaced labels).
 
    Everything here is deliberately low-specificity or scoped, so any
-   component that sets its own radius/size still wins â€” including the
+   component that sets its own radius/size still wins — including the
    schedule canvas, which must keep its exact print geometry. */
 
 button,
@@ -191,7 +191,7 @@ textarea {
 }
 
 /* The old look used tiny UPPERCASE letter-spaced button text. Mobile uses
-   bold sentence case, which tested better â€” override just those. */
+   bold sentence case, which tested better — override just those. */
 button.uppercase,
 a.uppercase {
   text-transform: none;
@@ -218,12 +218,59 @@ a.bg-accent-strong {
   border-radius: 16px;
 }
 
-/* Keep print output exactly as it was â€” the printable page must not
+/* Keep print output exactly as it was — the printable page must not
    inherit any of the rounding above. */
 @media print {
   button, input, select, textarea,
   .bg-surface.border, .bg-card.border, .bg-white.border {
     border-radius: 0 !important;
     box-shadow: none !important;
+  }
+}
+
+
+/* ── Gentle motion on the primary "create" button ─────────────────────
+   A slow, soft pulse that draws the eye without nagging. Deliberately
+   restrained: this sits on a page used by tired parents, so it breathes
+   rather than blinks. Lifts slightly on hover and presses in on tap.
+
+   Applied via the .cta-pulse class so both the mobile "Create Schedule"
+   button and the desktop "New Schedule" button share one definition. */
+
+@keyframes cta-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 6px 16px rgba(74, 90, 62, 0.28);
+  }
+  50% {
+    transform: scale(1.018);
+    box-shadow: 0 10px 24px rgba(74, 90, 62, 0.36);
+  }
+}
+
+.cta-pulse {
+  animation: cta-breathe 3.2s ease-in-out infinite;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  will-change: transform;
+}
+
+.cta-pulse:hover {
+  animation-play-state: paused;
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 12px 26px rgba(74, 90, 62, 0.4);
+}
+
+.cta-pulse:active {
+  animation-play-state: paused;
+  transform: scale(0.985);
+  box-shadow: 0 4px 10px rgba(74, 90, 62, 0.3);
+}
+
+/* Respect people who have asked their device to reduce motion — some
+   autistic and vestibular users find looping animation genuinely
+   uncomfortable, which matters especially for this audience. */
+@media (prefers-reduced-motion: reduce) {
+  .cta-pulse {
+    animation: none;
   }
 }
