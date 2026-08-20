@@ -7,7 +7,7 @@ import { useScheduleState } from "@/hooks/useScheduleState";
 
 const NAV_LINKS = [
   { href: "/schedule", label: "Create Schedule" },
-  { href: "/downloads", label: "Schedules" },
+  { href: "/downloads", label: "Free Schedules" },
   { href: "/blog", label: "Blog" },
 ];
 
@@ -253,7 +253,7 @@ function MobileIconBar({ user }: { user: User | null }) {
 
   const tabs = [
     { href: "/schedule", label: "Create", active: pathname === "/schedule" },
-    { href: "/downloads", label: "Schedules", active: pathname?.startsWith("/downloads") || false },
+    { href: "/downloads", label: "Free Schedules", active: pathname?.startsWith("/downloads") || false },
     { href: "/blog", label: "Blog", active: pathname?.startsWith("/blog") || false },
     user
       ? { href: "/schedules", label: "My Space", active: pathname === "/schedules" }
