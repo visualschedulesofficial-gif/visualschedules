@@ -161,7 +161,7 @@ export default function SchedulesPage() {
           </button>
           <Link
             href="/schedule"
-            className="text-[11px] tracking-wider uppercase px-4 py-[0.42rem] bg-ink text-white border border-ink no-underline font-medium font-sans hover:bg-[#333] transition-all"
+            className="cta-pulse text-[11px] tracking-wider uppercase px-4 py-[0.42rem] bg-ink text-white border border-ink no-underline font-medium font-sans hover:bg-[#333]"
           >
             + New Schedule
           </Link>
@@ -664,8 +664,8 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                 } catch {}
                 router.push("/schedule");
               }}
-              className="w-full py-3.5 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2"
-              style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
+              className="cta-pulse w-full py-3.5 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2"
+              style={{ background: GREEN }}
             >
               <span className="text-lg leading-none">+</span> Create Schedule
             </button>
@@ -847,6 +847,17 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                 )}
               </div>
 
+              {/* Let people replay the intro — skipping it shouldn't lose it. */}
+              <button
+                onClick={() => {
+                  try { localStorage.removeItem("vs_tour_seen_v1"); } catch {}
+                  router.push("/schedule");
+                }}
+                className="w-full py-3 rounded-2xl font-bold text-[14px] mb-2.5"
+                style={{ background: "#fff", color: GREEN_DARK, border: `1px solid ${GREEN_BORDER}` }}
+              >
+                Show me around again
+              </button>
               <button onClick={signOut} className="w-full py-3 rounded-2xl font-bold text-[14px]" style={{ background: "#fff", color: SUB, border: `1px solid ${BORDER}` }}>Sign Out</button>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/art/profile-art.svg" alt="" className="w-full max-w-[150px] mx-auto mt-8 opacity-70" />
