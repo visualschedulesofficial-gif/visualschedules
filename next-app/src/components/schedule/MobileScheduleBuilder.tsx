@@ -435,6 +435,7 @@ export function MobileScheduleBuilder({
   // to Save, so Download never offers a stale export.
   const DRAFT_KEY = "vs_draft_mobile_schedule";
   const ACTIVE_ID_KEY = "vs_active_schedule_id";
+  const PENDING_SAVE_KEY = "vs_pending_save";
   // The id of the row being edited. Kept in its own sessionStorage key so a
   // remount reuses it — previously the id lived only in the draft, which is
   // deleted on a successful save, so remounting minted a fresh id and the
@@ -530,6 +531,17 @@ export function MobileScheduleBuilder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pages, title]);
 
+  // Finish a save that was interrupted by signing in.
+  useEffect(() => {
+    if (!authChecked || !authed || saved || saving) return;
+    let pending = false;
+    try { pending = sessionStorage.getItem(PENDING_SAVE_KEY) === "1"; } catch {}
+    if (!pending || placedCount === 0) return;
+    try { sessionStorage.removeItem(PENDING_SAVE_KEY); } catch {}
+    save();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authChecked, authed, placedCount]);
+
   // Once the schedule is full there's nothing left to add — go straight
   // back to the canvas rather than leaving them on a dead-end picker.
   useEffect(() => {
@@ -591,6 +603,10 @@ export function MobileScheduleBuilder({
       // schedule keeps building on return) and send them to sign in.
       try {
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ id: scheduleId, title, scheduleType, language, gender, gridCols, miniCardCount, pages }));
+        // Remember they were trying to save, so it completes by itself once
+        // they're back — otherwise they'd have to find the button again and
+        // wonder whether the first tap did anything.
+        sessionStorage.setItem(PENDING_SAVE_KEY, "1");
       } catch {}
       router.push("/login?next=/schedule");
     } catch {
@@ -773,33 +789,33 @@ export function MobileScheduleBuilder({
         </label>
       )}
 
-      {/* 5 · Save, then Download once it's actually saved */}
+      {/* Save and Download side by side. Download needs no account — people
+          can build with free cards and walk away with a printable schedule.
+          Signing in is only asked for at Save (to keep it across devices) or
+          when a paid card is tapped. */}
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3" style={{ background: "linear-gradient(to top, #F5F8F5 60%, transparent)" }}>
         {saveError && <p className="text-[12px] text-center mb-2" style={{ color: "#DC4C4C" }}>{saveError}</p>}
-        <button
-          onClick={() => (saved ? setShowDownload(true) : save())}
-          disabled={saving}
-          className="w-full py-3.5 rounded-2xl text-white text-[15px] font-bold disabled:opacity-60"
-          style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
-        >
-          {saving ? "Saving…" : saved ? "Download" : (isAdmin && saveAsTemplate ? "Save as Template" : "Save")}
-        </button>
-      </div>
-
-      {/* Download confirmation */}
-      {toast && (
-        <div className="fixed left-0 right-0 bottom-24 z-[400] flex justify-center px-6 pointer-events-none">
-          <div
-            className="flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg max-w-sm"
-            style={{ background: INK, color: "#fff" }}
+        <div className="flex gap-2.5">
+          <button
+            onClick={save}
+            disabled={saving || placedCount === 0}
+            className="flex-1 py-3.5 rounded-2xl text-[15px] font-bold disabled:opacity-50"
+            style={saved
+              ? { background: GREEN_SOFT, color: GREEN_DARK, border: `1.5px solid ${GREEN_BORDER}` }
+              : { background: "#fff", color: GREEN, border: `1.5px solid ${GREEN}` }}
           >
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#9FD6B4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <span className="text-[13px] font-semibold leading-snug">{toast}</span>
-          </div>
+            {saving ? "Saving…" : saved ? "✓ Saved" : (isAdmin && saveAsTemplate ? "Save as Template" : "Save")}
+          </button>
+          <button
+            onClick={() => setShowDownload(true)}
+            disabled={placedCount === 0}
+            className="flex-1 py-3.5 rounded-2xl text-white text-[15px] font-bold disabled:opacity-50"
+            style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
+          >
+            Download
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Download sheet */}
       {showDownload && (
