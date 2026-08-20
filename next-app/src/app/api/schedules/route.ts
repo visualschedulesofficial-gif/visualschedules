@@ -33,9 +33,12 @@ export async function GET() {
 
   try {
     const result = await env.DB.prepare(
+      // Exclude templates: an admin's templates are stored as their own
+      // schedules with is_template = 1, so without this they appear in the
+      // admin's My Library as if they were personal schedules.
       `SELECT id, title, schedule_type, language, gender, updated_at, data
        FROM schedules
-       WHERE user_id = ?
+       WHERE user_id = ? AND is_template = 0
        ORDER BY updated_at DESC
        LIMIT 50`
     ).bind(userId).all();
