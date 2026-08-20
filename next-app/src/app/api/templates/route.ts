@@ -10,11 +10,34 @@ export async function GET() {
 
   try {
     const result = await env.DB.prepare(
-      `SELECT id, title, schedule_type, language, gender, updated_at
+      // `data` is needed to work out a thumbnail; only the first card's id is
+      // sent back, never the whole payload.
+      `SELECT id, title, schedule_type, language, gender, updated_at, data
        FROM schedules
        WHERE is_template = 1
        ORDER BY updated_at DESC`
     ).all();
+
+    // First card in the saved data becomes the thumbnail. Checks BOTH shapes
+    // (slots and columns) — a page can carry an empty slots array alongside a
+    // populated columns map.
+    const firstCardId = (raw: string | null): string | null => {
+      if (!raw) return null;
+      try {
+        const data = JSON.parse(raw);
+        for (const page of data?.pages || []) {
+          if (Array.isArray(page?.slots)) {
+            const hit = page.slots.find((x: any) => x?.cardId);
+            if (hit) return hit.cardId;
+          }
+          for (const col of Object.values(page?.columns || {})) {
+            const hit = (col as any[])?.find((c: any) => c?.cardId);
+            if (hit) return hit.cardId;
+          }
+        }
+      } catch {}
+      return null;
+    };
 
     const templates = (result.results || []).map((r: any) => ({
       id: r.id,
@@ -23,6 +46,7 @@ export async function GET() {
       language: r.language,
       gender: r.gender,
       updatedAt: r.updated_at,
+      coverCardId: firstCardId(r.data as string | null),
     }));
 
     return NextResponse.json({ templates });
