@@ -9,6 +9,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  setRuntimeCards,
+  setCardImages as setCardImagesGlobal,
+  setLabelOverrides,
+  getCardImageUrl,
+  getCardGender,
+  findCard,
+  type ParsedCard,
+} from "@/lib/card-data";
 
 const GREEN = "#4A5A3E";
 const GREEN_SOFT = "#EAF1E2";
@@ -25,6 +34,8 @@ interface TemplateSummary {
   scheduleType: string;
   language: string;
   updatedAt: string;
+  gender?: string;
+  coverCardId?: string | null;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -36,6 +47,35 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState<string | null>(null);
+
+  // Card data is needed to turn a template's first card into a thumbnail.
+  // Bumping assetsReady re-renders the rows once images have arrived.
+  const [assetsReady, setAssetsReady] = useState(0);
+  useEffect(() => {
+    fetch("/api/cards")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.cards?.length > 0) {
+          setRuntimeCards(
+            data.cards.map((c: ParsedCard) => ({
+              ...c,
+              isFree: !(c.icon || "").startsWith("paid:"),
+              icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
+            }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setAssetsReady((v) => v + 1));
+    fetch("/api/cards/images")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.images) setCardImagesGlobal(data.images);
+        if (data.labels) setLabelOverrides(data.labels);
+      })
+      .catch(() => {})
+      .finally(() => setAssetsReady((v) => v + 1));
+  }, []);
   const [authed, setAuthed] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -117,8 +157,19 @@ export default function TemplatesPage() {
                 className="w-full flex items-center gap-3 p-3 rounded-2xl text-left disabled:opacity-60"
                 style={{ background: "#fff", border: `1px solid ${BORDER}` }}
               >
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" /></svg>
+                <div key={assetsReady} className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+                  {(() => {
+                    const card = t.coverCardId ? findCard(t.coverCardId) : undefined;
+                    const img = card
+                      ? (getCardImageUrl(card.id, getCardGender(card, t.gender || "boy")) || getCardImageUrl(card.id, "neutral"))
+                      : null;
+                    return img ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={img} alt="" className="w-full h-full object-contain" />
+                    ) : (
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" /></svg>
+                    );
+                  })()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{t.title || "Untitled"}</div>
