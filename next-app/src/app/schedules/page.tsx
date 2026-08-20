@@ -681,17 +681,20 @@ function MobileHome({ user, schedules, loading, onDelete }: {
               <div className="flex justify-center py-10">
                 <div className="w-6 h-6 rounded-full animate-spin" style={{ border: `2px solid ${BORDER}`, borderTopColor: GREEN }} />
               </div>
-            ) : !user ? (
-              <div className="rounded-2xl p-5 text-center" style={{ background: "#fff", border: `1px solid ${BORDER}` }}>
-                <p className="text-[13px] mb-3" style={{ color: SUB }}>Sign in to save schedules and use them on any device.</p>
-                <Link href="/login" className="inline-block px-5 py-2.5 rounded-xl font-bold text-[13px] text-white no-underline" style={{ background: GREEN }}>Sign In</Link>
-              </div>
             ) : localSchedules.length === 0 ? (
+              // Signed-out visitors fall through to the starter templates
+              // below rather than hitting a Sign In box — they should see
+              // something usable before being asked for anything.
               starters.length > 0 ? (
                 <>
                   <p className="text-[12px] mb-2.5" style={{ color: SUB }}>
                     Start with a ready-made one — tap to open and make it yours.
                   </p>
+                  {!user && (
+                    <p className="text-[11px] mb-2.5" style={{ color: FAINT }}>
+                      No account needed to create and download. Sign in only if you want to keep them.
+                    </p>
+                  )}
                   <div className="space-y-2.5">
                     {starters.map((t) => (
                       <button
