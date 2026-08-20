@@ -71,15 +71,15 @@ export function DownloadsClient() {
     <div className="h-full flex flex-col bg-bg">
       <TopNav />
       <main className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-[1100px] mx-auto px-4 py-6">
-          <h1 className="font-serif text-[26px] text-ink mb-1">Free Downloads</h1>
-          <p className="text-[13px] text-ink-3 font-sans mb-4 max-w-[640px]">
+        <div className="max-w-[1400px] mx-auto px-3 py-4">
+          <h1 className="font-serif text-[22px] text-ink mb-1">Free Schedules</h1>
+          <p className="text-[12px] text-ink-3 font-sans mb-3 max-w-[640px]">
             Ready-to-print visual schedules. Filter by category, character and language,
             then download the version that fits your child.
           </p>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2 mb-5">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <select
               value={category}
               onChange={(e) => {
@@ -153,9 +153,9 @@ export function DownloadsClient() {
                 : "Nothing matches these filters — try clearing one."}
             </p>
           )}
-          <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 [column-fill:balance]">
+          <div className="columns-2 sm:columns-3 lg:columns-5 xl:columns-6 gap-2 [column-fill:balance]">
             {results.map(({ bundle, item, file }) => (
-              <div key={file.id} className="w-full mb-3 break-inside-avoid bg-white border border-[#C7D7B8] rounded overflow-hidden">
+              <div key={file.id} className="w-full mb-2 break-inside-avoid bg-white border border-[#C7D7B8] rounded overflow-hidden">
                 <button
                   onClick={() => {
                     setPreview({ bundle, item, file });
@@ -186,8 +186,8 @@ export function DownloadsClient() {
                     </div>
                   </div>
                 </button>
-                <div className="px-2 py-1.5">
-                  <p className="text-[12px] font-serif text-ink truncate mb-1.5">{item.title}</p>
+                <div className="px-1.5 py-1">
+                  <p className="text-[11px] font-serif text-ink truncate mb-1">{item.title}</p>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 text-[11px] text-ink-3 font-sans">
                       <span className="flex items-center gap-1">
