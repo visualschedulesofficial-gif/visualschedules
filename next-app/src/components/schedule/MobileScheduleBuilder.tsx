@@ -28,6 +28,7 @@ import {
 } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { track } from "@/lib/track";
+import { BuilderTour } from "@/components/onboarding/BuilderTour";
 import { useExport } from "@/hooks/useExport";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { A4_PORTRAIT } from "@/lib/constants";
@@ -626,6 +627,8 @@ export function MobileScheduleBuilder({
 
   return (
     <div className="px-4 pb-24 pt-3 min-h-full" style={{ background: "#F5F8F5" }}>
+      {/* First-time coach marks — shown once, skippable. */}
+      <BuilderTour />
       {orgBanner && !bannerDismissed && (
         <div className="flex items-center justify-between gap-2 rounded-2xl px-3 py-2 mb-3" style={{ background: GREEN_SOFT, border: `1px solid ${GREEN_BORDER}` }}>
           <span className="text-[12px]" style={{ color: GREEN_DARK }}>
@@ -656,6 +659,7 @@ export function MobileScheduleBuilder({
           className="py-1.5 px-2.5 bg-white text-[13px] rounded-lg shrink-0"
           style={{ border: `1px solid ${BORDER}`, color: INK }}
           aria-label="Language"
+          data-tour="language"
         >
           {Object.entries(LANGUAGES).map(([code, name]) => (
             <option key={code} value={code}>{name}</option>
@@ -672,6 +676,7 @@ export function MobileScheduleBuilder({
         className="w-full px-3.5 py-2.5 rounded-xl text-[15px] font-bold outline-none mb-4"
         style={{ border: `1.5px solid ${GREEN_BORDER}`, color: INK, background: "#fff" }}
         aria-label="Schedule name"
+        data-tour="name"
       />
 
       {/* 1 · Type + card count — one compact row */}
@@ -756,6 +761,7 @@ export function MobileScheduleBuilder({
           {(totalSlots === 0 || placedCount < totalSlots) && (
             <button
               onClick={() => setShowAddStep(true)}
+              data-tour="add"
               className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2"
               style={{ background: "#fff", color: GREEN, border: `1.5px solid ${GREEN}` }}
             >
@@ -798,6 +804,7 @@ export function MobileScheduleBuilder({
         <div className="flex gap-2.5">
           <button
             onClick={save}
+            data-tour="save"
             disabled={saving || placedCount === 0}
             className="flex-1 py-3.5 rounded-2xl text-[15px] font-bold disabled:opacity-50"
             style={saved
