@@ -441,7 +441,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
   // Ready-made schedules to offer when someone has none of their own. An
   // empty screen is a dead end for a first-time visitor — this gives them
   // something to open in one tap.
-  const [starters, setStarters] = useState<{ id: string; title: string; scheduleType: string }[]>([]);
+  const [starters, setStarters] = useState<{ id: string; title: string; scheduleType: string; gender?: string; coverCardId?: string | null }[]>([]);
   useEffect(() => {
     fetch("/api/templates")
       .then((r) => r.json())
@@ -704,11 +704,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                         className="w-full flex items-center gap-3 p-3 rounded-2xl text-left disabled:opacity-60"
                         style={{ background: "#fff", border: `1px solid ${BORDER}` }}
                       >
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
-                          </svg>
-                        </div>
+                        <TemplateThumb key={`${t.id}-${assetsVersion}`} t={t} />
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{t.title}</div>
                           <div className="text-[12px]" style={{ color: SUB }}>
@@ -766,11 +762,7 @@ function MobileHome({ user, schedules, loading, onDelete }: {
                         className="w-full flex items-center gap-3 p-3 rounded-2xl text-left disabled:opacity-60"
                         style={{ background: "#fff", border: `1px solid ${BORDER}` }}
                       >
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
-                          </svg>
-                        </div>
+                        <TemplateThumb key={`${t.id}-${assetsVersion}`} t={t} />
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-[14px] truncate" style={{ color: INK }}>{t.title}</div>
                           <div className="text-[12px]" style={{ color: SUB }}>
@@ -1049,3 +1041,24 @@ function DesktopAccessCode({ onDone }: { onDone?: (name: string | null) => void 
   );
 }
 
+/* Thumbnail for a starter template — the first card of the schedule, falling
+   back to a calendar glyph if the card or its image isn't available. */
+function TemplateThumb({ t }: { t: { coverCardId?: string | null; gender?: string } }) {
+  const card = t.coverCardId ? findCard(t.coverCardId) : undefined;
+  const img = card
+    ? (getCardImageUrl(card.id, getCardGender(card, t.gender || "boy")) ||
+       getCardImageUrl(card.id, "neutral"))
+    : null;
+  return (
+    <div className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shrink-0" style={{ background: GREEN_SOFT }}>
+      {img ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={img} alt="" className="w-full h-full object-contain" />
+      ) : (
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" />
+        </svg>
+      )}
+    </div>
+  );
+}
