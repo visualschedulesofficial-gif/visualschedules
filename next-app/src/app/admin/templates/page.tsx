@@ -37,8 +37,15 @@ function timeAgo(dateStr: string) {
   return `${days} days ago`;
 }
 
+type Candidate = {
+  id: string; title: string; scheduleType: string;
+  updatedAt: string; creatorEmail: string | null;
+};
+
 export default function AdminTemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -47,11 +54,25 @@ export default function AdminTemplatesPage() {
     if (res.ok) {
       const data = await res.json();
       setTemplates(data.templates || []);
+      setCandidates(data.candidates || []);
     }
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Turn an existing schedule into a template, without rebuilding it on
+  // mobile with the checkbox ticked.
+  const promote = async (c: Candidate) => {
+    setBusyId(c.id);
+    await fetch("/api/admin/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: c.id }),
+    });
+    setBusyId(null);
+    load();
+  };
 
   const unlist = async (t: Template) => {
     if (!confirm(`Remove "${t.title}" from Templates? It stays as a normal schedule for whoever made it.`)) return;
@@ -69,9 +90,9 @@ export default function AdminTemplatesPage() {
     <div className="max-w-[860px]">
       <h1 className="font-serif text-[22px] text-ink mb-1">Templates</h1>
       <p className="text-[12px] text-ink-3 mb-5 max-w-[560px]">
-        Default schedules shown to every user under Templates on mobile. To add one, open the
-        mobile app signed in as an admin, build a schedule, and check &ldquo;Save as a template
-        for everyone&rdquo; before saving.
+        Default schedules offered to every visitor — including people who haven&apos;t signed in.
+        Promote any saved schedule using the list below, or tick &ldquo;Save as a template for
+        everyone&rdquo; in the mobile app when saving.
       </p>
 
       {loading ? (
@@ -107,6 +128,42 @@ export default function AdminTemplatesPage() {
                 className="text-[11px] tracking-wider uppercase px-3 py-2 text-ink-3 font-medium hover:text-[#C53030] transition-all shrink-0"
               >
                 Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Promote an existing schedule */}
+      <h2 className="text-[13px] font-medium text-ink mt-8 mb-1">Add a template</h2>
+      <p className="text-[12px] text-ink-3 mb-3 max-w-[560px]">
+        Pick any saved schedule to offer as a starting point for everyone. Choose
+        simple, universal routines — they&apos;re the first thing a new visitor sees.
+      </p>
+
+      {candidates.length === 0 ? (
+        <div className="bg-surface border border-border p-6 text-center">
+          <p className="text-[13px] text-ink-2">
+            No other saved schedules yet. Create one in the app first, then promote it here.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-surface border border-border">
+          {candidates.map((c, i) => (
+            <div key={c.id} className={`flex items-center gap-4 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px] text-ink font-medium truncate">{c.title || "Untitled"}</div>
+                <div className="text-[12px] text-ink-3 mt-0.5">
+                  {TYPE_LABELS[c.scheduleType] || c.scheduleType}
+                  {c.creatorEmail ? ` · ${c.creatorEmail}` : ""} · edited {timeAgo(c.updatedAt)}
+                </div>
+              </div>
+              <button
+                onClick={() => promote(c)}
+                disabled={busyId === c.id}
+                className="text-[11px] tracking-wider uppercase px-4 py-2 bg-accent text-white border border-accent font-medium hover:bg-accent-hover transition-all shrink-0 disabled:opacity-50"
+              >
+                {busyId === c.id ? "…" : "Make template"}
               </button>
             </div>
           ))}
