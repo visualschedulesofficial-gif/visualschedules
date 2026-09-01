@@ -83,8 +83,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex flex-col overflow-hidden bg-bg">
+      {/* Main content — min-h-0 is the fix: without it, a grid/flex item
+          defaults to min-height:auto and silently ignores the grid's real
+          height, so nothing inside can ever scroll correctly no matter what
+          each individual page does. overflow-y-auto here also means EVERY
+          page scrolls correctly even if that page has no scroll wrapper of
+          its own — this is now a page-level guarantee, not a per-page task. */}
+      <main className="flex flex-col min-h-0 overflow-y-auto bg-bg">
         {children}
       </main>
     </div>
