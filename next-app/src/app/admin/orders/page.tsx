@@ -1,190 +1,140 @@
 "use client";
 
-// Orders & Access — replaces the placeholder that never fetched anything.
-//
-// Two jobs:
-//  1. Show every subscription, so you can see whether a payment was actually
-//     recorded and which account it landed on.
-//  2. Grant access by email, to credit a payment that didn't record properly
-//     or to comp a therapist.
+import { useState, useEffect } from "react";
 
-import { useState, useEffect, useCallback } from "react";
-
-type Sub = {
+type Order = {
   id: string;
-  user_id: string;
-  type: string;
+  email: string;
+  type: string;         // "3mo" | "6mo" | "12mo" | "comp" | ...
   status: string;
-  created_at: string;
   expires_at: string | null;
-  email: string | null;
+  created_at: string;
 };
 
-type User = { id: string; email: string | null; role: string; created_at: string };
-
-function fmt(dateStr: string | null) {
-  if (!dateStr) return "—";
-  const iso = /Z|[+-]\d{2}:?\d{2}$/.test(dateStr) ? dateStr : dateStr.replace(" ", "T") + "Z";
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? dateStr : d.toLocaleString();
+function isActive(o: Order) {
+  return o.status === "active" && (!o.expires_at || o.expires_at > new Date().toISOString());
 }
 
+const PLAN_LABEL: Record<string, string> = {
+  "3mo": "3 Months", "6mo": "6 Months", "12mo": "12 Months", comp: "Free access (comp)",
+};
+
 export default function AdminOrdersPage() {
-  const [subs, setSubs] = useState<Sub[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
-  const [email, setEmail] = useState("");
-  const [months, setMonths] = useState(12);
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/admin/subscriptions", { cache: "no-store" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Could not load");
-      setSubs(data.subscriptions || []);
-      setUsers(data.users || []);
-    } catch (e: any) {
-      setError(e?.message || "Could not load");
-    }
-    setLoading(false);
+  useEffect(() => {
+    fetch("/api/admin/orders")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setOrders(d.orders || []))
+      .catch(() => setError("Couldn't load orders — try refreshing."))
+      .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const filtered = orders.filter((o) => {
+    if (search.trim() && !o.email.toLowerCase().includes(search.trim().toLowerCase())) return false;
+    const active = isActive(o);
+    if (statusFilter === "active" && !active) return false;
+    if (statusFilter === "inactive" && active) return false;
+    return true;
+  });
 
-  const grant = async () => {
-    if (!email.trim()) return;
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await fetch("/api/admin/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), months }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setMsg({ ok: true, text: `Access granted to ${data.email} for ${data.months} months.` });
-        setEmail("");
-        load();
-      } else {
-        setMsg({ ok: false, text: data?.error || "Could not grant access." });
-      }
-    } catch {
-      setMsg({ ok: false, text: "Something went wrong." });
-    }
-    setBusy(false);
-  };
-
-  const revoke = async (id: string) => {
-    if (!confirm("Revoke this access?")) return;
-    await fetch(`/api/admin/subscriptions?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    load();
+  const exportCsv = () => {
+    const rows = [
+      ["Email", "Plan", "Status", "Expires", "Created"],
+      ...filtered.map((o) => [o.email, PLAN_LABEL[o.type] || o.type, isActive(o) ? "Active" : "Inactive", o.expires_at || "", o.created_at]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "orders.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="max-w-[900px]">
-      <h1 className="font-serif text-[22px] text-ink mb-1">Orders &amp; Access</h1>
-      <p className="text-[12px] text-ink-3 mb-5 max-w-[620px]">
-        Every subscription on the account. If a payment went through but the person still
-        sees locked cards, check whether a row exists here — and whether it shows their
-        email. A blank email means the payment was recorded against a different sign-in.
-      </p>
+    <>
+      <div className="h-[52px] bg-card border-b border-border flex items-center justify-between px-6 shrink-0">
+        <span className="text-sm text-ink">Orders &amp; Access</span>
+        <button
+          onClick={exportCsv}
+          className="text-[12px] tracking-wider uppercase px-3 py-1.5 border border-border text-ink-2 font-sans font-medium hover:border-ink hover:text-ink flex items-center gap-1.5"
+        >
+          <svg className="w-[11px] h-[11px] stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+          Export CSV
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-6">
+        {loading && <p className="text-[13px] text-ink-3">Loading…</p>}
+        {error && <p className="text-[13px] text-[#B05555] mb-3">{error}</p>}
 
-      {/* Grant access */}
-      <div className="bg-surface border border-border p-4 mb-6">
-        <h2 className="text-[13px] font-medium text-ink mb-1">Grant access</h2>
-        <p className="text-[12px] text-ink-2 mb-3">
-          Unlocks all paid cards for this email. They must have signed in at least once.
-        </p>
-        <div className="flex gap-2 flex-wrap items-center">
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="their@email.com"
-            className="flex-1 min-w-[220px] px-3 py-2 border border-input-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent"
-          />
-          <select
-            value={months}
-            onChange={(e) => setMonths(Number(e.target.value))}
-            className="px-3 py-2 border border-input-border bg-white font-sans text-[13px] text-ink outline-none"
-          >
-            <option value={3}>3 months</option>
-            <option value={6}>6 months</option>
-            <option value={12}>12 months</option>
-            <option value={120}>10 years (comp)</option>
-          </select>
-          <button
-            onClick={grant}
-            disabled={busy || !email.trim()}
-            className="text-[11px] tracking-wider uppercase px-4 py-2 bg-accent text-white border border-accent font-medium font-sans hover:bg-accent-hover transition-all disabled:opacity-50"
-          >
-            {busy ? "…" : "Grant"}
-          </button>
-        </div>
-        {msg && (
-          <p className={`mt-2 text-[12px] ${msg.ok ? "text-ink-2" : "text-[#C53030]"}`}>{msg.text}</p>
+        {!loading && !error && (
+          <>
+            <div className="flex gap-3 mb-4">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by email…"
+                className="flex-1 py-1.5 px-2.5 border border-border bg-white font-sans text-xs text-ink outline-none focus:border-accent"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="py-1.5 px-2.5 border border-border bg-white font-sans text-xs text-ink-2 outline-none"
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active only</option>
+                <option value="inactive">Inactive / expired</option>
+              </select>
+            </div>
+
+            <div className="bg-card border border-border overflow-hidden">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="border-b border-border bg-surface-hover text-[12px] tracking-wider uppercase text-ink-3">
+                    <th className="text-left px-4 py-2 font-medium">Email</th>
+                    <th className="text-left px-4 py-2 font-medium">Plan</th>
+                    <th className="text-left px-4 py-2 font-medium">Expires</th>
+                    <th className="text-left px-4 py-2 font-medium">Created</th>
+                    <th className="text-left px-4 py-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((o) => (
+                    <tr key={o.id} className="border-b border-border last:border-b-0 hover:bg-surface-hover">
+                      <td className="px-4 py-2.5 text-ink font-medium">{o.email}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`text-[12px] px-1.5 py-0.5 font-medium tracking-wider ${o.type === "comp" ? "bg-badge-free-bg text-badge-free-text" : "bg-badge-paid-bg text-badge-paid-text"}`}>
+                          {PLAN_LABEL[o.type] || o.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-ink-3">{o.expires_at ? o.expires_at.slice(0, 10) : "—"}</td>
+                      <td className="px-4 py-2.5 text-ink-3">{o.created_at.slice(0, 10)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`text-[12px] px-1.5 py-0.5 font-medium tracking-wider ${isActive(o) ? "bg-badge-free-bg text-badge-free-text" : "bg-[#F0F0F0] text-ink-3"}`}>
+                          {isActive(o) ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-6 text-center text-ink-3 text-[13px]">
+                        {orders.length === 0 ? "No orders yet." : "Nothing matches these filters."}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
-
-      {/* Subscriptions */}
-      <h2 className="text-[13px] font-medium text-ink mb-2">Subscriptions ({subs.length})</h2>
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
-        </div>
-      ) : error ? (
-        <p className="text-[13px] text-[#C53030]">{error}</p>
-      ) : subs.length === 0 ? (
-        <div className="bg-surface border border-border p-6 text-center">
-          <p className="text-[13px] text-ink-2">
-            No subscriptions recorded yet — so no payment has ever been saved.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-surface border border-border mb-8">
-          {subs.map((s, i) => (
-            <div key={s.id} className={`flex items-center gap-4 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] text-ink font-medium truncate">
-                  {s.email || <span className="text-[#C53030]">no matching account</span>}
-                </div>
-                <div className="text-[11px] text-ink-3 mt-0.5 truncate">
-                  {s.type} · {s.status} · started {fmt(s.created_at)} · expires {fmt(s.expires_at)}
-                </div>
-                <div className="text-[10px] text-ink-3 mt-0.5 truncate">user id: {s.user_id}</div>
-              </div>
-              {s.status === "active" && (
-                <button
-                  onClick={() => revoke(s.id)}
-                  className="text-[11px] tracking-wider uppercase px-3 py-2 text-ink-3 font-medium hover:text-[#C53030] transition-all shrink-0"
-                >
-                  Revoke
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Accounts */}
-      <h2 className="text-[13px] font-medium text-ink mb-2">Accounts ({users.length})</h2>
-      <div className="bg-surface border border-border">
-        {users.map((u, i) => (
-          <div key={u.id} className={`flex items-center gap-4 px-4 py-2.5 ${i > 0 ? "border-t border-border" : ""}`}>
-            <div className="flex-1 min-w-0">
-              <div className="text-[13px] text-ink truncate">{u.email || "(no email)"}</div>
-              <div className="text-[10px] text-ink-3 truncate">{u.id}</div>
-            </div>
-            <span className="text-[11px] text-ink-3 shrink-0">{u.role}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    </>
   );
 }
