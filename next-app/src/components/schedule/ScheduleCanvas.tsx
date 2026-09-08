@@ -1,1143 +1,415 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useDroppable } from "@dnd-kit/core";
-import { GRID_SPECS,
-  getDailySpec,
-  CANVAS_STRINGS, A4_PORTRAIT, A4_LANDSCAPE, LANGUAGES, DAYS, DAY_KEYS, MAX_WEEKLY_CARDS, MAX_CUSTOM_CARDS, MAX_TIMETABLE_CARDS } from "@/lib/constants";
-import { findCard, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { DAY_KEYS, getDailySpec } from "@/lib/constants";
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { createPortal } from "react-dom";
+import { AppShell } from "@/components/layout/AppShell";
+import { CardLibrarySidebar } from "@/components/schedule/CardLibrarySidebar";
+import { RightPanel } from "@/components/schedule/RightPanel";
+import { MobileScheduleBuilder } from "@/components/schedule/MobileScheduleBuilder";
+import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
-import type { DailyPageData, ColumnPageData } from "@/types/schedule";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { findCard, setRuntimeCards, getCardLabel, setCardImages as setCardImagesGlobal, setLabelOverrides, type CardImageMap, type ParsedCard } from "@/lib/card-data";
+import { makePaddedPointerWithin } from "@/lib/collision";
 
-// Paid users get branding-free schedules: check once, hide the footer if active.
-// If the check fails (offline, logged out), branding stays — the safe default.
-// Renders the card's label per the Card Text setting: single language,
-// two languages stacked, or (via LabelStrip) nothing at all.
-function CardLabelText({
-  card,
-  secondaryClassName = "block text-[15px] text-[#7A8F5E] leading-tight mt-1",
-}: {
-  card: any;
-  secondaryClassName?: string;
-}) {
-  const language = useScheduleState((s) => s.language);
-  const secondLanguage = useScheduleState((s) => s.secondLanguage);
-  const labelMode = useScheduleState((s) => s.labelMode);
-  const primary =
-    card.translations?.[language] || card.translations?.en || getCardLabel(card, language);
-  if (labelMode === "multi") {
-    const secondary =
-      card.translations?.[secondLanguage] ||
-      card.translations?.en ||
-      getCardLabel(card, secondLanguage);
-    return (
-      <>
-        {primary}
-        <span className={secondaryClassName}>{secondary}</span>
-      </>
-    );
-  }
-  return <>{primary}</>;
-}
+function PointerOverlay({ label, scale = 1 }: { label: string; scale?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
 
-function LabelStrip({ className, children }: { className: string; children: React.ReactNode }) {
-  const labelMode = useScheduleState((s) => s.labelMode);
-  if (labelMode === "none") return null;
-  return <div className={className}>{children}</div>;
-}
-
-// Free-tier footer, matching the printable references: two-line credit + QR
-// that sends anyone holding the paper to the builder. Paid users get none.
-// White-label: when the visitor is connected to a therapy center (code
-// session or linked login), the footer carries the center's logo + name.
-function useOrgBranding() {
-  const [org, setOrg] = useState<{ name: string; logoUrl: string | null; isPaid?: boolean } | null>(null);
   useEffect(() => {
-    fetch("/api/me/org")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.org) setOrg(d.org); })
-      .catch(() => {});
-  }, []);
-  return org;
-}
-
-function CanvasFooter({ show }: { show: boolean }) {
-  const org = useOrgBranding();
-  if (org && show) {
-    // Paid centers get PURE white-label: their logo + name only — no
-    // Visual Schedules attribution text, no QR code anywhere on the page.
-    if (org.isPaid) {
-      return (
-        <div className="shrink-0 h-[62px] py-2 pb-3 flex items-center gap-3">
-          {org.logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`/api/org-logo?v=${encodeURIComponent(org.logoUrl)}`}
-              alt={org.name}
-              className="h-[42px] w-auto max-w-[160px] object-contain shrink-0 bg-white rounded-[4px] p-[2px]"
-            />
-          )}
-          <p className="text-[15px] font-serif text-[#4A5A3E] leading-snug truncate">{org.name}</p>
-        </div>
-      );
+    function onPointerMove(e: PointerEvent) {
+      if (ref.current) {
+        ref.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+      }
     }
-    return (
-      <div className="shrink-0 h-[62px] py-2 pb-3 flex items-end justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          {org.logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`/api/org-logo?v=${encodeURIComponent(org.logoUrl)}`}
-              alt={org.name}
-              className="h-[40px] w-auto max-w-[120px] object-contain shrink-0 bg-white rounded-[4px] p-[2px]"
-            />
-          )}
-          <div className="min-w-0">
-            <p className="text-[14px] font-serif text-[#4A5A3E] leading-snug truncate">{org.name}</p>
-            <p className="text-[12px] text-[#8A8480] leading-snug">
-              Made with visualschedule.app • © 2026 Grow Gently
-            </p>
-          </div>
-        </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/qr-schedule.png"
-          alt="Scan to create your own visual schedule"
-          crossOrigin="anonymous"
-          className="w-[46px] h-[46px] shrink-0"
-        />
-      </div>
-    );
-  }
-  // The footer band always occupies the same height so pages stay balanced;
-  // paid accounts simply get it empty.
-  if (!show) return <div className="shrink-0 h-[62px]" />;
-  return (
-    <div className="shrink-0 h-[62px] py-2 pb-3 flex items-end justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-[10.5px] text-[#8A8480] leading-snug">
-          Create Personalized A4 Visual Schedules in Just 2 Minutes • https://visualschedule.app/schedule
-        </p>
-        <p className="text-[10.5px] text-[#8A8480] leading-snug">
-          Visual Schedule by Grow Gently • © 2026 Grow Gently. All Rights Reserved.
-        </p>
-      </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/qr-schedule.png"
-        alt="Scan to create your own visual schedule"
-        crossOrigin="anonymous"
-        className="w-[46px] h-[46px] shrink-0"
-      />
-    </div>
-  );
-}
-
-function useIsPaid() {
-  const [isPaid, setIsPaid] = useState(false);
-  useEffect(() => {
-    fetch("/api/user/subscription")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setIsPaid(!!d?.subscription))
-      .catch(() => {});
+    window.addEventListener("pointermove", onPointerMove);
+    return () => window.removeEventListener("pointermove", onPointerMove);
   }, []);
-  return isPaid;
-}
 
-// Local schedule type labels (avoiding import issues)
-const SCHEDULE_TYPE_LABELS = {
-  daily: "Daily Schedule",
-  weekly: "Weekly Schedule",
-  custom: "Custom Schedule",
-  firstthen: "First/Then Board",
-  iwant: "I want",
-  timetable: "Timetable",
-  mini: "My Schedule",
-} as const;
-
-// Which weekday (0=Sunday..6=Saturday, matching CANVAS_STRINGS.days) each
-// Timetable page shows. Page 4's second slot is the free-form extra column
-// (Sick Day / Rainy Day / Holiday...) instead of a day, so it's `null` here.
-const TIMETABLE_PAGE_DAYS: Array<[number, number | null]> = [
-  [1, 2], // Monday, Tuesday
-  [3, 4], // Wednesday, Thursday
-  [5, 6], // Friday, Saturday
-  [0, null], // Sunday, + editable extra column
-];
-
-// Title/labels in the schedule's language. A user-typed custom title always
-// wins; the stock English defaults localize automatically.
-function useCanvasStrings() {
-  const language = useScheduleState((s) => s.language);
-  return CANVAS_STRINGS[language] || CANVAS_STRINGS.en;
-}
-
-function useLocalizedTitle() {
-  const title = useScheduleState((s) => s.title);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const t = useCanvasStrings();
-  const englishDefaults = Object.values(SCHEDULE_TYPE_LABELS) as string[];
-  if (!title || englishDefaults.includes(title)) {
-    return t.types[scheduleType as keyof typeof t.types] || title;
-  }
-  return title;
-}
-
-function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slotIdx: number; pageIdx: number; justDropped: boolean; onEmptySlotTap?: () => void }) {
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
-  const cardStyle = useScheduleState((s) => s.cardStyle);
-  const cardType = useScheduleState((s) => s.cardType);
-  const labelMode = useScheduleState((s) => s.labelMode);
-  const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const page = pages[pageIdx] as DailyPageData;
-  const cardRef = page?.slots?.[slotIdx] ?? null;
-
-  const { setNodeRef, isOver, active } = useDroppable({
-    id: `${pageIdx}-${slotIdx}`,
-  });
-
-  const card = cardRef ? findCard(cardRef.cardId) : null;
-  const imageUrl = card ? getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral") : null;
-  const isDragging = !!active;
-  const isBlack = cardStyle === "black";
-
-  return (
+  return createPortal(
     <div
-      ref={setNodeRef}
-      className={`relative flex flex-col items-center justify-center overflow-hidden bg-white border-[1.5px] border-solid ${cardType !== "visual" ? "rounded-[12px]" : ""}
-        ${!cardRef
-          ? `transition-[border-color,background-color,transform] duration-200 ease-out
-             ${isOver ? "border-[#7A8F5E] bg-[#F0F8F0] scale-[1.03]" : isDragging ? "border-[#7A8F5E] bg-white" : "border-[#C7D7B8] bg-white"}`
-          : `border-[#C7D7B8] group bg-white`
-        }
-        ${justDropped ? "animate-[cardLand_350ms_cubic-bezier(0.34,1.56,0.64,1)]" : ""}
-      `}
+      ref={ref}
+      className="fixed top-0 left-0 z-[9999] pointer-events-none will-change-transform"
+      style={{ transform: "translate3d(-9999px, -9999px, 0)" }}
     >
-      {cardRef && card && cardType !== "visual" ? (
-        <>
-          {/* Equal / Text focus: image left, words right (image untouched, just placed) */}
-          <div className="absolute inset-0 flex items-stretch">
-            <div className="h-full aspect-square p-[4px] shrink-0 flex items-center justify-center overflow-hidden bg-white">
-              {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
-              ) : (
-                <svg className="w-8 h-8 stroke-[1.4] fill-none stroke-[#DDD]" viewBox="0 0 24 24" strokeLinecap="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              )}
-            </div>
-            <LabelStrip className="flex-1 min-w-0 flex items-center px-2.5">
-              <span className={`${cardType === "equal" ? "text-[24px]" : "text-[20px]"} font-serif text-[#2C2C2C] leading-tight break-words line-clamp-2 text-left`}>
-                <CardLabelText
-                  card={card}
-                  secondaryClassName={`block ${cardType === "equal" ? "text-[20px]" : "text-[17px]"} text-[#7A8F5E] leading-tight mt-1.5`}
-                />
-              </span>
-            </LabelStrip>
-          </div>
-          <button
-            onClick={() => removeCard(pageIdx, String(slotIdx))}
-            className="absolute top-[5px] right-[5px] w-[18px] h-[18px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[13px] text-[#666] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink transition-colors"
-          >
-            &times;
-          </button>
-        </>
-      ) : cardRef && card ? (
-        <>
-          <div className="absolute inset-0 flex flex-col">
-            <div className={`${labelMode === "none" ? "flex-1" : "flex-[0_0_70%]"} p-[4px] flex items-center justify-center overflow-hidden bg-white`}>
-              {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
-              ) : (
-                <svg className={`w-10 h-10 stroke-[1.4] fill-none stroke-[#DDD]`} viewBox="0 0 24 24" strokeLinecap="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              )}
-            </div>
-            <LabelStrip className="flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white">
-              <span className="text-[18px] text-center leading-tight font-serif text-[#2C2C2C] break-words line-clamp-2">
-                <CardLabelText card={card} />
-              </span>
-            </LabelStrip>
-          </div>
-          <button
-            onClick={() => removeCard(pageIdx, String(slotIdx))}
-            className="absolute top-[5px] right-[5px] w-[18px] h-[18px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[13px] text-[#666] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink transition-colors"
-          >
-            &times;
-          </button>
-        </>
-      ) : onEmptySlotTap ? (
-        <button
-          onClick={onEmptySlotTap}
-          aria-label="Add step"
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xl font-bold"
-          style={{ background: "#4A5A3E" }}
-        >
-          +
-        </button>
-      ) : (
-        <div className={`dz-hint flex flex-col items-center gap-[5px] transition-transform duration-200 ${isOver ? "scale-125" : ""}`}>
-          <svg className={`w-[18px] h-[18px] stroke-[1.5] fill-none transition-[stroke] duration-200 ${isOver ? "stroke-[#7A8F5E]" : isDragging ? "stroke-[#7A8F5E]" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span className={`text-xs font-medium transition-[color] duration-200 ${isOver ? "text-[#7A8F5E]" : isDragging ? "text-[#7A8F5E]" : "text-[#999]"}`}>
-            {isOver ? "Release" : "Drop"}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WeeklyColumn({ dayKey, dayName, pageIdx, justDroppedSlot }: { dayKey: string; dayName: string; pageIdx: number; justDroppedSlot: string | null }) {
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
-  const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.[dayKey] || [];
-
-  const droppableId = `${pageIdx}-${dayKey}`;
-  const { setNodeRef, isOver, active } = useDroppable({ id: droppableId });
-  const isDragging = !!active;
-
-  return (
-    <div className="flex flex-col border-r border-r-[#C5D2B8] last:border-r-0 min-w-0 overflow-hidden">
-      <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
-        <div className="font-serif text-[15px] text-[#4A5A3E]">{dayName}</div>
-      </div>
-      <div
-        ref={setNodeRef}
-        className={`flex-1 min-h-0 overflow-hidden flex flex-col gap-1 p-1 justify-center transition-colors duration-150
-          ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
-        `}
-      >
-        {cards.map((cardRef, idx) => {
-          const card = findCard(cardRef.cardId);
-          if (!card) return null;
-          const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
-          return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden flex-1 min-h-0">
-              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
-                {imageUrl ? (
-                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
-                ) : (
-                  <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                )}
-              </div>
-              <LabelStrip className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
-                <CardLabelText card={card} />
-              </LabelStrip>
-              <button
-                onClick={() => removeCard(pageIdx, dayKey, idx)}
-                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[12px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-              >
-                &times;
-              </button>
-            </div>
-          );
-        })}
-        {cards.length < MAX_WEEKLY_CARDS && (
-          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-transparent"}`}>
-            {(isDragging || isOver) && (
-              <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DailyPage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
-  const isPaid = useIsPaid();
-  const gridCols = useScheduleState((s) => s.gridCols);
-  const cardType = useScheduleState((s) => s.cardType);
-  const title = useScheduleState((s) => s.title);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const language = useScheduleState((s) => s.language);
-  const spec = getDailySpec(cardType, gridCols);
-  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
-  const shownTitle = useLocalizedTitle();
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "36px 48px 0" }}
-    >
-      <div className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-end pb-2.5 mb-2.5">
-        <div className="col-start-2">
-          {shownTitle ? (
-            <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug text-center">{shownTitle}</h2>
-          ) : (
-            <h2 className="font-serif text-[30px] text-[#CCC] leading-snug text-center">Untitled</h2>
-          )}
-        </div>
-        <div className="col-start-3 justify-self-end">
-          <span className="text-[12px] tracking-wider text-[#8A8480] border border-border px-2.5 py-1 font-medium">{LANGUAGES[language] || language}</span>
-        </div>
-      </div>
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="grid gap-2 h-full" style={{ gridTemplateColumns: `repeat(${spec.cols}, 1fr)`, gridTemplateRows: `repeat(${spec.rows}, 1fr)` }}>
-          {Array.from({ length: spec.slots }).map((_, i) => (
-            <DailyDropSlot key={i} slotIdx={i} pageIdx={pageIdx} justDropped={justDroppedSlot === `${pageIdx}-${i}`} onEmptySlotTap={onEmptySlotTap} />
-          ))}
-        </div>
-      </div>
-      <CanvasFooter show />
-    </div>
-  );
-}
-
-function WeeklyPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
-  const isPaid = useIsPaid();
-  const title = useScheduleState((s) => s.title);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const language = useScheduleState((s) => s.language);
-  const weekMode = useScheduleState((s) => s.weekMode);
-  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
-  const shownTitle = useLocalizedTitle();
-
-  const localizedDays = useCanvasStrings().days;
-  const days = weekMode === "weekdays" ? localizedDays.slice(1, 6) : [...localizedDays];
-  const dayKeys = weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS];
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
-    >
-      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
-        {shownTitle ? (
-          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
-        ) : (
-          <h2 className="font-serif text-[30px] text-[#CCC] leading-snug">Untitled</h2>
-        )}
-      </div>
-      <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
-        {dayKeys.map((key, idx) => (
-          <WeeklyColumn key={key} dayKey={key} dayName={days[idx]} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-        ))}
-      </div>
-      <CanvasFooter show />
-    </div>
-  );
-}
-
-function TimetableColumn({
-  colIdx,
-  dayIdx,
-  pageIdx,
-  justDroppedSlot,
-}: {
-  colIdx: number;
-  dayIdx: number | null; // null = the free-form extra column (Sick Day...)
-  pageIdx: number;
-  justDroppedSlot: string | null;
-}) {
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
-  const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const timetableExtraName = useScheduleState((s) => s.timetableExtraName);
-  const setTimetableExtraName = useScheduleState((s) => s.setTimetableExtraName);
-  const timetableDayNames = useScheduleState((s) => s.timetableDayNames);
-  const setTimetableDayName = useScheduleState((s) => s.setTimetableDayName);
-  const t = useCanvasStrings();
-  const isExtra = dayIdx === null;
-  const headerValue = isExtra
-    ? timetableExtraName
-    : timetableDayNames[dayIdx] ?? t.days[dayIdx];
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.[String(colIdx)] || [];
-
-  const droppableId = `${pageIdx}-${colIdx}`;
-  const { setNodeRef, isOver, active } = useDroppable({ id: droppableId });
-  const isDragging = !!active;
-
-  return (
-    <div className="flex flex-col min-w-0 overflow-hidden border border-[#C5D2B8] rounded-[8px]">
-      <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
-        <input
-          type="text"
-          value={headerValue}
-          onChange={(e) =>
-            isExtra ? setTimetableExtraName(e.target.value) : setTimetableDayName(dayIdx as number, e.target.value)
-          }
-          className="custom-col-input w-full text-center border-none bg-transparent font-serif text-[15px] text-[#4A5A3E] outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
-        />
-      </div>
-      <div
-        ref={setNodeRef}
-        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-1.5 p-1.5 justify-start transition-colors duration-150
-          ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
-        `}
-      >
-        {cards.map((cardRef, idx) => {
-          const card = findCard(cardRef.cardId);
-          if (!card) return null;
-          const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
-          return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] rounded-[6px] flex flex-row items-center relative group overflow-hidden h-[68px] shrink-0">
-              <div className="h-full aspect-square shrink-0 flex items-center justify-center overflow-hidden bg-white p-[4px]">
-                {imageUrl ? (
-                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
-                ) : (
-                  <svg className="w-6 h-6 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                )}
-              </div>
-              <LabelStrip className="flex-1 min-w-0 px-2 border-l border-[#F0F0F0] text-[15px] text-ink leading-tight font-serif break-words line-clamp-2">
-                <CardLabelText card={card} />
-              </LabelStrip>
-              <button
-                onClick={() => removeCard(pageIdx, String(colIdx), idx)}
-                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[12px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-              >
-                &times;
-              </button>
-            </div>
-          );
-        })}
-        {cards.length < MAX_TIMETABLE_CARDS && (
-          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-transparent"}`}>
-            {(isDragging || isOver) && (
-              <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TimetablePage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
-  const shownTitle = useLocalizedTitle();
-  const [dayA, dayB] = TIMETABLE_PAGE_DAYS[pageIdx] || [1, 2];
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
-    >
-      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
-        {shownTitle ? (
-          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
-        ) : (
-          <h2 className="font-serif text-[30px] text-[#CCC] leading-snug">Untitled</h2>
-        )}
-      </div>
-      <div className="flex-1 min-h-0 grid grid-cols-2 gap-4">
-        <TimetableColumn colIdx={0} dayIdx={dayA} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-        <TimetableColumn colIdx={1} dayIdx={dayB} pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-      </div>
-      <CanvasFooter show />
-    </div>
-  );
-}
-
-function MiniSchedulePage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
-  const shownTitle = useLocalizedTitle();
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
-  const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const labelMode = useScheduleState((s) => s.labelMode);
-  const miniCardCount = useScheduleState((s) => s.miniCardCount);
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.["0"] || [];
-
-  const droppableId = `${pageIdx}-0`;
-  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
-
-  // Fixed left/right margin as a ratio of the page width — proportional,
-  // never overly wide, and matches at any zoom level since it's not a
-  // fixed pixel padding on the outer page.
-  const sideMargin = A4_PORTRAIT.width * 0.06;
-  const emptySlots = Math.max(0, miniCardCount - cards.length);
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{
-        width: A4_PORTRAIT.width,
-        height: A4_PORTRAIT.height,
-        padding: `24px ${sideMargin}px 20px`,
-      }}
-    >
-      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-4 shrink-0">
-        <h2 className="font-serif text-[34px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
-      </div>
-
-      {/* One big column, centered with margins either side — not full width */}
-      <div className="flex-1 min-h-0 flex justify-center">
-        <div
-          ref={setNodeRef}
-          className={`w-full max-w-[420px] flex-1 min-h-0 overflow-hidden flex flex-col gap-3 rounded-[10px] transition-colors duration-150 ${
-            isOver ? "bg-[#EFF2E8]" : ""
-          }`}
-        >
-          {cards.map((cardRef, idx) => {
-            const card = findCard(cardRef.cardId);
-            if (!card) return null;
-            const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
-            return (
-              <div
-                key={idx}
-                className="bg-white border-[1.5px] border-[#C7D7B8] rounded-[12px] flex flex-col relative group overflow-hidden flex-1 min-h-0"
-              >
-                <div className={`${labelMode === "none" ? "flex-1" : "flex-[0_0_72%]"} p-2 flex items-center justify-center overflow-hidden bg-white`}>
-                  {imageUrl ? (
-                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
-                  ) : (
-                    <svg className="w-10 h-10 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                  )}
-                </div>
-                {labelMode !== "none" && (
-                  <LabelStrip className="px-2 py-2 border-t border-[#F0F0F0] bg-white text-[24px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
-                    <CardLabelText card={card} />
-                  </LabelStrip>
-                )}
-                <button
-                  onClick={() => removeCard(pageIdx, "0", idx)}
-                  className="absolute top-2 right-2 w-[24px] h-[24px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[15px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-                >
-                  &times;
-                </button>
-              </div>
-            );
-          })}
-          {Array.from({ length: emptySlots }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="flex-1 min-h-0 flex items-center justify-center border-2 border-dashed border-[#C5D2B8] rounded-[12px]"
+      {/* Scaled to match the canvas zoom so the ghost's on-screen size stays
+          proportional to the (possibly shrunk) drop target underneath it —
+          otherwise a full-size ghost over a zoomed-out column visually
+          overlaps the target well before the pointer's real hotspot does. */}
+      <div style={{ transform: `translate(-50%, -50%) scale(${scale})`, transformOrigin: "center" }}>
+        <div className="w-[88px] bg-white border border-accent/70 rounded shadow-[0_14px_28px_rgba(0,0,0,0.16),0_4px_10px_rgba(139,94,42,0.18)] rotate-[3deg]">
+          <div className="w-full aspect-square bg-white flex items-center justify-center rounded-t">
+            <svg
+              className="w-5 h-5 stroke-accent/60 stroke-[1.5] fill-none"
+              viewBox="0 0 24 24"
+              strokeLinecap="round"
             >
-              {onEmptySlotTap ? (
-                <button
-                  onClick={onEmptySlotTap}
-                  aria-label="Add step"
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-                  style={{ background: "#4A5A3E" }}
-                >
-                  +
-                </button>
-              ) : (
-                <p className="text-[14px] text-weekly-accent font-sans text-center px-4 leading-snug">
-                  Click or drag &amp; drop to add
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <CanvasFooter show />
-    </div>
-  );
-}
-
-function CustomColumn({ colIdx, colName, pageIdx, justDroppedSlot }: { colIdx: number; colName: string; pageIdx: number; justDroppedSlot: string | null }) {
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
-  const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const customColNames = useScheduleState((s) => s.customColNames);
-  const setCustomColNames = useScheduleState((s) => s.setCustomColNames);
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.[String(colIdx)] || [];
-
-  const droppableId = `${pageIdx}-${colIdx}`;
-  const { setNodeRef, isOver, active } = useDroppable({ id: droppableId });
-  const isDragging = !!active;
-
-  return (
-    <div className="flex flex-col border-r border-r-[#C5D2B8] last:border-r-0 min-w-0 overflow-hidden">
-      <div className="bg-[#E8EDE0] border-b border-b-[#C5D2B8] px-1.5 py-2.5 text-center shrink-0">
-        <input
-          type="text"
-          value={colName}
-          onChange={(e) => {
-            const names = [...customColNames];
-            names[colIdx] = e.target.value;
-            setCustomColNames(names);
-          }}
-          className="custom-col-input w-full text-center border-none bg-transparent font-serif text-[15px] text-[#4A5A3E] outline-none hover:bg-white/60 focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#7A8F5E] rounded-sm px-1 py-0.5"
-        />
-      </div>
-      <div
-        ref={setNodeRef}
-        className={`flex-1 min-h-0 overflow-hidden flex flex-col gap-1 p-1 justify-center transition-colors duration-150
-          ${isOver ? "bg-[#EFF2E8]" : "bg-[#FAFBF7]"}
-        `}
-      >
-        {cards.map((cardRef, idx) => {
-          const card = findCard(cardRef.cardId);
-          if (!card) return null;
-          const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
-          return (
-            <div key={idx} className="bg-white border border-[#C7D7B8] flex flex-col relative group overflow-hidden flex-1 min-h-0">
-              <div className="flex-1 flex items-center justify-center overflow-hidden bg-white min-h-0 p-[4px]">
-                {imageUrl ? (
-                  <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
-                ) : (
-                  <svg className="w-7 h-7 stroke-[#CCC] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                )}
-              </div>
-              <LabelStrip className="px-1 py-1 border-t border-[#F0F0F0] bg-white text-[18px] text-ink text-center leading-tight font-serif shrink-0 break-words line-clamp-2">
-                <CardLabelText card={card} />
-              </LabelStrip>
-              <button
-                onClick={() => removeCard(pageIdx, String(colIdx), idx)}
-                className="absolute top-1 right-1 w-[15px] h-[15px] bg-white/90 border border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[12px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-              >
-                &times;
-              </button>
-            </div>
-          );
-        })}
-        {cards.length < MAX_CUSTOM_CARDS && (
-          <div className={`flex items-center justify-center shrink-0 h-7 border border-solid rounded transition-colors duration-150 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-transparent"}`}>
-            {(isDragging || isOver) && (
-              <svg className={`w-3 h-3 stroke-[1.8] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-weekly-border"}`} viewBox="0 0 24 24" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDroppedSlot: string | null }) {
-  const isPaid = useIsPaid();
-  const title = useScheduleState((s) => s.title);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const customColNames = useScheduleState((s) => s.customColNames);
-  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
-  const shownTitle = useLocalizedTitle();
-  const customT = useCanvasStrings();
-
-  const colCount = customColNames.length;
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_LANDSCAPE.width, height: A4_LANDSCAPE.height, padding: "28px 32px 24px" }}
-    >
-      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-3 shrink-0">
-        {shownTitle ? (
-          <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
-        ) : (
-          <h2 className="font-serif text-[30px] text-[#CCC] leading-snug">Untitled</h2>
-        )}
-      </div>
-      <div className="flex-1 min-h-0 grid border border-[#C5D2B8] rounded-sm overflow-hidden" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
-        {customColNames.map((name, idx) => (
-          <CustomColumn
-            key={idx}
-            colIdx={idx}
-            colName={/^Column \d+$/.test(name) ? `${customT.column} ${idx + 1}` : name}
-            pageIdx={pageIdx}
-            justDroppedSlot={justDroppedSlot}
-          />
-        ))}
-      </div>
-      <CanvasFooter show />
-    </div>
-  );
-}
-
-function FirstThenColumn({ colKey, colName, dims, pageIdx, justDroppedSlot }: { colKey: string; colName: string; dims: { w: number; h: number }; pageIdx: number; justDroppedSlot: string | null }) {
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
-  const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.[colKey] || [];
-
-  const droppableId = `${pageIdx}-${colKey}`;
-  const { setNodeRef, isOver, active } = useDroppable({ id: droppableId });
-  const isDragging = !!active;
-  const hasCard = cards.length > 0;
-
-  return (
-    <div className="flex flex-col border border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#F4F6EF] min-w-0">
-      <div className="bg-[#E8EDE0] border-b-2 border-b-[#C5D2B8] px-2 py-3.5 text-center shrink-0">
-        <span className="font-serif text-[26px] text-[#4A5A3E]">{colName}</span>
-      </div>
-      <div
-        ref={setNodeRef}
-        className={`flex-1 flex items-center justify-center p-4 min-h-0 transition-colors duration-150 ${isOver ? "bg-[#EFF2E8]" : ""}`}
-      >
-        {hasCard ? (
-          (() => {
-            const card = findCard(cards[0].cardId);
-            if (!card) return null;
-            const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
-            return (
-              <div style={{ width: dims.w, height: dims.h }} className="bg-white border-2 border-dashed border-[#C5D2B8] rounded-[10px] flex flex-col overflow-hidden relative group">
-                <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white p-[4px]">
-                  {imageUrl ? (
-                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
-                  ) : (
-                    <svg className="w-[90px] h-[90px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                  )}
-                </div>
-                <LabelStrip className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
-                  <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
-                    <CardLabelText card={card} />
-                  </span>
-                </LabelStrip>
-                <button
-                  onClick={() => removeCard(pageIdx, colKey, 0)}
-                  className="absolute top-2 right-2 w-[30px] h-[30px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[19px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-                >
-                  &times;
-                </button>
-              </div>
-            );
-          })()
-        ) : (
-          <div style={{ width: dims.w, height: dims.h }} className={`border-2 border-dashed rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-80 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-[#C5D2B8]"}`}>
-            <svg className={`w-[52px] h-[52px] stroke-[1.4] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Cut-out cards and the board drop areas share EXACTLY these dimensions,
-// so a printed cut-out fits the board perfectly when pasted/velcroed.
-// Sizes shrink as the number of boards grows.
-// Board card == cut-out card, and the cut-out grid is N×N — so all sizes
-// shrink together as boards grow: 2→2×2, 3→3×3, 4→4×4.
-const FT_DIMS: Record<number, { w: number; h: number }> = {
-  2: { w: 216, h: 186 },
-  3: { w: 200, h: 182 },
-  4: { w: 162, h: 140 },
-};
-// The I-want communication board: one target slot + a 3×3 cut-out grid.
-const IW_DIM = { w: 226, h: 210 };
-const FT_LABELS: Record<string, string[]> = {
-  "first-then": ["First", "Then"],
-  "first-then-now": ["First", "Then", "Now"],
-  sequencing: ["First", "Next", "Then", "Last"],
-};
-
-function FirstThenPage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
-  const isPaid = useIsPaid();
-  const title = useScheduleState((s) => s.title);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const ftStyle = useScheduleState((s) => s.ftStyle);
-  const ftT = useCanvasStrings();
-  const labels =
-    ftStyle === "sequencing"
-      ? [ftT.first, ftT.next, ftT.then, ftT.last]
-      : ftStyle === "first-then-now"
-        ? [ftT.first, ftT.then, ftT.now]
-        : [ftT.first, ftT.then];
-  const dims = FT_DIMS[labels.length] || FT_DIMS[2];
-  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
-  const shownTitle = useLocalizedTitle();
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
-    >
-      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-4 shrink-0">
-        <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
-      </div>
-
-      {/* Boards — 2, 3, or 4 depending on the chosen style */}
-      <div
-        className="shrink-0 grid gap-6"
-        style={{
-          height: dims.h + 48 + 44,
-          gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))`,
-        }}
-      >
-        {labels.map((name, i) => (
-          <FirstThenColumn
-            key={i}
-            colKey={String(i)}
-            colName={name}
-            dims={dims}
-            pageIdx={pageIdx}
-            justDroppedSlot={justDroppedSlot}
-          />
-        ))}
-      </div>
-
-      {/* Scissors cut line */}
-      <div className="shrink-0 flex items-center gap-3 my-4">
-        <svg className="w-[22px] h-[22px] stroke-[#8A9B74] stroke-[1.6] fill-none shrink-0" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="6" cy="6" r="3" />
-          <circle cx="6" cy="18" r="3" />
-          <line x1="20" y1="4" x2="8.12" y2="15.88" />
-          <line x1="14.47" y1="14.48" x2="20" y2="20" />
-          <line x1="8.12" y1="8.12" x2="12" y2="12" />
-        </svg>
-        <div className="flex-1 border-t-2 border-dashed border-[#C5D2B8]" />
-      </div>
-
-      {/* Six cut-out card slots */}
-      <CutoutStrip
-        pageIdx={pageIdx}
-        dims={dims}
-        count={labels.length === 4 ? 16 : 9}
-        cols={labels.length === 4 ? 4 : 3}
-        justDroppedSlot={justDroppedSlot}
-        onEmptySlotTap={onEmptySlotTap}
-      />
-
-      <CanvasFooter show />
-    </div>
-  );
-}
-
-// "I want" communication board: big editable phrase on the left, one target
-// slot on the right (same size as the cut cards, so a cut card fits it), and
-// a 3×3 grid of cut-out cards below. Used for pointing/handing, not scheduling.
-function IWantPage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
-  const isPaid = useIsPaid();
-  const shownTitle = useLocalizedTitle();
-  const pages = useScheduleState((s) => s.pages);
-  const page = pages[pageIdx] as ColumnPageData;
-  const targetCards = page?.columns?.["target"] || [];
-  const targetEntry = targetCards[0];
-  const targetCard = targetEntry ? findCard(targetEntry.cardId) : null;
-  const gender = useScheduleState((s) => s.gender);
-  const language = useScheduleState((s) => s.language);
-  const removeCard = useScheduleState((s) => s.removeCard);
-
-  const droppableId = `${pageIdx}-target`;
-  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
-
-  return (
-    <div
-      data-a4-page
-      className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height }}
-    >
-      {/* Full-bleed header band: phrase + target slot, matching the other
-          schedule types' header treatment */}
-      <div className="shrink-0 bg-[#F4F6EF] border-b-2 border-[#C5D2B8] px-8 pt-10 pb-8 flex items-center justify-between gap-6">
-        <h2 className="font-serif text-[92px] text-[#5A8A3C] leading-[1.05] min-w-0 break-words">
-          {shownTitle}
-        </h2>
-        <div
-          ref={setNodeRef}
-          style={{ width: IW_DIM.w, height: IW_DIM.h }}
-          className={`shrink-0 border-2 border-dashed rounded-[10px] bg-white flex flex-col overflow-hidden relative group ${
-            isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : "border-[#C5D2B8]"
-          }`}
-        >
-          {targetCard ? (
-            <>
-              <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-[4px]">
-                {getCardImageUrl(targetCard.id, isCharacterCard(targetCard) ? gender : "neutral") ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={getCardImageUrl(targetCard.id, isCharacterCard(targetCard) ? gender : "neutral")!}
-                    alt={getCardLabel(targetCard, language)}
-                    crossOrigin="anonymous"
-                    className="w-full h-full object-contain"
-                  />
-                ) : null}
-              </div>
-              <LabelStrip className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
-                <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
-                  <CardLabelText card={targetCard} />
-                </span>
-              </LabelStrip>
-              <button
-                onClick={() => removeCard(pageIdx, "target", 0)}
-                className="absolute top-1.5 right-1.5 w-[26px] h-[26px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[16px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-              >
-                &times;
-              </button>
-            </>
-          ) : null}
+          <div className="px-1 py-1 bg-white border-t border-accent/15 text-[12px] text-ink text-center leading-tight font-sans font-medium rounded-b truncate">
+            {label}
+          </div>
         </div>
       </div>
-
-      {/* Body: cut-out cards + footer, in the page's normal padding */}
-      <div className="flex-1 min-h-0 flex flex-col px-8 pt-8 pb-6">
-        <CutoutStrip pageIdx={pageIdx} dims={IW_DIM} count={9} cols={3} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
-        <div className="flex-1" />
-        <CanvasFooter show />
-      </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
-function CutoutStrip({ pageIdx, dims, count, cols, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; dims: { w: number; h: number }; count: number; cols: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
-  const pages = useScheduleState((s) => s.pages);
-  const removeCard = useScheduleState((s) => s.removeCard);
+export default function ScheduleBuilder() {
+  const [activeCard, setActiveCard] = useState<{ id: string; label: string } | null>(null);
+  const [justDroppedSlot, setJustDroppedSlot] = useState<string | null>(null);
+  const [fullNotice, setFullNotice] = useState<string | null>(null);
+  const [orgBanner, setOrgBanner] = useState<{ name: string; code: string } | null>(null);
+  useEffect(() => {
+    fetch("/api/me/org")
+      .then((r) => r.json())
+      .then((d) => setOrgBanner(d.via === "code" ? { name: d.org.name, code: d.code } : null))
+      .catch(() => setOrgBanner(null));
+  }, []);
+  const leaveOrgCode = async () => {
+    await fetch("/api/me/org", { method: "DELETE" });
+    window.location.reload();
+  };
+  const [cardImages, setLocalCardImages] = useState<CardImageMap>({});
+  const [cardsLoaded, setCardsLoaded] = useState(false);
+  // Mobile gets its own linear layout; desktop keeps the three-panel one.
+  // Only one renders at a time so the exporter always finds a single canvas.
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
+  // Landscape pages (1123px) are wider than the center column — scale to fit.
+  // Measure the stable #canvas-wrap main (the wrapper around children is
+  // shrink-to-fit, so measuring it would collapse to zero).
+  const [fitZoom, setFitZoom] = useState(1);
+  const scheduleTypeForFit = useScheduleState((s) => s.scheduleType);
+  const exportingNow = useScheduleState((s) => s.exporting);
+  useEffect(() => {
+    const el = document.getElementById("canvas-wrap");
+    if (!el) return;
+    const canvasW =
+      scheduleTypeForFit === "weekly" || scheduleTypeForFit === "custom" ? 1123 : 794; // mini stays portrait (794)
+    const update = () => {
+      const avail = el.clientWidth;
+      if (avail < 200) return; // ignore bogus early measurements
+      setFitZoom(Math.max(0.35, Math.min(1, (avail - 56) / canvasW)));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [scheduleTypeForFit, isMobile]);
+  const placeCard = useScheduleState((s) => s.placeCard);
   const language = useScheduleState((s) => s.language);
-  const gender = useScheduleState((s) => s.gender);
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.["cutout"] || [];
 
-  const droppableId = `${pageIdx}-cutout`;
-  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
-  const justDropped = justDroppedSlot === droppableId;
+  // Load an existing schedule when opened as /schedule?id=... Nothing read
+  // this parameter before, so Open/Edit from My Schedules always landed on an
+  // empty builder. `editingId` also locks the schedule-type picker, since
+  // changing type would discard the saved layout.
+  const searchParams = useSearchParams();
+  const editingId = searchParams.get("id");
+  const loadSchedule = useScheduleState((s) => s.loadSchedule);
+  const [loadingSchedule, setLoadingSchedule] = useState(!!editingId);
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        height: (count / cols) * dims.h + (count / cols - 1) * 12,
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-      }}
-      className={`shrink-0 grid gap-3 justify-items-center transition-colors duration-150 ${isOver ? "bg-[#F4F7EE]" : ""} ${justDropped ? "animate-pulse-once" : ""}`}
-    >
-      {Array.from({ length: count }).map((_, i) => {
-        const entry = cards[i];
-        const card = entry ? findCard(entry.cardId) : null;
-        if (!card) {
-          return (
-            <div
-              key={i}
-              style={{ width: dims.w, height: dims.h }}
-              className={`border-2 border-dashed rounded-[10px] flex items-center justify-center ${isOver ? "border-[#7A8F5E]" : "border-[#C5D2B8]"}`}
-            >
-              {onEmptySlotTap ? (
-                <button
-                  onClick={onEmptySlotTap}
-                  aria-label="Add step"
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl font-bold"
-                  style={{ background: "#4A5A3E" }}
-                >
-                  +
-                </button>
-              ) : (
-                <svg className="w-[26px] h-[26px] stroke-[#D8DFCB] stroke-[1.4] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              )}
-            </div>
-          );
+  useEffect(() => {
+    if (!editingId) return;
+    let cancelled = false;
+    fetch(`/api/schedules/${editingId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((full) => {
+        if (cancelled || !full?.id) return;
+        loadSchedule({
+          id: full.id,
+          title: full.title,
+          scheduleType: full.scheduleType,
+          language: full.language,
+          gender: full.gender,
+          gridCols: full.gridCols,
+          customColNames: full.customColNames || undefined,
+          weekMode: full.weekMode,
+          cardStyle: full.cardStyle,
+          pages: full.data?.pages || [],
+        } as any);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoadingSchedule(false); });
+    return () => { cancelled = true; };
+  }, [editingId, loadSchedule]);
+
+  useAutoSave();
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Load runtime cards + images from D1 on mount
+  useEffect(() => {
+    // 1. Load cards into runtime registry so canvas can find them
+    fetch("/api/cards")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.cards?.length > 0) {
+          const cleaned = data.cards.map((c: ParsedCard) => ({
+            ...c,
+            isFree: !(c.icon || "").startsWith("paid:"),
+            icon: c.icon?.replace(/^(free|paid):/, "") || "s-star",
+          }));
+          setRuntimeCards(cleaned);
         }
-        const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
-        return (
-          <div
-            key={i}
-            style={{ width: dims.w, height: dims.h }}
-            className="border-2 border-dashed border-[#C5D2B8] rounded-[10px] bg-white flex flex-col overflow-hidden relative group"
-          >
-            <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-[4px]">
-              {imageUrl ? (
-                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
-              ) : (
-                <svg className="w-[40px] h-[40px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              )}
-            </div>
-            <div className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
-              <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
-                {card.translations?.[language] || card.translations?.en || getCardLabel(card, language)}
-              </span>
-            </div>
-            <button
-              onClick={() => removeCard(pageIdx, "cutout", i)}
-              className="absolute top-1.5 right-1.5 w-[26px] h-[26px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[16px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-            >
-              &times;
-            </button>
-          </div>
-        );
-      })}
-    </div>
+        setCardsLoaded(true);
+      })
+      .catch(() => {});
+
+    // 2. Load images
+    fetch("/api/cards/images")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.images) {
+          // Set the global card images (for ScheduleCanvas)
+          setCardImagesGlobal(data.images);
+          // Also set local state (for prop passing)
+          setLocalCardImages(data.images);
+        }
+        if (data.labels) {
+          setLabelOverrides(data.labels);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load card images:", err);
+      });
+  }, []);
+
+  const handleClickPlace = useCallback((cardId: string) => {
+    const card = findCard(cardId);
+    if (!card) return;
+
+    const { pages, scheduleType, gridCols } = useScheduleState.getState();
+    const pageIdx = 0;
+
+    if (scheduleType === "daily") {
+      const page = pages[pageIdx] as import("@/types/schedule").DailyPageData;
+      const { cardType, gridCols } = useScheduleState.getState();
+      const spec = getDailySpec(cardType, gridCols);
+      let emptyIdx = -1;
+      for (let i = 0; i < spec.slots; i++) {
+        if (page.slots[i] == null) {
+          emptyIdx = i;
+          break;
+        }
+      }
+      if (emptyIdx === -1) return;
+      placeCard(pageIdx, String(emptyIdx), { cardId: card.id, catId: card.categoryId });
+      setJustDroppedSlot(`${pageIdx}-${emptyIdx}`);
+    } else if (scheduleType === "mini") {
+      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
+      const { miniCardCount } = useScheduleState.getState();
+      if ((page.columns?.["0"] || []).length < miniCardCount) {
+        placeCard(pageIdx, "0", { cardId: card.id, catId: card.categoryId });
+        setJustDroppedSlot(`${pageIdx}-0`);
+      } else {
+        setFullNotice(`This page holds ${miniCardCount} cards — add another page for more.`);
+        setTimeout(() => setFullNotice(null), 2600);
+      }
+    } else if (scheduleType === "iwant") {
+      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
+      if ((page.columns?.["cutout"] || []).length < 9) {
+        placeCard(pageIdx, "cutout", { cardId: card.id, catId: card.categoryId });
+        setJustDroppedSlot(`${pageIdx}-cutout`);
+      } else {
+        setFullNotice("All nine card slots are full.");
+        setTimeout(() => setFullNotice(null), 2600);
+      }
+    } else if (scheduleType === "firstthen") {
+      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
+      // Cards go to the cut-out placeholders only — the boards above stay
+      // empty; the child physically places cut cards onto them after printing.
+      const { ftStyle } = useScheduleState.getState();
+      const ftN = ftStyle === "sequencing" ? 4 : ftStyle === "first-then-now" ? 3 : 2;
+      const order: Array<{ key: string; max: number }> = [{ key: "cutout", max: ftN === 4 ? 16 : 9 }];
+      let ftPlaced = false;
+      for (const { key, max } of order) {
+        if ((page.columns?.[key] || []).length < max) {
+          placeCard(pageIdx, key, { cardId: card.id, catId: card.categoryId });
+          setJustDroppedSlot(`${pageIdx}-${key}`);
+          ftPlaced = true;
+          break;
+        }
+      }
+      if (!ftPlaced) {
+        setFullNotice("All cut-out slots are full.");
+        setTimeout(() => setFullNotice(null), 2600);
+      }
+    } else if (scheduleType === "timetable") {
+      // Timetable is 4 SEPARATE pages (Mon/Tue, Wed/Thu, Fri/Sat, Sun/extra),
+      // and each column is one day's stacked subject list — so clicks fill
+      // top-to-bottom, one column completely before the next, moving to the
+      // next PAGE once both of a page's columns are full. This is why the
+      // page index can't be hardcoded to 0 here: every page needs to be
+      // reachable by click, in reading order.
+      const max = 12;
+      let placed = false;
+      outer: for (let pIdx = 0; pIdx < pages.length; pIdx++) {
+        const page = pages[pIdx] as import("@/types/schedule").ColumnPageData;
+        for (const col of ["0", "1"]) {
+          const len = (page.columns?.[col] || []).length;
+          if (len < max) {
+            placeCard(pIdx, col, { cardId: card.id, catId: card.categoryId });
+            setJustDroppedSlot(`${pIdx}-${col}`);
+            placed = true;
+            break outer;
+          }
+        }
+      }
+      if (!placed) {
+        setFullNotice(`All pages are full — only ${max} cards fit in each column.`);
+        setTimeout(() => setFullNotice(null), 2600);
+      }
+    } else {
+      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
+      // Derive the full set of columns from the schedule setup — a fresh page
+      // has no columns created yet, so Object.keys() alone finds nothing.
+      const { weekMode, customColNames } = useScheduleState.getState();
+      const cols =
+        scheduleType === "weekly"
+          ? (weekMode === "weekdays" ? DAY_KEYS.slice(1, 6) : [...DAY_KEYS])
+          : customColNames.map((_, i) => String(i));
+      const max = 5;
+      // Fill ROW BY ROW: each click goes to the leftmost column with the
+      // fewest cards (Mon→Sun across row 1, then row 2, ...). First/Then
+      // naturally becomes First, then Then.
+      let target: string | null = null;
+      let fewest = Infinity;
+      for (const col of cols) {
+        const len = (page.columns[col] || []).length;
+        if (len < max && len < fewest) {
+          fewest = len;
+          target = col;
+        }
+      }
+      if (target) {
+        placeCard(pageIdx, target, { cardId: card.id, catId: card.categoryId });
+        setJustDroppedSlot(`${pageIdx}-${target}`);
+      } else {
+        // Every column already holds 5 cards
+        setFullNotice(`All columns are full — only ${max} cards fit in each column.`);
+        setTimeout(() => setFullNotice(null), 2600);
+      }
+    }
+    setTimeout(() => setJustDroppedSlot(null), 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeCard]);
+
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: { distance: 6 },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 150, tolerance: 5 },
+  });
+  const sensors = useSensors(mouseSensor, touchSensor);
+
+  // The desktop canvas renders at `fitZoom` (down to 0.35x on small screens)
+  // to fit an A4 page in the available width, which shrinks each column's
+  // real hit area proportionally. Grow the collision padding as zoom shrinks
+  // so a card doesn't need pixel-exact placement to register a drop.
+  const collisionPadding = isMobile ? 16 : Math.min(48, 14 / Math.max(fitZoom, 0.35));
+  const collisionDetection = useMemo(
+    () => makePaddedPointerWithin(collisionPadding),
+    [collisionPadding]
   );
-}
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const cardId = event.active.id as string;
+    const card = findCard(cardId);
+    if (card) {
+      setActiveCard({ id: card.id, label: getCardLabel(card, language) });
+    }
+  }, [language]);
 
-interface ScheduleCanvasProps {
-  justDroppedSlot: string | null;
-  cardImages?: Record<string, Record<string, string>>;
-  // Mobile-only: renders a green "+" inside each empty slot that calls this
-  // instead of drag-and-drop. Undefined (desktop's default) changes nothing
-  // — every slot renders exactly as before.
-  onEmptySlotTap?: () => void;
-}
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveCard(null);
 
-export function ScheduleCanvas({ justDroppedSlot, onEmptySlotTap }: ScheduleCanvasProps) {
-  const scheduleType = useScheduleState((s) => s.scheduleType);
-  const pages = useScheduleState((s) => s.pages);
+    if (!over) return;
+
+    const cardId = active.id as string;
+    const card = findCard(cardId);
+    if (!card) return;
+
+    // Droppable IDs are formatted as "pageIdx-slotKey"
+    const overId = over.id as string;
+    const dashIdx = overId.indexOf("-");
+    const pageIdx = parseInt(overId.substring(0, dashIdx));
+    const slotKey = overId.substring(dashIdx + 1);
+
+    placeCard(pageIdx, slotKey, { cardId: card.id, catId: card.categoryId });
+
+    setJustDroppedSlot(overId);
+    setTimeout(() => setJustDroppedSlot(null), 400);
+  }, [placeCard]);
 
   return (
-    <>
-      {pages.map((_, pageIdx) => (
-        <div key={pageIdx} className="flex flex-col items-center w-full">
-          <div className="flex flex-col items-center gap-2">
-            <div
-              className="text-[12px] tracking-widest uppercase text-[#B0ACA6] font-medium shrink-0"
-              style={{ width: scheduleType === "daily" ? A4_PORTRAIT.width : A4_LANDSCAPE.width }}
-            >
-              Page {pageIdx + 1}
-            </div>
-            {scheduleType === "daily" && (
-              <DailyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
-            )}
-            {scheduleType === "weekly" && (
-              <WeeklyPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-            )}
-            {scheduleType === "custom" && (
-              <CustomPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-            )}
-            {scheduleType === "firstthen" && (
-              <FirstThenPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
-            )}
-            {scheduleType === "iwant" && (
-              <IWantPage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
-            )}
-            {scheduleType === "timetable" && (
-              <TimetablePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} />
-            )}
-            {scheduleType === "mini" && (
-              <MiniSchedulePage pageIdx={pageIdx} justDroppedSlot={justDroppedSlot} onEmptySlotTap={onEmptySlotTap} />
-            )}
-          </div>
-          {pageIdx < pages.length - 1 && (
-            <div className="w-full h-px bg-[#E0E0E0] my-6" />
-          )}
-        </div>
-      ))}
-    </>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+     {fullNotice && (
+       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-ink text-white text-[13px] font-sans px-4 py-2.5 rounded-full shadow-lg">
+         {fullNotice}
+       </div>
+     )}
+     {orgBanner && !isMobile && (
+       <div className="shrink-0 flex items-center justify-center gap-2 bg-accent-soft border-b border-weekly-accent px-4 py-1.5">
+         <span className="text-[12px] text-accent-strong font-sans">
+           Branding this schedule as: <span className="font-semibold">{orgBanner.name}</span> (code {orgBanner.code})
+         </span>
+         <button onClick={leaveOrgCode} className="text-[12px] font-sans font-semibold text-[#C53030] underline">
+           Not you? Leave
+         </button>
+       </div>
+     )}
+     {isMobile ? (
+       <AppShell>
+         <MobileScheduleBuilder
+           onAddCard={handleClickPlace}
+           cardsLoaded={cardsLoaded}
+           justDroppedSlot={justDroppedSlot}
+           cardImages={cardImages}
+         />
+       </AppShell>
+     ) : (
+       <AppShell
+         sidebar={<CardLibrarySidebar />}
+         rightPanel={<RightPanel />}
+       >
+         <div style={{ zoom: exportingNow ? 1 : fitZoom }}>
+           <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+         </div>
+       </AppShell>
+     )}
+
+      {/* Invisible overlay for dnd-kit collision detection */}
+      <DragOverlay dropAnimation={null} style={{ opacity: 0, position: "fixed", pointerEvents: "none" }}>
+        {activeCard ? <div /> : null}
+      </DragOverlay>
+
+      {/* Visual overlay that follows pointer exactly */}
+      {activeCard && <PointerOverlay label={activeCard.label} scale={isMobile ? 1 : fitZoom} />}
+    </DndContext>
   );
 }
