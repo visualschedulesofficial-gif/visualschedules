@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { DAY_KEYS, getDailySpec } from "@/lib/constants";
 import {
@@ -10,7 +10,6 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
-  pointerWithin,
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
@@ -23,8 +22,9 @@ import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { findCard, setRuntimeCards, getCardLabel, setCardImages as setCardImagesGlobal, setLabelOverrides, type CardImageMap, type ParsedCard } from "@/lib/card-data";
+import { makePaddedPointerWithin } from "@/lib/collision";
 
-function PointerOverlay({ label }: { label: string }) {
+function PointerOverlay({ label, scale = 1 }: { label: string; scale?: number }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,7 +43,11 @@ function PointerOverlay({ label }: { label: string }) {
       className="fixed top-0 left-0 z-[9999] pointer-events-none will-change-transform"
       style={{ transform: "translate3d(-9999px, -9999px, 0)" }}
     >
-      <div className="-translate-x-1/2 -translate-y-1/2">
+      {/* Scaled to match the canvas zoom so the ghost's on-screen size stays
+          proportional to the (possibly shrunk) drop target underneath it —
+          otherwise a full-size ghost over a zoomed-out column visually
+          overlaps the target well before the pointer's real hotspot does. */}
+      <div style={{ transform: `translate(-50%, -50%) scale(${scale})`, transformOrigin: "center" }}>
         <div className="w-[88px] bg-white border border-accent/70 rounded shadow-[0_14px_28px_rgba(0,0,0,0.16),0_4px_10px_rgba(139,94,42,0.18)] rotate-[3deg]">
           <div className="w-full aspect-square bg-white flex items-center justify-center rounded-t">
             <svg
@@ -317,6 +321,16 @@ export default function ScheduleBuilder() {
   });
   const sensors = useSensors(mouseSensor, touchSensor);
 
+  // The desktop canvas renders at `fitZoom` (down to 0.35x on small screens)
+  // to fit an A4 page in the available width, which shrinks each column's
+  // real hit area proportionally. Grow the collision padding as zoom shrinks
+  // so a card doesn't need pixel-exact placement to register a drop.
+  const collisionPadding = isMobile ? 16 : Math.min(48, 14 / Math.max(fitZoom, 0.35));
+  const collisionDetection = useMemo(
+    () => makePaddedPointerWithin(collisionPadding),
+    [collisionPadding]
+  );
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const cardId = event.active.id as string;
     const card = findCard(cardId);
@@ -350,7 +364,7 @@ export default function ScheduleBuilder() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={pointerWithin}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -395,7 +409,7 @@ export default function ScheduleBuilder() {
       </DragOverlay>
 
       {/* Visual overlay that follows pointer exactly */}
-      {activeCard && <PointerOverlay label={activeCard.label} />}
+      {activeCard && <PointerOverlay label={activeCard.label} scale={isMobile ? 1 : fitZoom} />}
     </DndContext>
   );
 }
