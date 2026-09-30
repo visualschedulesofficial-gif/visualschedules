@@ -22,6 +22,7 @@ import {
   type ParsedCard,
 } from "@/lib/card-data";
 import { getPrefs, setPrefs, type Prefs } from "@/lib/prefs";
+import { scheduleCardIds, readDone } from "@/lib/schedule-steps";
 
 type User = { id: string; email: string | null; role: string };
 type Schedule = {
@@ -120,23 +121,31 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
       .catch(() => setStarters([]));
   }, []);
 
-  // The most recent schedule is today's: load its cards for the hero.
+  // Cards of the schedules shown on Today (latest = hero, next 3 = rows).
   const latest = list[0] || null;
-  const [latestCards, setLatestCards] = useState<string[]>([]);
+  const [cardsOf, setCardsOf] = useState<Record<string, string[]>>({});
   useEffect(() => {
-    if (!latest) { setLatestCards([]); return; }
-    fetch(`/api/schedules/${latest.id}`, { cache: "no-store" })
-      .then((r) => r.json())
-      .then((full) => {
-        const ids: string[] = [];
-        for (const p of full?.data?.pages || []) {
-          for (const s of p?.slots || []) if (s?.cardId) ids.push(s.cardId);
-          for (const col of Object.values(p?.columns || {})) for (const c of (col as { cardId?: string }[]) || []) if (c?.cardId) ids.push(c.cardId);
-        }
-        setLatestCards(ids);
-      })
-      .catch(() => setLatestCards([]));
+    list.slice(0, 4).forEach((sch) => {
+      if (cardsOf[sch.id]) return;
+      fetch(`/api/schedules/${sch.id}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((full) => setCardsOf((m) => ({ ...m, [sch.id]: scheduleCardIds(full?.data?.pages) })))
+        .catch(() => {});
+    });
+  }, [list]); // eslint-disable-line react-hooks/exhaustive-deps
+  const latestCards = latest ? cardsOf[latest.id] || [] : [];
+  // Progress comes from "Show to child", which ticks steps on this device.
+  const [done, setDone] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    if (!latest) return;
+    const load = () => setDone(readDone(latest.id));
+    load();
+    window.addEventListener("focus", load);
+    return () => window.removeEventListener("focus", load);
   }, [latest?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stepDone = latestCards.map((c, i) => !!done[`${c}-${i}`]);
+  const doneCount = stepDone.filter(Boolean).length;
+  const nowIdx = stepDone.findIndex((d) => !d);
 
   const newSchedule = () => {
     try {
@@ -238,28 +247,39 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
               <section className="bg-white rounded-3xl p-[18px] flex flex-col gap-4">
                 <div className="flex justify-between items-baseline gap-3">
                   <b className="text-[16px] truncate">{latest.title || "My schedule"}</b>
-                  <span className="text-[13px] text-ink-2 shrink-0">{latestCards.length} cards · {timeAgo(latest.updatedAt)}</span>
+                  <span className="text-[14px] text-ink-2 shrink-0">
+                    {latestCards.length ? `${doneCount} of ${latestCards.length} done` : timeAgo(latest.updatedAt)}
+                  </span>
                 </div>
-                <button type="button" onClick={() => router.push(`/schedule/${latest.id}/do`)} className="flex gap-4 items-center text-left" aria-label={`Open ${latest.title}`}>
-                  <Thumb src={cardImg(latestCards[0] || latest.coverCardId, latest.gender)} size={112} tint={TINTS[1]} radius={20} key={`h-${assetsVersion}`} />
+                {latestCards.length > 0 && (
+                  <div className="flex gap-[5px]" aria-hidden>
+                    {latestCards.slice(0, 12).map((_, i) => (
+                      <span key={i} className={`flex-1 h-2 rounded-full transition-colors duration-300 ${stepDone[i] ? "bg-accent-strong" : i === nowIdx ? "bg-[#C9D3BB]" : "bg-[#E6E6DD]"}`} />
+                    ))}
+                  </div>
+                )}
+                <button type="button" onClick={() => router.push(`/schedule/${latest.id}/do`)} className="flex gap-4 items-center text-left" aria-label={`Show ${latest.title} to child`}>
+                  <Thumb key={`h-${assetsVersion}`} src={cardImg(latestCards[nowIdx === -1 ? 0 : nowIdx] || latest.coverCardId, latest.gender)} size={112} tint={TINTS[1]} radius={20} />
                   <span className="min-w-0">
-                    <span className="block text-[12px] font-semibold tracking-[.08em] uppercase text-accent-strong">Up first</span>
-                    <span className="block text-[26px] font-bold leading-tight break-words">
-                      {cardLabel(latestCards[0] || latest.coverCardId, latest.language) || latest.title}
+                    <span className="block text-[13px] font-bold tracking-[.08em] uppercase text-accent-strong">
+                      {nowIdx === -1 && latestCards.length ? "All done" : "Now"}
+                    </span>
+                    <span className="block text-[30px] font-bold leading-[1.05] break-words">
+                      {nowIdx === -1 && latestCards.length ? "Great job!" : cardLabel(latestCards[nowIdx] || latest.coverCardId, latest.language) || latest.title}
                     </span>
                   </span>
                 </button>
-                {latestCards[1] && (
-                  <div className="flex items-center gap-2.5 bg-[#F4F3EE] rounded-2xl px-3 py-2.5 text-[15px]">
-                    <Thumb src={cardImg(latestCards[1], latest.gender)} size={36} tint={TINTS[0]} radius={10} key={`n-${assetsVersion}`} />
-                    <span className="min-w-0 truncate"><span className="text-ink-2">Next</span> · <b>{cardLabel(latestCards[1], latest.language)}</b></span>
+                {nowIdx > -1 && latestCards[nowIdx + 1] && (
+                  <div className="flex items-center gap-2.5 bg-[#F4F3EE] rounded-2xl px-3 py-2.5 text-[16px]">
+                    <Thumb key={`n-${assetsVersion}`} src={cardImg(latestCards[nowIdx + 1], latest.gender)} size={36} tint={TINTS[0]} radius={10} />
+                    <span className="min-w-0 truncate"><span className="text-ink-2">Next</span> · <b>{cardLabel(latestCards[nowIdx + 1], latest.language)}</b></span>
                   </div>
                 )}
                 <div className="flex gap-2.5">
-                  <button type="button" onClick={newSchedule} className="flex-1 min-h-[52px] rounded-2xl bg-accent-strong text-white font-semibold text-[16px] flex items-center justify-center gap-2">
-                    <PlusIcon /> Create Schedule
+                  <button type="button" onClick={newSchedule} className="flex-1 min-h-[56px] rounded-2xl bg-accent-strong text-white font-medium text-[17px] flex items-center justify-center gap-2">
+                    + Create Schedule
                   </button>
-                  <button type="button" onClick={() => startEdit(latest.id)} className="min-h-[52px] px-5 rounded-2xl bg-white border-[1.5px] border-[#C9CCBF] font-semibold text-[16px]">
+                  <button type="button" onClick={() => startEdit(latest.id)} className="min-h-[56px] px-6 rounded-2xl bg-white border-[1.5px] border-[#C9CCBF] font-semibold text-[17px]">
                     Edit
                   </button>
                 </div>
@@ -268,8 +288,8 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
               <section className="bg-white rounded-3xl p-5 flex flex-col gap-3">
                 <h1 className="m-0 text-[24px] font-bold leading-tight">Make your child&apos;s routine easier to follow.</h1>
                 <p className="m-0 text-[15px] text-ink-2">Pick pictures, put them in order, print or show on the phone.</p>
-                <button type="button" onClick={newSchedule} className="min-h-[52px] rounded-2xl bg-accent-strong text-white font-semibold text-[16px] flex items-center justify-center gap-2 animate-[vsPulse_1.8s_ease-in-out_3]">
-                  <PlusIcon /> Create Schedule
+                <button type="button" onClick={newSchedule} className="min-h-[56px] rounded-2xl bg-accent-strong text-white font-medium text-[17px] flex items-center justify-center gap-2 animate-[vsPulse_1.8s_ease-in-out_3]">
+                  + Create Schedule
                 </button>
                 {!user && <p className="m-0 text-[12px] text-ink-3">No account needed to create and download. Sign in only to keep them.</p>}
               </section>
@@ -277,20 +297,22 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
 
             {starters.length > 0 && (
               <section className="flex flex-col gap-3">
-                <SecHead title="Start from a routine" link={<Link href="/templates" className="text-[15px] font-semibold no-underline text-accent-strong">Templates</Link>} />
-                <div className="flex gap-2.5 overflow-x-auto -mx-[18px] px-[18px] pb-1 [scrollbar-width:none]">
+                <SecHead title="Start from a routine" link={<Link href="/templates" className="text-[16px] font-bold no-underline text-accent-strong">Templates</Link>} />
+                <div className="flex gap-3 overflow-x-auto -mx-[18px] px-[18px] pb-1 [scrollbar-width:none]">
                   {starters.map((t, i) => (
                     <button
                       key={t.id}
                       type="button"
                       onClick={() => startFromTemplate(t.id)}
                       disabled={startingTemplate === t.id}
-                      className="shrink-0 w-[128px] rounded-[18px] p-2 pb-2.5 flex flex-col gap-2 text-left disabled:opacity-60"
+                      className="shrink-0 w-[140px] h-[138px] rounded-[20px] p-3.5 flex flex-col justify-between text-left disabled:opacity-60"
                       style={{ background: TINTS[i % TINTS.length] }}
                     >
-                      <Thumb src={cardImg(t.coverCardId, t.gender || "boy")} size={112} height={84} tint="rgba(255,255,255,.55)" radius={12} key={`t-${t.id}-${assetsVersion}`} />
-                      <b className="text-[14px] leading-tight px-1 line-clamp-2">{t.title}</b>
-                      <small className="text-[12px] text-ink-2 px-1 -mt-1.5">{startingTemplate === t.id ? "Opening…" : TYPE_LABELS[t.scheduleType] || "Ready-made"}</small>
+                      <Thumb key={`t-${t.id}-${assetsVersion}`} src={cardImg(t.coverCardId, t.gender || "boy")} size={44} tint="rgba(255,255,255,.6)" radius={12} />
+                      <span>
+                        <b className="block text-[18px] leading-tight line-clamp-2">{t.title}</b>
+                        <small className="block text-[14px] text-ink-2 mt-0.5">{startingTemplate === t.id ? "Opening…" : TYPE_LABELS[t.scheduleType] || "Ready-made"}</small>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -299,8 +321,8 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
 
             {list.length > 1 && (
               <section className="flex flex-col gap-2.5">
-                <SecHead title="Other schedules" link={list.length > 4 ? <button type="button" onClick={() => setTab("schedules")} className="text-[15px] font-semibold text-accent-strong">See all</button> : null} />
-                {list.slice(1, 4).map((s) => <ScheduleRow key={`${s.id}-${assetsVersion}`} {...rowProps(s)} />)}
+                <SecHead title="Other schedules" link={list.length > 4 ? <button type="button" onClick={() => setTab("schedules")} className="text-[16px] font-bold text-accent-strong">See all</button> : null} />
+                {list.slice(1, 4).map((s) => <ScheduleRow key={`${s.id}-${assetsVersion}`} {...rowProps(s)} cards={cardsOf[s.id]} />)}
               </section>
             )}
           </>
@@ -413,14 +435,24 @@ function SchedulesTab({ list, loading, user, prefs, updatePrefs, onCreate, rowPr
   );
 }
 
-function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete, onEdit }: {
+function ScheduleRow({ s, menuOpen, onOpen, onMenu, onRename, onDelete, onEdit, cards }: {
   s: Schedule; menuOpen: boolean; onOpen: () => void; onMenu: () => void; onRename: () => void; onDelete: () => void; onEdit: () => void;
+  cards?: string[];
 }) {
   const tint = TINTS[(s.id.charCodeAt(0) || 0) % TINTS.length];
+  const strip = (cards || []).slice(0, 3);
   return (
     <div className="relative bg-white rounded-[18px] p-3 flex items-center gap-3">
       <button type="button" onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-        <Thumb src={cardImg(s.coverCardId, s.gender)} size={52} tint={tint} radius={12} />
+        {strip.length > 1 ? (
+          <span className="flex gap-[3px] shrink-0">
+            {strip.map((c, i) => (
+              <Thumb key={i} src={cardImg(c, s.gender)} size={strip.length === 2 ? 50 : 34} height={52} tint={TINTS[(i + 1) % TINTS.length]} radius={8} />
+            ))}
+          </span>
+        ) : (
+          <Thumb src={cardImg(s.coverCardId, s.gender)} size={52} tint={tint} radius={12} />
+        )}
         <span className="flex-1 min-w-0">
           <b className="block text-[16px] leading-tight truncate">{s.title || "Untitled schedule"}</b>
           <span className="text-[13px] text-[#5B6356]">
@@ -450,6 +482,8 @@ function LibraryTab({ prefs, updatePrefs }: { prefs: Prefs; updatePrefs: (p: Par
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [bundle, setBundle] = useState("all");
+  const [lang, setLang] = useState("all");
+  const [filters, setFilters] = useState(false);
   const [open, setOpen] = useState<{ item: DItem; file: DFile; bundle: DBundle } | null>(null);
   useEffect(() => {
     fetch("/api/downloads")
@@ -458,59 +492,121 @@ function LibraryTab({ prefs, updatePrefs }: { prefs: Prefs; updatePrefs: (p: Par
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+  const languages = useMemo(() => {
+    const set = new Set<string>();
+    bundles.forEach((b) => b.items.forEach((i) => i.files.forEach((f) => f.language && set.add(f.language))));
+    return Array.from(set).sort();
+  }, [bundles]);
   const rows = useMemo(() => {
     const out: { bundle: DBundle; item: DItem; file: DFile }[] = [];
     const needle = q.trim().toLowerCase();
     bundles.forEach((b) => {
       if (bundle !== "all" && b.id !== bundle) return;
       b.items.forEach((item) => item.files.forEach((file) => {
+        if (lang !== "all" && (file.language || "") !== lang) return;
         if (needle && !`${item.title} ${b.title} ${file.language || ""}`.toLowerCase().includes(needle)) return;
         out.push({ bundle: b, item, file });
       }));
     });
     return out;
-  }, [bundles, bundle, q]);
+  }, [bundles, bundle, lang, q]);
+  const activeFilters = (bundle !== "all" ? 1 : 0) + (lang !== "all" ? 1 : 0);
 
   const track = (fileId: string, kind: "view" | "download") =>
     fetch("/api/downloads/track", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileId, kind }) }).catch(() => {});
 
+  // Phones: hand the file to the share sheet (Save to Photos / Files /
+  // WhatsApp); elsewhere, or if that isn't possible, open it to save.
+  const download = async (file: DFile, title: string) => {
+    track(file.id, "download");
+    try {
+      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+      if (nav.canShare && nav.share) {
+        const blob = await fetch(file.file_url).then((r) => (r.ok ? r.blob() : Promise.reject()));
+        const ext = (blob.type.split("/")[1] || "pdf").replace("jpeg", "jpg");
+        const f = new File([blob], `${title.replace(/[^\w\u0900-\u097F -]+/g, "").trim() || "schedule"}.${ext}`, { type: blob.type });
+        if (nav.canShare({ files: [f] })) { await nav.share({ files: [f], title }); return; }
+      }
+    } catch (e) {
+      if ((e as { name?: string })?.name === "AbortError") return;
+    }
+    window.open(file.file_url, "_blank", "noopener");
+  };
+
+  const DlIcon = ({ c = "#1E2A24" }: { c?: string }) => (
+    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+  );
+
   return (
     <>
       <Header kicker="Printable visual boards" title="Library" right={<LangSelect value={prefs.language} onChange={(l) => updatePrefs({ language: l })} />} />
-      <label className="flex items-center gap-2 bg-white border border-[#E3E2DA] rounded-2xl h-[46px] px-3 focus-within:border-accent-strong">
-        <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#5B6356" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search boards" aria-label="Search boards" className="flex-1 min-w-0 bg-transparent outline-none text-[15px]" />
-      </label>
-      {bundles.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto -mx-[18px] px-[18px] [scrollbar-width:none]" role="group" aria-label="Filter by category">
-          {[{ id: "all", title: "All" }, ...bundles].map((b) => (
-            <button key={b.id} type="button" onClick={() => setBundle(b.id)} aria-pressed={bundle === b.id}
-              className={`h-9 px-3.5 rounded-full border text-[14px] font-medium whitespace-nowrap ${bundle === b.id ? "bg-accent-strong border-accent-strong text-white" : "bg-white border-[#E3E2DA]"}`}>
-              {b.title}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex gap-2.5 items-center">
+        <label className="flex-1 flex items-center gap-2 bg-white border-[1.5px] border-[#C9CCBF] rounded-2xl h-[50px] px-3.5 focus-within:border-accent-strong">
+          <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="#1E2A24" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search this board" aria-label="Search boards" className="flex-1 min-w-0 bg-transparent outline-none text-[16px]" />
+        </label>
+        <button type="button" onClick={() => setFilters(true)} aria-label={`Filters${activeFilters ? ` (${activeFilters} on)` : ""}`}
+          className="relative w-[50px] h-[50px] rounded-2xl flex items-center justify-center shrink-0">
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#1E2A24" strokeWidth="1.9" strokeLinecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>
+          {activeFilters > 0 && <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-accent-strong text-white text-[10px] font-bold flex items-center justify-center">{activeFilters}</span>}
+        </button>
+      </div>
+
       {loading ? <Spinner /> : rows.length === 0 ? (
         <p className="text-center text-[14px] text-ink-2 py-8">{bundles.length ? "No boards match." : "New boards are coming soon."}</p>
       ) : (
-        <div className="columns-2 gap-2.5">
+        <div className="columns-2 gap-3">
           {rows.map(({ bundle: b, item, file }) => (
-            <button key={file.id} type="button" onClick={() => { setOpen({ item, file, bundle: b }); track(file.id, "view"); }}
-              className="w-full mb-3 break-inside-avoid bg-white rounded-2xl p-1.5 pb-2 text-left block">
-              {file.preview_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={file.preview_url} alt="" loading="lazy" className="w-full h-auto rounded-[11px] block bg-[#FAFBF8]" />
-              ) : (
-                <span className="block rounded-[11px] bg-[#EEF2EA] py-10 text-center text-[12px] text-ink-3">{item.title}</span>
-              )}
-              <span className="block px-1 pt-2">
-                <b className="block text-[14px] leading-tight">{item.title}</b>
-                <small className="text-[12px] text-ink-3 capitalize">{[file.language, file.variant].filter(Boolean).join(" · ")}</small>
-              </span>
-            </button>
+            <div key={file.id} className="mb-3 break-inside-avoid bg-white rounded-2xl p-1.5 pb-2 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+              <button type="button" onClick={() => { setOpen({ item, file, bundle: b }); track(file.id, "view"); }} className="block w-full text-left" aria-label={`Preview ${item.title}`}>
+                {file.preview_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={file.preview_url} alt="" loading="lazy" decoding="async" className="w-full h-auto rounded-[12px] block bg-[#FAFBF8]" />
+                ) : (
+                  <span className="block rounded-[12px] bg-[#EEF2EA] py-10 text-center text-[12px] text-ink-3">{item.title}</span>
+                )}
+              </button>
+              <div className="flex items-center gap-1 pl-1.5 pt-2">
+                <span className="flex-1 min-w-0 text-[15px] leading-tight truncate">{item.title}</span>
+                <button type="button" onClick={() => download(file, item.title)} aria-label={`Download ${item.title}`}
+                  className="w-10 h-10 -my-1 rounded-xl flex items-center justify-center shrink-0 active:bg-accent-soft">
+                  <DlIcon />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
+      )}
+
+      {filters && (
+        <Sheet onClose={() => setFilters(false)} title="Filter boards">
+          <span className="text-[14px] font-semibold text-ink-2">Category</span>
+          <div className="flex flex-wrap gap-2">
+            {[{ id: "all", title: "All" }, ...bundles].map((b) => (
+              <button key={b.id} type="button" onClick={() => setBundle(b.id)} aria-pressed={bundle === b.id}
+                className={`h-10 px-4 rounded-full border text-[14px] font-medium ${bundle === b.id ? "bg-accent-strong border-accent-strong text-white" : "bg-white border-[#E3E2DA]"}`}>
+                {b.title}
+              </button>
+            ))}
+          </div>
+          {languages.length > 1 && (
+            <>
+              <span className="text-[14px] font-semibold text-ink-2">Language</span>
+              <div className="flex flex-wrap gap-2">
+                {["all", ...languages].map((l) => (
+                  <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l}
+                    className={`h-10 px-4 rounded-full border text-[14px] font-medium capitalize ${lang === l ? "bg-accent-strong border-accent-strong text-white" : "bg-white border-[#E3E2DA]"}`}>
+                    {l === "all" ? "All" : l}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <div className="flex gap-2.5 pt-1">
+            <button type="button" onClick={() => { setBundle("all"); setLang("all"); }} className="min-h-[50px] px-5 rounded-2xl font-semibold bg-white border-[1.5px] border-[#C9CCBF]">Clear</button>
+            <button type="button" onClick={() => setFilters(false)} className="flex-1 min-h-[50px] rounded-2xl bg-accent-strong text-white font-semibold">Show {rows.length} boards</button>
+          </div>
+        </Sheet>
       )}
 
       {open && (
@@ -527,11 +623,10 @@ function LibraryTab({ prefs, updatePrefs }: { prefs: Prefs; updatePrefs: (p: Par
           </div>
           <div className="flex gap-2.5">
             <button type="button" onClick={() => setOpen(null)} className="min-h-[52px] px-5 rounded-2xl font-semibold bg-white border-[1.5px] border-[#C9CCBF]">Cancel</button>
-            <a href={open.file.file_url} download target="_blank" rel="noopener" onClick={() => track(open.file.id, "download")}
-              className="flex-1 min-h-[52px] rounded-2xl bg-accent-strong text-white font-semibold text-[16px] flex items-center justify-center gap-2 no-underline">
-              <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
-              Download
-            </a>
+            <button type="button" onClick={() => download(open.file, open.item.title)}
+              className="flex-1 min-h-[52px] rounded-2xl bg-accent-strong text-white font-semibold text-[16px] flex items-center justify-center gap-2">
+              <DlIcon c="#fff" /> Download
+            </button>
           </div>
         </Sheet>
       )}
