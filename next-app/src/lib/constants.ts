@@ -138,8 +138,8 @@ export function languageLabel(code: string): string {
 
 // Face shown in every character picker. Files live in /public/art/characters.
 export const CHARACTER_FACES: Record<string, string> = {
-  neutral: "/art/characters/neutral.png",
-  boy: "/art/characters/boy.png",
-  girl: "/art/characters/girl.png",
-  brown: "/art/characters/brown.png",
+   neutral: "/art/art/characters/neutral.png",
+   boy: "/art/art/characters/boy.png",
+   girl: "/art/art/characters/girl.png",
+   brown: "/art/art/characters/brown.png",
 };
