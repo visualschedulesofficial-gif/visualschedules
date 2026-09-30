@@ -157,6 +157,48 @@ async function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
+/** True when this device can hand files to the OS share sheet (phones). */
+export function canShareFiles(): boolean {
+  try {
+    if (typeof navigator === "undefined" || !(navigator as any).canShare) return false;
+    const probe = new File([new Blob(["x"], { type: "image/jpeg" })], "x.jpg", { type: "image/jpeg" });
+    return (navigator as any).canShare({ files: [probe] });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Hand ready-made files to the user. Call this DIRECTLY from a tap handler,
+ * with the files already built: iPhones only open the share sheet during the
+ * tap itself, so building first and sharing after (the old path) often fell
+ * back to a silent download into Files. Returns "shared", "downloaded" or
+ * "cancelled".
+ */
+export async function deliverFiles(files: File[]): Promise<"shared" | "downloaded" | "cancelled"> {
+  if (canShareFiles() && (navigator as any).canShare({ files })) {
+    try {
+      await (navigator as any).share({ files });
+      return "shared";
+    } catch (err: any) {
+      if (err?.name === "AbortError") return "cancelled";
+      // Any other refusal: fall through to a normal download.
+    }
+  }
+  for (let i = 0; i < files.length; i++) {
+    const url = URL.createObjectURL(files[i]);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = files[i].name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    if (i < files.length - 1) await new Promise((r) => setTimeout(r, 400));
+  }
+  return "downloaded";
+}
+
 function getPageElements(): HTMLElement[] {
   return Array.from(document.querySelectorAll("[data-a4-page]")) as HTMLElement[];
 }
@@ -532,9 +574,49 @@ export function useExport() {
     }
   }, [pages, scheduleType, title, language, showStatus, hideStatus, saveToDatabase]);
 
+  /**
+   * Build the export files without delivering them, so a sheet can prepare
+   * them in the background and then share on the user's tap (see
+   * deliverFiles). Pass save: true to also save the schedule, like the
+   * old one-tap export did.
+   */
+  const prepareFiles = useCallback(
+    async (kind: "image" | "pdf", opts: { save?: boolean } = {}): Promise<File[]> => {
+      if (!pages.length) throw new Error("NO_PAGES");
+      setExporting(true);
+      useScheduleState.getState().setExporting(true);
+      const hideStyle = injectExportHideStyle();
+      try {
+        const baseName = getExportFileBaseName(title, language);
+        let files: File[];
+        if (kind === "pdf") {
+          const blob = (await buildPdfBlob(scheduleType)) as Blob;
+          files = [new File([blob], baseName + ".pdf", { type: "application/pdf" })];
+        } else {
+          const blobs = await buildJpegBlobs(scheduleType);
+          files = blobs.map(({ blob, index }) =>
+            new File([blob], blobs.length > 1 ? `${baseName}-page-${index + 1}.jpg` : `${baseName}.jpg`, { type: "image/jpeg" })
+          );
+        }
+        if (opts.save) await saveToDatabase();
+        return files;
+      } catch (err) {
+        console.error("Export prepare error:", err);
+        throw new Error(friendlyMessage(err, kind === "pdf" ? "PDF" : "images"));
+      } finally {
+        hideStyle.remove();
+        setExporting(false);
+        useScheduleState.getState().setExporting(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pages, scheduleType, title, language]
+  );
+
   return {
     exportPDF,
     exportJPEG,
+    prepareFiles,
     exporting,
     exportStatus,
     lastSaved,
