@@ -30,6 +30,7 @@ import { useScheduleState } from "@/hooks/useScheduleState";
 import { track } from "@/lib/track";
 import { BuilderTour } from "@/components/onboarding/BuilderTour";
 import { useExport } from "@/hooks/useExport";
+import { DownloadSheet } from "@/components/schedule/DownloadSheet";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { A4_PORTRAIT } from "@/lib/constants";
 import type { CardImageMap } from "@/lib/card-data";
@@ -265,7 +266,7 @@ export function MobileScheduleBuilder({
   const setGender = useScheduleState((s) => s.setGender);
   const pages = useScheduleState((s) => s.pages);
 
-  const { exportPDF, exportJPEG, exporting } = useExport();
+  const { prepareFiles, exporting } = useExport();
 
   // Landscape types don't suit phones — fall back to Daily if one was opened.
   useEffect(() => {
@@ -410,22 +411,18 @@ export function MobileScheduleBuilder({
   useEffect(() => { track("builder_opened"); }, []);
 
   const [showDownload, setShowDownload] = useState(false);
+  // true when the sheet was opened by a successful Save (shows "Saved").
+  const [openedFromSave, setOpenedFromSave] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Downloads land silently on a phone — the file just appears in Files/
-  // Photos with no visible feedback in the browser. Tell them where it went.
-  const runExport = async (fn: () => Promise<void> | void, what: string) => {
-    try {
-      await fn();
-      track("schedule_downloaded", what);
-      setShowDownload(false);
-      setToast(`${what} downloaded — check your Files or Photos.`);
-      // Long enough to read the toast, then back to the home page where the
-      // schedule is now sitting at the top of Recently Added.
-      setTimeout(() => router.push("/schedules"), 2200);
-    } catch {
-      /* useExport already surfaces its own error */
-    }
+  // After the file is shared or downloaded, confirm where it went, then go
+  // back to My schedules, where this schedule now sits at the top.
+  const onExported = (format: "image" | "pdf", how: "shared" | "downloaded") => {
+    const what = format === "pdf" ? "PDF" : "Image";
+    track("schedule_downloaded", what);
+    setShowDownload(false);
+    setToast(how === "shared" ? `${what} ready — shared from your phone.` : `${what} downloaded — check your Downloads.`);
+    setTimeout(() => router.push("/schedules"), 2200);
   };
   const [showAddStep, setShowAddStep] = useState(false);
   const [addStepCat, setAddStepCat] = useState<string>("all");
@@ -594,6 +591,9 @@ export function MobileScheduleBuilder({
       if (res.ok && data.saved) {
         setSaved(true);
         track("schedule_saved", scheduleType);
+        // Straight into Download / Share — the next thing people want.
+        setOpenedFromSave(true);
+        setShowDownload(true);
         try {
           sessionStorage.removeItem(DRAFT_KEY);
           sessionStorage.setItem(ACTIVE_ID_KEY, scheduleId);
@@ -814,7 +814,7 @@ export function MobileScheduleBuilder({
             {saving ? "Saving…" : saved ? "✓ Saved" : (isAdmin && saveAsTemplate ? "Save as Template" : "Save")}
           </button>
           <button
-            onClick={() => setShowDownload(true)}
+            onClick={() => { setOpenedFromSave(false); setShowDownload(true); }}
             disabled={placedCount === 0}
             className="flex-1 py-3.5 rounded-2xl text-white text-[15px] font-bold disabled:opacity-50"
             style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
@@ -824,51 +824,17 @@ export function MobileScheduleBuilder({
         </div>
       </div>
 
-      {/* Download sheet */}
-      {showDownload && (
-        <div className="fixed inset-0 z-[300] flex items-end justify-center" style={{ background: "rgba(28,27,25,0.5)" }} onClick={() => setShowDownload(false)}>
-          <div className="bg-white w-full rounded-t-3xl p-5 pb-7 space-y-2.5" onClick={(e) => e.stopPropagation()}>
-            <p className="font-bold text-[16px] mb-1" style={{ color: INK }}>Print / Download</p>
-
-            <button
-              onClick={() => runExport(exportJPEG, "Image")}
-              disabled={exporting}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left disabled:opacity-60"
-              style={{ border: `1px solid ${BORDER}` }}
-            >
-              <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#E9F1FA" }}>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#3E7CB1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-              </span>
-              <span className="flex-1 font-bold text-[14px]" style={{ color: INK }}>{exporting ? "Preparing…" : "Download Image"}</span>
-            </button>
-
-            <button
-              onClick={() => runExport(exportPDF, "PDF")}
-              disabled={exporting}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left disabled:opacity-60"
-              style={{ border: `1px solid ${BORDER}` }}
-            >
-              <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "#FBECEC" }}>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#D9534F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-              </span>
-              <span className="flex-1 font-bold text-[14px]" style={{ color: INK }}>{exporting ? "Preparing…" : "Download PDF"}</span>
-            </button>
-
-            <button
-              onClick={() => window.print()}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left"
-              style={{ border: `1px solid ${BORDER}` }}
-            >
-              <span className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: GREEN_SOFT }}>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
-              </span>
-              <span className="flex-1 font-bold text-[14px]" style={{ color: INK }}>Print</span>
-            </button>
-
-            <button onClick={() => setShowDownload(false)} className="w-full py-2.5 text-[13px] font-semibold" style={{ color: SUB }}>Close</button>
-          </div>
-        </div>
-      )}
+      {/* Download / Share sheet */}
+      <DownloadSheet
+        open={showDownload}
+        onClose={() => setShowDownload(false)}
+        justSaved={openedFromSave}
+        title={title || "My schedule"}
+        subtitle={`${placedCount} card${placedCount === 1 ? "" : "s"}`}
+        prepareFiles={prepareFiles}
+        saveOnExport={!saved}
+        onDone={onExported}
+      />
 
       {/* Add Step — opened by the + on the canvas. Category as a dropdown
           and the 4 character faces up top, per your note. */}
