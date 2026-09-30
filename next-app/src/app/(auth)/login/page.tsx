@@ -3,8 +3,10 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { CardSetup } from "@/components/auth/CardSetup";
+import { hasSavedPrefs } from "@/lib/prefs";
 
-type Step = "email" | "otp" | "done";
+type Step = "email" | "otp" | "setup" | "done";
 type Mode = "user" | "admin";
 
 const GREEN = "#4A5A3E";
@@ -149,8 +151,7 @@ function LoginPageInner() {
             });
           } catch {}
         }
-        setStep("done");
-        setTimeout(() => { window.location.href = next || (isMobile ? "/schedules" : "/schedule"); }, 800);
+        afterSignIn();
       } else {
         setError(data.error || "Invalid code");
       }
@@ -161,9 +162,20 @@ function LoginPageInner() {
     }
   }
 
+  function goIn() {
+    window.location.href = next || (isMobile ? "/schedules" : "/schedule");
+  }
+  // First sign-in on this device: set up card language + character first.
+  function afterSignIn() {
+    if (hasSavedPrefs()) {
+      setStep("done");
+      setTimeout(goIn, 800);
+    } else {
+      setStep("setup");
+    }
+  }
   function finish() {
-    setStep("done");
-    setTimeout(() => { window.location.href = next || (isMobile ? "/schedules" : "/schedule"); }, 800);
+    afterSignIn();
   }
 
   // Step 3 — access code. Already signed in by this point, so a bad code
@@ -226,218 +238,152 @@ function LoginPageInner() {
         redeemOrgCode={redeemOrgCode} loading={loading} error={error} setError={setError}
         onSendOTP={handleSendOTP} onVerifyOTP={handleVerifyOTP} onAdminLogin={handleAdminLogin}
         onRedeemAccessCode={handleRedeemAccessCode} onSkipAccessCode={finish}
+        setup={<CardSetup onDone={() => { setStep("done"); setTimeout(goIn, 600); }} />}
       />
     );
   }
 
+  const input = "w-full h-[50px] px-3.5 rounded-xl border border-input-border bg-white text-[16px] text-ink outline-none focus:border-accent-strong focus:ring-2 focus:ring-weekly-accent/30";
+  const primary = "w-full min-h-[52px] rounded-[14px] bg-accent-strong text-white font-bold text-[15px] hover:bg-accent-hover disabled:opacity-50";
+  const signedIn = step === "setup" || step === "done";
+
   return (
-    <div className="min-h-dvh flex bg-surface">
-      {/* Left: brand illustration (desktop) */}
-      <div className="hidden md:block md:w-[55%] lg:w-[60%] relative bg-[#FDF9F4]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/login-hero.jpg"
-          alt="What children can see, they can understand — Visual Schedules"
-          className="absolute inset-0 w-full h-full object-cover object-left"
-          fetchPriority="high"
-          decoding="async"
-        />
-      </div>
+    <div className="min-h-dvh flex flex-col bg-bg">
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-[1000px] grid md:grid-cols-[460px_1fr] bg-white rounded-3xl overflow-hidden shadow-[0_10px_40px_rgba(30,42,36,0.1)]">
+          {/* Brand side */}
+          <div className="bg-nav-bg text-white p-9 flex flex-col gap-3">
+            <Link href="/schedule" className="flex items-center gap-2.5 no-underline text-white">
+              <span className="w-9 h-9 rounded-[10px] bg-[#56663F] flex items-center justify-center">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4" /></svg>
+              </span>
+              <span className="font-serif text-[17px]">Visual Schedules</span>
+            </Link>
+            <h2 className="font-serif font-normal text-[26px] leading-snug mt-6 mb-0">Picture schedules your child can follow.</h2>
+            <p className="m-0 text-[#C9D6B8] text-[14px]">Free, in English, हिन्दी, मराठी and more. Built by a parent.</p>
+            <div className="mt-auto pt-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/login-hero.jpg" alt="" className="w-full aspect-[4/3] object-cover object-left rounded-2xl" fetchPriority="high" decoding="async" />
+            </div>
+          </div>
 
-      {/* Right: sign-in column */}
-      <div className="flex-1 flex flex-col min-h-dvh">
-        <div className="px-6 pt-4 md:px-10 md:pt-8">
-          <Link href="/schedule" className="font-serif text-xl md:text-2xl italic text-ink no-underline leading-none">
-            Visual Schedules
-          </Link>
-        </div>
+          {/* Form side */}
+          <div className="p-8 md:p-10 flex flex-col gap-5 max-h-[calc(100dvh-48px)] overflow-y-auto">
+            {mode === "user" && (
+              <ol className="m-0 p-0 list-none flex items-center gap-2.5 text-[13.5px] font-semibold" aria-label="Steps">
+                <li className={`flex items-center gap-2 ${signedIn ? "text-accent-strong" : "text-ink"}`}>
+                  <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[12px] ${signedIn ? "bg-accent-soft border-accent-strong" : "bg-accent-strong border-accent-strong text-white"}`}>{signedIn ? "✓" : "1"}</span>
+                  Sign in
+                </li>
+                <li aria-hidden className="w-9 h-0.5 rounded bg-[#DCE2D8]" />
+                <li className={`flex items-center gap-2 ${signedIn ? "text-ink" : "text-ink-3"}`}>
+                  <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[12px] ${signedIn ? "bg-accent-strong border-accent-strong text-white" : "border-[#CBD3C6]"}`}>2</span>
+                  Your cards
+                </li>
+              </ol>
+            )}
 
-        <main className="flex-1 min-h-0 overflow-y-auto flex md:items-center justify-center px-6 pt-4 pb-8 md:px-10 md:py-10">
-          <div className="w-full max-w-sm">
-
-          {/* ── USER FLOW ── */}
-          {mode === "user" && (
-            <>
-              {step === "email" && (
-                <>
-                  <h1 className="font-serif text-xl italic text-ink mb-3">Sign in</h1>
-                  <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
-                    Enter your email — we'll send a 6-digit code. No password needed.
-                  </p>
-                  <form onSubmit={handleSendOTP}>
-                    <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      required
-                      autoFocus
-                      className="w-full py-2.5 px-3 border border-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent mb-4"
-                    />
-                    <label className="flex items-center gap-2 mb-4 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={hasAccessCode}
-                        onChange={(e) => setHasAccessCode(e.target.checked)}
-                        className="w-4 h-4 shrink-0"
-                        style={{ accentColor: "var(--accent-strong)" }}
-                      />
-                      <span className="text-[12px] text-ink-2">
-                        I have an access code (free subscription)
-                      </span>
-                    </label>
-                    {hasAccessCode && (
-                      <div className="mb-4">
-                        <input
-                          type="text"
-                          value={orgCode}
-                          onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
-                          placeholder="e.g. SUNSHINE24"
-                          className="w-full py-2.5 px-3 border border-input-border bg-surface-hover font-sans text-[15px] tracking-widest uppercase text-ink outline-none focus:border-accent"
-                        />
-                        <p className="text-[11px] text-ink-3 mt-1.5 leading-relaxed">
-                          Unlocks all paid cards and adds your centre&apos;s branding.
-                        </p>
-                      </div>
-                    )}
-                    {error && <p className="text-xs text-[#C53030] mb-3">{error}</p>}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full text-[12px] tracking-wider uppercase py-3 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333] transition-all disabled:opacity-50"
-                    >
-                      {loading ? "Sending..." : "Send Code"}
-                    </button>
-                    <p className="text-[12px] text-ink-3 text-center mt-3 leading-relaxed">
-                      By continuing you agree to our{" "}
-                      <Link href="/terms" className="text-ink underline">Terms</Link>
-                      {" "}and{" "}
-                      <Link href="/privacy" className="text-ink underline">Privacy Policy</Link>.
-                    </p>
-                  </form>
-                  <div className="mt-4 pt-4 border-t border-border text-center">
-            <p className="text-center text-[13px] text-ink-3 font-sans mb-2">No account needed for free cards</p>
-            <a
-              href="/schedule"
-              className="block w-full text-center py-3 border border-[#7A8F5E] text-[#4A5A3E] rounded font-sans text-[14px] font-semibold no-underline hover:bg-[#7A8F5E] hover:text-white transition-all"
-            >
-              Create free schedule →
-            </a>
-                  </div>
-                </>
-              )}
-
-              {step === "otp" && (
-                <>
-                  <h1 className="font-serif text-xl italic text-ink mb-1.5">Check your email</h1>
-                  <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
-                    We sent a 6-digit code to{" "}
-                    <strong className="text-ink">{email}</strong>. Enter it below.
-                  </p>
-                  <form onSubmit={handleVerifyOTP}>
-                    <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">
-                      6-Digit Code
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="123456"
-                      required
-                      maxLength={6}
-                      autoFocus
-                      className="w-full py-3 px-3 border border-border bg-surface-hover font-sans text-[22px] text-ink text-center tracking-[8px] outline-none focus:border-accent mb-4 font-medium"
-                    />
-
-                    {error && <p className="text-xs text-[#C53030] mb-3">{error}</p>}
-                    <button
-                      type="submit"
-                      disabled={loading || otp.length < 6}
-                      className="w-full text-[12px] tracking-wider uppercase py-3 bg-ink text-white border border-ink font-sans font-medium hover:bg-[#333] transition-all disabled:opacity-50"
-                    >
-                      {loading ? "Verifying..." : "Verify Code"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setStep("email"); setOtp(""); setError(""); }}
-                      className="w-full text-[12px] text-ink-3 mt-2 py-2 hover:text-ink"
-                    >
-                      Use a different email
-                    </button>
-                  </form>
-                </>
-              )}
-
-              {step === "done" && (
-                <div className="text-center py-4">
-                  <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-badge-free-bg flex items-center justify-center">
-                    <svg className="w-5 h-5 stroke-green stroke-2 fill-none" viewBox="0 0 24 24">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-ink font-medium">Signed in!</p>
-                  <p className="text-xs text-ink-2 mt-1">Taking you in...</p>
+            {mode === "user" && step === "email" && (
+              <form onSubmit={handleSendOTP} className="flex flex-col gap-4 animate-[vsFadeIn_250ms_ease-out]">
+                <div>
+                  <h1 className="m-0 text-[26px] font-bold text-ink">Welcome</h1>
+                  <p className="m-0 mt-1 text-[14px] text-ink-2">Enter your email and we&apos;ll send a 6-digit code. No password needed.</p>
                 </div>
-              )}
-            </>
-          )}
+                <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-ink-2">
+                  Email
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoFocus autoComplete="email" className={input} />
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={hasAccessCode} onChange={(e) => setHasAccessCode(e.target.checked)} className="w-4 h-4 shrink-0 accent-[var(--accent-strong)]" />
+                  <span className="text-[13px] text-ink-2">I have an access code (free subscription)</span>
+                </label>
+                {hasAccessCode && (
+                  <div className="animate-[vsSlideDown_200ms_ease-out]">
+                    <input type="text" value={orgCode} onChange={(e) => setOrgCode(e.target.value.toUpperCase())} placeholder="e.g. SUNSHINE24" aria-label="Access code" className={`${input} tracking-widest uppercase`} />
+                    <p className="m-0 mt-1.5 text-[12px] text-ink-3">Unlocks all paid cards and adds your centre&apos;s branding.</p>
+                  </div>
+                )}
+                {error && <p className="m-0 text-[13px] text-[#C53030]">{error}</p>}
+                <button type="submit" disabled={loading} className={primary}>{loading ? "Sending…" : "Send me a code"}</button>
+                <p className="m-0 text-[12.5px] text-ink-3 text-center">
+                  By continuing you agree to our <Link href="/terms" className="text-ink-2 underline">Terms</Link> and <Link href="/privacy" className="text-ink-2 underline">Privacy policy</Link>.
+                </p>
+                <div className="pt-4 border-t border-border flex flex-col gap-2 items-center">
+                  <span className="text-[13px] text-ink-3">No account needed for free cards</span>
+                  <a href="/schedule" className="w-full min-h-[46px] rounded-xl border-[1.5px] border-input-border text-accent-strong font-semibold text-[14px] flex items-center justify-center no-underline hover:bg-surface-hover">
+                    Create a free schedule →
+                  </a>
+                </div>
+              </form>
+            )}
 
-          {/* ── ADMIN FLOW ── */}
-          {mode === "admin" && step === "email" && (
-            <>
-              <h1 className="font-serif text-xl italic text-ink mb-1.5">Admin sign in</h1>
-              <p className="text-[13px] text-ink-2 leading-relaxed mb-5">
-                For Grow Gently team only.
-              </p>
-              <form onSubmit={handleAdminLogin}>
-                <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">Email</label>
+            {mode === "user" && step === "otp" && (
+              <form onSubmit={handleVerifyOTP} className="flex flex-col gap-4 animate-[vsFadeIn_250ms_ease-out]">
+                <div>
+                  <h1 className="m-0 text-[26px] font-bold text-ink">Check your email</h1>
+                  <p className="m-0 mt-1 text-[14px] text-ink-2">We sent a 6-digit code to <b className="text-ink">{email}</b>.</p>
+                </div>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full py-2.5 px-3 border border-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent mb-3"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="••••••"
+                  aria-label="6-digit code"
+                  required
+                  maxLength={6}
+                  autoFocus
+                  className="w-full h-[62px] rounded-xl border border-input-border text-center text-[28px] font-bold tracking-[14px] text-ink outline-none focus:border-accent-strong focus:ring-2 focus:ring-weekly-accent/30"
                 />
-                <label className="text-[12px] tracking-widest uppercase text-[#5C5855] mb-1.5 block font-medium">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full py-2.5 px-3 border border-border bg-surface-hover font-sans text-[13px] text-ink outline-none focus:border-accent mb-4"
-                />
-                {error && <p className="text-xs text-[#C53030] mb-3">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full text-[12px] tracking-wider uppercase py-3 bg-accent text-white border border-accent font-sans font-medium hover:bg-accent-hover transition-all disabled:opacity-50"
-                >
-                  {loading ? "Signing in..." : "Sign In"}
+                {error && <p className="m-0 text-[13px] text-[#C53030]">{error}</p>}
+                <button type="submit" disabled={loading || otp.length < 6} className={primary}>{loading ? "Verifying…" : "Verify"}</button>
+                <button type="button" onClick={() => { setStep("email"); setOtp(""); setError(""); }} className="text-[13px] font-semibold text-ink-3 hover:text-ink">
+                  Use a different email
                 </button>
               </form>
-              <button
-                type="button"
-                onClick={() => { setMode("user"); setError(""); setPassword(""); }}
-                className="w-full text-[12px] text-ink-3 mt-3 py-2 hover:text-ink"
-              >
-                ← Back to sign in
-              </button>
-            </>
-          )}
-          </div>
-        </main>
+            )}
 
-        <div className="px-6 pb-5 text-center shrink-0">
-          {mode === "user" && step === "email" && (
-            <button
-              onClick={() => { setMode("admin"); setError(""); setEmail(""); }}
-              className="text-[12px] text-ink-3 hover:text-ink underline underline-offset-2"
-            >
-              Login as admin
-            </button>
-          )}
+            {mode === "user" && step === "setup" && (
+              <CardSetup onDone={() => { setStep("done"); setTimeout(goIn, 600); }} />
+            )}
+
+            {mode === "user" && step === "done" && (
+              <div className="text-center py-10 animate-[vsFadeIn_250ms_ease-out]">
+                <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-accent-strong flex items-center justify-center animate-[vsPop_350ms_ease-out]">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                </div>
+                <p className="m-0 font-bold text-[16px] text-ink">You&apos;re in!</p>
+                <p className="m-0 mt-1 text-[13px] text-ink-2">Taking you to your schedules…</p>
+              </div>
+            )}
+
+            {mode === "admin" && step === "email" && (
+              <form onSubmit={handleAdminLogin} className="flex flex-col gap-4">
+                <div>
+                  <h1 className="m-0 text-[26px] font-bold text-ink">Admin sign in</h1>
+                  <p className="m-0 mt-1 text-[14px] text-ink-2">For the Grow Gently team only.</p>
+                </div>
+                <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-ink-2">Email
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={input} />
+                </label>
+                <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-ink-2">Password
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={input} />
+                </label>
+                {error && <p className="m-0 text-[13px] text-[#C53030]">{error}</p>}
+                <button type="submit" disabled={loading} className={primary}>{loading ? "Signing in…" : "Sign in"}</button>
+                <button type="button" onClick={() => { setMode("user"); setError(""); setPassword(""); }} className="text-[13px] font-semibold text-ink-3 hover:text-ink">
+                  ← Back to sign in
+                </button>
+              </form>
+            )}
+
+            {mode === "user" && step === "email" && (
+              <button type="button" onClick={() => { setMode("admin"); setError(""); setEmail(""); }} className="mt-auto self-center text-[12px] text-ink-3 hover:text-ink underline underline-offset-2">
+                Login as admin
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -462,6 +408,7 @@ function MobileLogin(props: {
   loading: boolean; error: string; setError: (v: string) => void;
   onSendOTP: (e: React.FormEvent) => void; onVerifyOTP: (e: React.FormEvent) => void; onAdminLogin: (e: React.FormEvent) => void;
   onRedeemAccessCode: (e: React.FormEvent) => void; onSkipAccessCode: () => void;
+  setup: React.ReactNode;
 }) {
   const {
     mode, setMode, loginMode, setLoginMode, step, setStep, email, setEmail,
@@ -563,6 +510,8 @@ function MobileLogin(props: {
               </button>
             </form>
           )}
+
+          {mode === "user" && step === "setup" && props.setup}
 
           {mode === "user" && step === "done" && (
             <div className="text-center py-4">
