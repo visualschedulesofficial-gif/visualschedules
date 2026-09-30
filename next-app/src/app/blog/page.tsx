@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TopNav } from "@/components/layout/TopNav";
+import { SiteTopBar } from "@/components/schedule/BuilderTopBar";
 import { getEnv } from "@/lib/admin-auth";
 import { BlogListClient } from "@/components/blog/BlogListClient";
 
@@ -48,8 +48,8 @@ export default async function BlogIndexPage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-bg">
-      <TopNav />
+    <div className="h-dvh flex flex-col bg-bg">
+      <SiteTopBar />
       <main className="flex-1 overflow-y-auto">
         <BlogListClient posts={posts as any} />
       </main>
