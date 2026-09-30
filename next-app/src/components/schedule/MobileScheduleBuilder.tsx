@@ -169,7 +169,7 @@ function CardTile({
       <div className="w-full aspect-square flex items-center justify-center overflow-hidden" style={{ opacity: isLocked ? 0.55 : 1 }}>
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt="" className="w-full h-full object-contain" loading="lazy" />
+          <img src={img} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full" style={{ background: GREEN_SOFT }} />
         )}

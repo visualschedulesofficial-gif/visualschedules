@@ -66,6 +66,8 @@ function DraggableCardItem({
           <img
             src={imageUrl}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-contain p-0.5"
           />
         ) : (
