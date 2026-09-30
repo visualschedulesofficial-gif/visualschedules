@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, setRuntimeCards, type ParsedCard } from "@/lib/card-data";
-import { LANGUAGES, GRID_SPECS, type Language, type Gender, type ScheduleType, type GridCols } from "@/lib/constants";
+import { LANGUAGES, languageLabel, type Language, type Gender } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
@@ -51,22 +51,22 @@ function DraggableCardItem({
         }
         onClickAdd(card.id, catId);
       }}
-      className={`flex flex-col items-center gap-1.5 p-1.5 rounded transition-all group relative ${
+      className={`flex flex-col items-center gap-1.5 p-1.5 pb-2 rounded-[14px] border-[1.5px] bg-white transition-all duration-150 group relative ${
         isLocked
-          ? "cursor-pointer"
+          ? "cursor-pointer border-border"
           : isDragging
-          ? "opacity-50 scale-95 cursor-grabbing"
-          : "cursor-grab hover:bg-[#F5F5F5]"
-      } ${isAdded ? "border border-weekly-accent bg-white" : ""}`}
-      title={isLocked ? "Subscribe to unlock paid cards" : isCharacter ? `Character card - ${imageGender} variant` : "Neutral card - single image"}
+          ? "opacity-50 scale-95 cursor-grabbing border-border"
+          : "cursor-grab border-border hover:border-weekly-accent hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(74,90,62,0.14)]"
+      } ${isAdded ? "!border-accent-strong !bg-accent-soft" : ""}`}
+      title={isLocked ? "Subscribe to unlock paid cards" : `Add ${getCardLabel(card, language)}`}
+      aria-label={isLocked ? `${getCardLabel(card, language)} (paid)` : `Add ${getCardLabel(card, language)}`}
     >
-      {/* Card Image */}
-      <div className="w-full aspect-square bg-white rounded border-[1.5px] border-dashed border-border flex items-center justify-center overflow-hidden group-hover:shadow-md transition-all pointer-events-none">
+      <div className="w-full aspect-[5/4] bg-white rounded-[9px] flex items-center justify-center overflow-hidden pointer-events-none">
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt={getCardLabel(card, language)}
-            className="w-full h-full object-contain p-1"
+            alt=""
+            className="w-full h-full object-contain p-0.5"
           />
         ) : (
           <svg className="w-10 h-10 stroke-[#D0D0D0] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
@@ -77,28 +77,24 @@ function DraggableCardItem({
         )}
       </div>
 
-      {/* Card Label */}
-      <span className="text-[12px] font-semibold text-ink text-center line-clamp-2 leading-tight pointer-events-none">
+      <span className="text-[12.5px] font-semibold text-ink text-center line-clamp-2 leading-tight pointer-events-none">
         {getCardLabel(card, language)}
       </span>
 
-      {/* Green Tick for Added Cards */}
-      {isAdded && (
-        <div className="absolute top-1 right-1 bg-[#2D6A2D] text-white rounded-full w-5 h-5 flex items-center justify-center text-[12px] font-bold pointer-events-none">
-          ✓
-        </div>
-      )}
+      {/* Added: tick. Otherwise a + that appears on hover. */}
+      {isAdded ? (
+        <span className="absolute top-2 right-2 bg-accent-strong text-white rounded-full w-6 h-6 flex items-center justify-center text-[12px] font-bold pointer-events-none animate-[vsPop_300ms_ease-out]">✓</span>
+      ) : !isLocked ? (
+        <span className="absolute top-2 right-2 bg-accent-strong text-white rounded-full w-7 h-7 flex items-center justify-center pointer-events-none opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all shadow">
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        </span>
+      ) : null}
 
-      {/* Free / Paid badge */}
-      <div className={`absolute bottom-[28px] left-1 text-[12px] font-bold tracking-wide px-1 py-[1px] rounded-sm pointer-events-none leading-tight ${
-        isFree
-          ? "bg-[#E6F2E6] text-[#2D6A2D] border border-[#BCE0BC]"
-          : "bg-[#FBF0DD] text-[#9A6B12] border border-[#EBD3A0]"
+      <span className={`absolute top-2 left-2 text-[10.5px] font-bold px-1.5 py-[1px] rounded-md pointer-events-none leading-tight ${
+        isFree ? "bg-accent-soft text-accent-hover" : "bg-[#FFF3E6] text-[#9A5F12]"
       }`}>
-        {isFree ? "Free" : isLocked ? "🔒 Paid" : "Paid"}
-      </div>
-
-
+        {isFree ? "Free" : "🔒 Paid"}
+      </span>
     </button>
   );
 }
@@ -149,7 +145,7 @@ function useIsEditingSaved() {
   return editing;
 }
 
-export function CardLibrarySidebar() {
+export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string) => void } = {}) {
   const isEditingSaved = useIsEditingSaved();
   const gender = useScheduleState((s) => s.gender);
   const setGender = useScheduleState((s) => s.setGender);
@@ -174,11 +170,12 @@ export function CardLibrarySidebar() {
   const setGridCols = useScheduleState((s) => s.setGridCols);
   const weekMode = useScheduleState((s) => s.weekMode);
   const setWeekMode = useScheduleState((s) => s.setWeekMode);
-  const [panelWidth, setPanelWidth] = useState(400);
+  const [panelWidth, setPanelWidth] = useState(360);
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
   const [accessFilter, setAccessFilter] = useState<"" | "free" | "paid">("");
+  const cycleAccess = () => setAccessFilter((v) => (v === "" ? "free" : v === "free" ? "paid" : ""));
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -197,7 +194,8 @@ export function CardLibrarySidebar() {
         page.slots?.forEach((slot) => {
           if (slot) ids.add(slot.cardId);
         });
-      } else if ("columns" in page) {
+      }
+      if ("columns" in page) {
         Object.values(page.columns || {}).forEach((col) => {
           col?.forEach((card) => {
             if (card) ids.add(card.cardId);
@@ -394,205 +392,91 @@ export function CardLibrarySidebar() {
       {/* Everything scrolls; the toggle row below sticks to the top */}
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="border-b border-border bg-white">
-        <div className="p-3 space-y-3">
-          {/* Row A: Schedule type + contextual dropdown */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Schedule type</label>
-              <select
-                value={scheduleType}
-                onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
-                disabled={isEditingSaved}
-                title={isEditingSaved ? "Schedule type can't be changed when editing a saved schedule" : undefined}
-                className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {/* Grouped by where the result is usable. The landscape types
-                    (weekly / custom / timetable) are too wide to work on a
-                    phone, so anything built with them can't be used on
-                    mobile — worth knowing before you build, not after. */}
-                <optgroup label="📱 Phone + 💻 Desktop">
-                  <option value="mini">My Schedule</option>
-                  <option value="daily">Daily Schedule</option>
-                  <option value="firstthen">First/Then Board</option>
-                  <option value="iwant">I Want (communication)</option>
-                </optgroup>
-                <optgroup label="💻 Desktop only">
-                  <option value="weekly">Weekly Schedule — desktop only</option>
-                  <option value="custom">Custom Schedule — desktop only</option>
-                  <option value="timetable">Timetable — desktop only</option>
-                </optgroup>
-              </select>
-              {(scheduleType === "weekly" || scheduleType === "custom" || scheduleType === "timetable") && (
-                <p className="text-[11px] mt-1 leading-snug text-ink-3">
-                  💻 Desktop only — this layout is too wide for a phone, so it won&apos;t appear in the mobile app.
-                </p>
+        <div className="p-4 pb-3 space-y-3">
+          {/* Language first: card names follow it, so a parent who reads
+              Marathi can pick cards without reading English. */}
+          <label className="flex items-center gap-2.5 h-[46px] px-3 rounded-xl border-[1.5px] border-accent-strong bg-accent-soft cursor-pointer">
+            <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as Language)}
+              aria-label="Card language"
+              className="flex-1 min-w-0 appearance-none bg-transparent border-0 outline-none font-bold text-[15px] text-ink cursor-pointer"
+            >
+              {Object.keys(LANGUAGES).map((code) => (
+                <option key={code} value={code}>{languageLabel(code)}</option>
+              ))}
+            </select>
+            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
+          </label>
+
+          {/* One box: type to search, or pick a category from the list */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 min-h-[44px] px-2.5 rounded-xl border border-input-border bg-white focus-within:border-accent-strong focus-within:ring-2 focus-within:ring-weekly-accent/30">
+                <svg className="w-4 h-4 shrink-0 stroke-ink-2 fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                {selectedCategory && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-accent-soft text-accent-hover pl-2 pr-0.5 py-0.5 text-[12.5px] font-semibold whitespace-nowrap max-w-[55%]">
+                    <span className="truncate">{catName(selectedCategory)}</span>
+                    <button type="button" onClick={() => setSearchOrCategory("")} aria-label="Clear category" className="w-5 h-5 rounded-md hover:bg-[#D7E3C9] leading-none text-[15px]">×</button>
+                  </span>
+                )}
+                <input
+                  type="search"
+                  placeholder={selectedCategory ? "" : "Search or pick category"}
+                  value={selectedCategory ? "" : searchOrCategory}
+                  onChange={(e) => {
+                    setSearchOrCategory(e.target.value);
+                    setIsDropdownOpen(e.target.value === "");
+                  }}
+                  onFocus={() => { if (!searchOrCategory || selectedCategory) setIsDropdownOpen(true); }}
+                  onBlur={() => setTimeout(() => setIsDropdownOpen(false), 150)}
+                  aria-label="Search cards or pick a category"
+                  aria-expanded={isDropdownOpen}
+                  className="flex-1 min-w-0 h-10 bg-transparent border-0 outline-none text-[14px] text-ink placeholder:text-ink-3"
+                />
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); setIsDropdownOpen((v) => !v); }} aria-label="Show categories" className="w-6 h-6 shrink-0 flex items-center justify-center">
+                  <svg className={`w-3.5 h-3.5 stroke-ink-2 fill-none transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" strokeWidth="2.2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+              </div>
+              {isDropdownOpen && (
+                <ul role="listbox" className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-border rounded-xl shadow-[0_12px_28px_rgba(30,42,36,0.14)] z-50 max-h-72 overflow-y-auto p-1.5 m-0 list-none animate-[vsSlideDown_180ms_ease-out]">
+                  <li className="px-2.5 pt-1.5 pb-1 text-[11px] font-bold tracking-wider uppercase text-ink-3">Categories</li>
+                  {categories.map((catId) => (
+                    <li
+                      key={catId}
+                      role="option"
+                      aria-selected={selectedCategory === catId}
+                      onMouseDown={(e) => { e.preventDefault(); setSearchOrCategory(catId); setIsDropdownOpen(false); }}
+                      className={`flex justify-between items-center px-2.5 py-2.5 rounded-lg cursor-pointer text-[14px] font-medium ${selectedCategory === catId ? "bg-accent-soft" : "hover:bg-accent-soft"}`}
+                    >
+                      {catName(catId)} <span className="text-ink-3 text-[12px]">{categoryCounts[catId] || 0}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
-            {scheduleType === "daily" && (
-              <div>
-                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Card Type</label>
-                <select
-                  value={cardType}
-                  onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
-                >
-                  <option value="visual">Visual Focus</option>
-                  <option value="equal">Equal Focus</option>
-                  <option value="text">Text Focus</option>
-                </select>
-              </div>
-            )}
-            {scheduleType === "weekly" && (
-              <div>
-                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Days</label>
-                <select
-                  value={weekMode}
-                  onChange={(e) => setWeekMode(e.target.value as "week" | "weekdays")}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
-                >
-                  <option value="week">Weekly</option>
-                  <option value="weekdays">Weekdays</option>
-                </select>
-              </div>
-            )}
-            {scheduleType === "custom" && (
-              <div>
-                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Columns</label>
-                <select
-                  value={customColNames.length}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    const names = Array.from({ length: n }, (_, i) => customColNames[i] || `Column ${i + 1}`);
-                    setCustomColNames(names);
-                  }}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
-                >
-                  {[2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>{n} columns</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {scheduleType === "mini" && (
-              <div>
-                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Cards</label>
-                <select
-                  value={miniCardCount}
-                  onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
-                >
-                  {[2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>{n} cards</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {scheduleType === "firstthen" && (
-              <div>
-                <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Board style</label>
-                <select
-                  value={ftStyle}
-                  onChange={(e) => setFtStyle(e.target.value as "first-then" | "first-then-now" | "sequencing")}
-                  className="w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
-                >
-                  <option value="first-then">First, Then</option>
-                  <option value="first-then-now">First, Then, Now</option>
-                  <option value="sequencing">Sequencing</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Row B: Category/Search (language lives in the right panel) */}
-          <div className="grid grid-cols-1 gap-2">
-
-          {/* Row 2: Category/Search */}
-          <div className="relative">
-            <label className="block text-[12px] font-bold text-ink uppercase tracking-widest mb-1">Category / Search</label>
-            <div className="relative flex items-center">
-              {/* Search Icon */}
-              <svg className="absolute left-3 w-4 h-4 stroke-[#333] fill-none pointer-events-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-
-              {/* Input Field */}
-              <input
-                type="text"
-                placeholder="Search or select..."
-                value={searchOrCategory}
-                onChange={(e) => {
-                  setSearchOrCategory(e.target.value);
-                  setIsDropdownOpen(true);
-                }}
-                onFocus={() => setIsDropdownOpen(true)}
-                className="w-full pl-10 pr-10 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans"
-              />
-
-              {/* Dropdown Icon */}
-              <svg
-                className="absolute right-3 w-4 h-4 stroke-[#333] fill-none pointer-events-none transition-transform"
-                style={{ transform: isDropdownOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                strokeLinecap="round"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
-
-            {/* Dropdown Menu */}
-            {isDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#333] rounded shadow-lg z-50 max-h-48 overflow-y-auto">
-                <div
-                  className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-ink font-medium border-b border-border"
-                  onClick={() => {
-                    setSearchOrCategory("");
-                    setIsDropdownOpen(false);
-                  }}
-                >
-                  ✕ Clear Filter
-                </div>
-                {categories.map((catId) => (
-                  <div
-                    key={catId}
-                    className="px-3 py-2.5 hover:bg-[#f9f9f9] cursor-pointer text-[12px] text-ink font-medium border-b border-border last:border-b-0"
-                    onClick={() => {
-                      setSearchOrCategory(catId);
-                      setIsDropdownOpen(false);
-                    }}
-                  >
-                    {catName(catId)} <span className="text-[#B0ACA6]">({categoryCounts[catId] || 0})</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
+            {/* One tag: tap to cycle All → Free → Paid */}
+            <button
+              type="button"
+              onClick={cycleAccess}
+              aria-label={`Showing ${accessFilter || "all"} cards. Tap to change`}
+              className={`h-11 min-w-[78px] px-3.5 rounded-xl border flex items-center justify-center gap-2 font-semibold text-[14px] transition-colors ${
+                accessFilter === "free" ? "bg-accent-soft border-[#9DB887] text-[#2E4A22]"
+                : accessFilter === "paid" ? "bg-[#FFF3E6] border-[#EBC993] text-[#7A4E12]"
+                : "bg-white border-input-border text-ink"
+              }`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${accessFilter === "free" ? "bg-[#5E8F48]" : accessFilter === "paid" ? "bg-[#D9922E]" : "bg-[conic-gradient(#7FAF6A_0_50%,#E0A246_50%_100%)]"}`} />
+              {accessFilter === "free" ? "Free" : accessFilter === "paid" ? "Paid" : "All"}
+            </button>
           </div>
         </div>
       </div>
 
       {/* STICKY: free/paid + characters stay visible while browsing */}
-      <div className="sticky top-0 z-20 bg-white border-b border-border px-3 py-2 flex items-center justify-between gap-2">
-        <div className="flex gap-1.5">
-          {(["free", "paid"] as const).map((v) => {
-            const active = accessFilter === v;
-            return (
-              <button
-                key={v}
-                onClick={() => setAccessFilter(active ? "" : v)}
-                className={`h-9 px-3.5 rounded-full border text-[12px] font-sans capitalize transition-colors ${
-                  active
-                    ? "border-weekly-accent bg-[#E8EDE0] text-accent-strong font-semibold"
-                    : "border-input-border bg-white text-[#666]"
-                }`}
-              >
-                {v}
-              </button>
-            );
-          })}
-        </div>
+      <div className="sticky top-0 z-20 bg-white border-b border-border px-4 py-2.5 flex items-center gap-3 min-h-[54px]">
+        <span className="text-[13px] font-semibold text-ink-2">Character</span>
         {!charactersLocked && (
           <div className="flex gap-1.5">
             {(["neutral", "boy", "girl", "brown"] as Gender[]).map((g) => {
@@ -603,16 +487,18 @@ export function CardLibrarySidebar() {
               return (
                 <button
                   key={g}
+                  type="button"
+                  aria-pressed={active}
                   onClick={() => {
                     setGender(g);
                     setForceUpdate((prev) => prev + 1);
                   }}
                   aria-label={g}
                   title={g}
-                  className={`w-9 h-9 rounded-full overflow-hidden border shrink-0 transition-all ${
+                  className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
                     active
-                      ? "border-success ring-2 ring-[#BCD9B4]"
-                      : "border-[#D8D4CC] opacity-70 hover:opacity-100"
+                      ? "border-accent-strong ring-2 ring-accent-soft"
+                      : "border-transparent opacity-75 hover:opacity-100"
                   }`}
                 >
                   {faceImg ? (
@@ -629,7 +515,7 @@ export function CardLibrarySidebar() {
       </div>
 
       {/* CARDS SECTION */}
-      <div className="px-3 py-4">
+      <div className="px-4 py-4">
         {filteredCards.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center">
             <div>
@@ -659,10 +545,10 @@ export function CardLibrarySidebar() {
                       else next.add(catId);
                       setCollapsedCats(next);
                     }}
-                    className="w-full flex items-center justify-between text-[12px] font-bold text-ink-2 uppercase tracking-widest mb-2.5"
+                    className="w-full flex items-center justify-between text-[14px] font-semibold text-ink-2 mb-2.5"
                   >
                     <span>
-                      {catName(catId)} <span className="text-[#B0ACA6] font-medium">({categoryCards.length})</span>
+                      {catName(catId)} <span className="text-ink-3 font-medium">({categoryCards.length})</span>
                     </span>
                     <svg
                       className={`w-3.5 h-3.5 stroke-[#B0ACA6] stroke-2 fill-none transition-transform ${collapsedCats.has(catId) ? "-rotate-90" : ""}`}
@@ -672,7 +558,7 @@ export function CardLibrarySidebar() {
                     </svg>
                   </button>
                   {!collapsedCats.has(catId) && (
-                  <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(104px,116px))] justify-start">
+                  <div className="grid gap-2.5 grid-cols-[repeat(auto-fill,minmax(98px,1fr))]">
                     {categoryCards.map((card) => (
                       <DraggableCardItem
                         key={`${card.id}-${forceUpdate}`}
@@ -711,6 +597,7 @@ export function CardLibrarySidebar() {
   );
 
   function handleAddCard(cardId: string, catId: string) {
+    if (onAddCard) { onAddCard(cardId); return; }
     if (pages.length === 0) return;
     const currentPageIdx = 0;
     const currentPage = pages[currentPageIdx];
