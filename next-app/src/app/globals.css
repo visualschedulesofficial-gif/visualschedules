@@ -274,3 +274,16 @@ a.bg-accent-strong {
     animation: none;
   }
 }
+
+
+/* ── Builder guidance motion (desktop) ── */
+@keyframes vsPop { 0% { transform: scale(.6) } 70% { transform: scale(1.15) } 100% { transform: scale(1) } }
+@keyframes vsNudge { 0%, 100% { transform: none } 30% { transform: translateX(-3px) } 60% { transform: translateX(2px) } }
+@keyframes vsFadeIn { from { opacity: 0; transform: translateY(-3px) } to { opacity: 1; transform: none } }
+@keyframes vsSlideDown { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+@keyframes vsPulse { 0%, 100% { box-shadow: 0 0 0 2px rgba(110,143,78,.45) } 50% { box-shadow: 0 0 0 7px rgba(110,143,78,.16) } }
+/* The empty box the next clicked card will go into. Export hides this. */
+.vs-next { background: #F6FAF1 !important; animation: vsPulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .vs-next, [class*="animate-[vs"] { animation: none !important; }
+}
