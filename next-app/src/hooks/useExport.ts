@@ -51,7 +51,7 @@ async function ensureFontsLoaded() {
 function injectExportHideStyle() {
   const style = document.createElement("style");
   style.id = "export-hide-style";
-  style.textContent = ".slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}";
+  style.textContent = ".vs-next{box-shadow:none!important;animation:none!important;background:#fff!important}.slot-rm,.weekly-card-rm,.dz-hint,.weekly-drop-hint,.weekly-mini-drop,.ft-drop-hint,.ft-card-rm,.card-remove-btn,.slot-remove-icon{display:none!important}";
   document.head.appendChild(style);
   return style;
 }
@@ -439,7 +439,9 @@ export function useExport() {
   const [exportStatus, setExportStatus] = useState("");
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  const saveToDatabase = async () => {
+  // Returns true when the schedule was stored on the account (false when
+  // signed out or offline) so a Save button can say what happened.
+  const saveToDatabase = async (): Promise<boolean> => {
     try {
       const state = useScheduleState.getState();
       // Fall back to the mobile builder's id if the store hasn't got one yet.
@@ -480,8 +482,10 @@ export function useExport() {
         }
         setLastSaved(new Date());
         useScheduleState.getState().markClean?.();
+        return !!data?.saved;
       }
     } catch {}
+    return false;
   };
 
   const showStatus = useCallback((text: string) => {
@@ -617,6 +621,7 @@ export function useExport() {
     exportPDF,
     exportJPEG,
     prepareFiles,
+    saveNow: saveToDatabase,
     exporting,
     exportStatus,
     lastSaved,
