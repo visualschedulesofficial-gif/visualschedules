@@ -202,6 +202,11 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slot
   const imageUrl = card ? getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral") : null;
   const isDragging = !!active;
   const isBlack = cardStyle === "black";
+  const exporting = useScheduleState((s) => s.exporting);
+  // Desktop only (mobile passes onEmptySlotTap): glow the box the next
+  // clicked card will land in.
+  const isNext = !cardRef && !onEmptySlotTap && !exporting && pageIdx === 0 &&
+    (page?.slots || []).findIndex((x) => x == null) === slotIdx;
 
   return (
     <div
@@ -209,7 +214,8 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slot
       className={`relative flex flex-col items-center justify-center overflow-hidden bg-white border-[1.5px] border-solid ${cardType !== "visual" ? "rounded-[12px]" : ""}
         ${!cardRef
           ? `transition-[border-color,background-color,transform] duration-200 ease-out
-             ${isOver ? "border-[#7A8F5E] bg-[#F0F8F0] scale-[1.03]" : isDragging ? "border-[#7A8F5E] bg-white" : "border-[#C7D7B8] bg-white"}`
+             ${isOver ? "border-[#7A8F5E] bg-[#F0F8F0] scale-[1.03]" : isDragging || isNext ? "border-[#7A8F5E] bg-white" : "border-[#C7D7B8] bg-white"}
+             ${isNext && !isDragging ? "vs-next" : ""}`
           : `border-[#C7D7B8] group bg-white`
         }
         ${justDropped ? "animate-[cardLand_350ms_cubic-bezier(0.34,1.56,0.64,1)]" : ""}
@@ -284,8 +290,8 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slot
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          <span className={`text-xs font-medium transition-[color] duration-200 ${isOver ? "text-[#7A8F5E]" : isDragging ? "text-[#7A8F5E]" : "text-[#999]"}`}>
-            {isOver ? "Release" : "Drop"}
+          <span className={`text-xs font-medium transition-[color] duration-200 ${isOver || isDragging || isNext ? "text-[#4A5A3E]" : "text-[#999]"}`}>
+            {isOver ? "Release" : isNext && !isDragging ? (slotIdx === 0 ? "Start here" : "Next card") : "Drop"}
           </span>
         </div>
       )}
@@ -579,6 +585,7 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageId
   // fixed pixel padding on the outer page.
   const sideMargin = A4_PORTRAIT.width * 0.06;
   const emptySlots = Math.max(0, miniCardCount - cards.length);
+  const exporting = useScheduleState((s) => s.exporting);
 
   return (
     <div
@@ -637,7 +644,9 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageId
           {Array.from({ length: emptySlots }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="flex-1 min-h-0 flex items-center justify-center border-2 border-dashed border-[#C5D2B8] rounded-[12px]"
+              className={`flex-1 min-h-0 flex items-center justify-center border-2 border-dashed rounded-[12px] ${
+                i === 0 && !onEmptySlotTap && !exporting && pageIdx === 0 ? "border-[#6E8F4E] vs-next" : "border-[#C5D2B8]"
+              }`}
             >
               {onEmptySlotTap ? (
                 <button
@@ -650,7 +659,14 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageId
                 </button>
               ) : (
                 <p className="text-[14px] text-weekly-accent font-sans text-center px-4 leading-snug">
-                  Click or drag &amp; drop to add
+                  {i === 0 && pageIdx === 0 && !exporting ? (
+                    <>
+                      <b className="block text-[16px] text-[#4A5A3E]">{cards.length === 0 ? "Start here" : "Next card goes here"}</b>
+                      Click any card on the left
+                    </>
+                  ) : (
+                    "Click or drag & drop to add"
+                  )}
                 </p>
               )}
             </div>
