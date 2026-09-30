@@ -135,3 +135,11 @@ export function languageLabel(code: string): string {
   const native = LANGUAGE_NATIVE[code];
   return native && native !== en ? `${native} · ${en}` : en;
 }
+
+// Face shown in every character picker. Files live in /public/art/characters.
+export const CHARACTER_FACES: Record<string, string> = {
+  neutral: "/art/characters/neutral.png",
+  boy: "/art/characters/boy.png",
+  girl: "/art/characters/girl.png",
+  brown: "/art/characters/brown.png",
+};
