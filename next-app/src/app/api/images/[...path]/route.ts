@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withEdgeCache } from "@/lib/edge-cache";
 
 // GET /api/images/cards/wake/neutral.jpg — serve image from R2
 export async function GET(
@@ -7,7 +8,10 @@ export async function GET(
 ) {
   const { path } = await params;
   const key = path.join("/");
+  return withEdgeCache(request, () => fromR2(key));
+}
 
+async function fromR2(key: string): Promise<Response> {
   try {
     // Access Cloudflare bindings via the global context symbol
     const symbol = Symbol.for("__cloudflare-context__");
@@ -26,6 +30,7 @@ export async function GET(
     const headers = new Headers();
     headers.set("Content-Type", object.httpMetadata?.contentType || "image/jpeg");
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    if (object.httpEtag) headers.set("ETag", object.httpEtag);
 
     return new NextResponse(object.body, { headers });
   } catch (err: any) {
