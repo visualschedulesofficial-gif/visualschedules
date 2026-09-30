@@ -153,10 +153,10 @@ function LoginPageInner() {
         }
         afterSignIn();
       } else {
-        setError(data.error || "Invalid code");
+        setError((data.error || "Invalid code") + (data.detail ? ` (${data.detail})` : ""));
       }
     } catch {
-      setError("Verification failed. Please try again.");
+      setError("Couldn't reach the server to check the code. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
