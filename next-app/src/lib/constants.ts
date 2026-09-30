@@ -121,3 +121,17 @@ export const CANVAS_STRINGS: Record<string, {
   tl: { types: { daily: "Pang-araw-araw na Iskedyul", weekly: "Lingguhang Iskedyul", custom: "Custom na Iskedyul", firstthen: "First-Then Board", iwant: "Gusto ko", timetable: "Iskedyul", mini: "Iskedyul Ko" }, column: "Hanay", days: ["Linggo","Lunes","Martes","Miyerkules","Huwebes","Biyernes","Sabado"], first: "Una", then: "Pagkatapos", now: "Ngayon", next: "Susunod", last: "Huli" },
   vi: { types: { daily: "Lịch hằng ngày", weekly: "Lịch tuần", custom: "Lịch tùy chỉnh", firstthen: "Bảng Trước-Sau", iwant: "Con muốn", timetable: "Thời khóa biểu", mini: "Lịch của tôi" }, column: "Cột", days: ["Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"], first: "Trước", then: "Sau", now: "Bây giờ", next: "Tiếp theo", last: "Cuối cùng" },
 };
+
+// Each language's name in its own script, so a parent who doesn't read
+// English can still find theirs in the language picker.
+export const LANGUAGE_NATIVE: Partial<Record<string, string>> = {
+  hi: "हिन्दी", mr: "मराठी", pa: "ਪੰਜਾਬੀ", gu: "ગુજરાતી", ta: "தமிழ்", te: "తెలుగు",
+  bn: "বাংলা", ur: "اردو", kn: "ಕನ್ನಡ", ml: "മലയാളം", es: "Español", fr: "Français",
+  de: "Deutsch", ar: "العربية", zh: "中文", ja: "日本語", ko: "한국어", pt: "Português",
+  th: "ไทย",
+};
+export function languageLabel(code: string): string {
+  const en = (LANGUAGES as Record<string, string>)[code] || code;
+  const native = LANGUAGE_NATIVE[code];
+  return native && native !== en ? `${native} · ${en}` : en;
+}
