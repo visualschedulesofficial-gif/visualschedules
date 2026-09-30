@@ -29,7 +29,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { LANGUAGES, type Language, type Gender } from "@/lib/constants";
+import { LANGUAGES, CHARACTER_FACES, type Language, type Gender } from "@/lib/constants";
 import {
   CATEGORIES,
   ALL_CARDS,
@@ -71,10 +71,10 @@ const TEMPLATES: { id: string; name: string; terms: string[] }[] = [
 ];
 
 const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
-  { value: "neutral", label: "Neutral" },
+  { value: "neutral", label: "Glasses" },
   { value: "boy", label: "Boy" },
   { value: "girl", label: "Girl" },
-  { value: "brown", label: "Brown" },
+  { value: "brown", label: "Curly hair" },
 ];
 
 interface Step { key: string; cardId: string; catId: string }
@@ -486,8 +486,10 @@ function LibraryScreen({ groups, language, gender, showCharacters, setGender, is
               {CHARACTER_OPTIONS.map((o) => {
                 const active = gender === o.value;
                 return (
-                  <button key={o.value} onClick={() => setGender(o.value)} className="flex-1 py-2 rounded-xl text-[11px] font-semibold"
-                    style={active ? { background: GREEN_SOFT, border: `1.5px solid ${GREEN}`, color: GREEN_DARK } : { background: "#fff", border: `1px solid ${BORDER}`, color: SUB }}>
+                  <button key={o.value} onClick={() => setGender(o.value)} aria-pressed={active} className="flex-1 p-1.5 rounded-xl text-[11px] font-semibold flex flex-col items-center gap-1"
+                    style={active ? { background: GREEN_SOFT, border: `2px solid ${GREEN}`, color: GREEN_DARK } : { background: "#fff", border: `1px solid ${BORDER}`, color: SUB }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={CHARACTER_FACES[o.value]} alt="" className="w-full aspect-square rounded-lg object-cover object-top bg-white" />
                     {o.label}
                   </button>
                 );
