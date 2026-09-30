@@ -21,6 +21,7 @@ import { MobileScheduleBuilder } from "@/components/schedule/MobileScheduleBuild
 import { BuilderTopBar } from "@/components/schedule/BuilderTopBar";
 import { BuilderToolbar } from "@/components/schedule/BuilderToolbar";
 import { getScheduleProgress, isLandscapeType } from "@/lib/schedule-progress";
+import { applyPrefsToNewSchedule } from "@/lib/prefs";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -165,6 +166,17 @@ export default function ScheduleBuilder() {
       .finally(() => { if (!cancelled) setLoadingSchedule(false); });
     return () => { cancelled = true; };
   }, [editingId, loadSchedule]);
+
+  // A fresh desktop schedule starts from the parent's saved defaults.
+  useEffect(() => {
+    if (editingId) return;
+    const { pages } = useScheduleState.getState();
+    const empty = pages.every((p) => {
+      const pg = p as { slots?: unknown[]; columns?: Record<string, unknown[]> };
+      return !(pg.slots || []).some(Boolean) && !Object.values(pg.columns || {}).some((c) => (c || []).length);
+    });
+    if (empty) applyPrefsToNewSchedule();
+  }, [editingId]);
 
   useAutoSave();
 
