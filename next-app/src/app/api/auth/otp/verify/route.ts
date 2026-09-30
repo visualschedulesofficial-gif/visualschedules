@@ -53,22 +53,21 @@ export async function POST(request: NextRequest) {
     // never be granted. Everything downstream depends on this row existing.
     const userId = `user-${normalizedEmail.replace(/[^a-z0-9]/g, "")}`;
 
-    // Preserve an existing role (e.g. admin) — only insert when absent.
-    await env.DB.prepare(
-      `INSERT OR IGNORE INTO users (id, email, role, created_at, updated_at)
-       VALUES (?, ?, 'user', datetime('now'), datetime('now'))`
-    ).bind(userId, normalizedEmail).run();
-
-    // Keep the stored email current in case it changed casing.
-    await env.DB.prepare(
-      `UPDATE users SET email = ?, updated_at = datetime('now') WHERE id = ?`
-    ).bind(normalizedEmail, userId).run();
-
-    // Carry the real role into the session so admins stay admins.
-    const existing: any = await env.DB.prepare(`SELECT role FROM users WHERE id = ?`)
-      .bind(userId)
-      .first();
-    const role = (existing?.role as string) || "user";
+    // The code is valid, so sign them in even if the account-row upkeep
+    // below hits a database snag (e.g. an older row already holding this
+    // email) — that used to fail the whole login with "Verification failed".
+    let role = "user";
+    try {
+      // Preserve an existing role (e.g. admin) — only insert when absent.
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO users (id, email, role, created_at, updated_at)
+         VALUES (?, ?, 'user', datetime('now'), datetime('now'))`
+      ).bind(userId, normalizedEmail).run();
+      const existing: any = await env.DB.prepare(`SELECT role FROM users WHERE id = ?`).bind(userId).first();
+      role = (existing?.role as string) || "user";
+    } catch (e: any) {
+      console.error("[otp/verify] user row:", e?.message || e);
+    }
 
     // Set session cookie
     const sessionData = JSON.stringify({
@@ -90,9 +89,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      user: { id: userId, email: normalizedEmail, role: "user" },
+      user: { id: userId, email: normalizedEmail, role },
     });
-  } catch {
-    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
+  } catch (e: any) {
+    console.error("[otp/verify]", e?.message || e);
+    return NextResponse.json({ error: "Verification failed", detail: String(e?.message || e).slice(0, 160) }, { status: 500 });
   }
 }
