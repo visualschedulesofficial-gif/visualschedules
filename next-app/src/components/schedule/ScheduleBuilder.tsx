@@ -18,6 +18,9 @@ import { AppShell } from "@/components/layout/AppShell";
 import { CardLibrarySidebar } from "@/components/schedule/CardLibrarySidebar";
 import { RightPanel } from "@/components/schedule/RightPanel";
 import { MobileScheduleBuilder } from "@/components/schedule/MobileScheduleBuilder";
+import { BuilderTopBar } from "@/components/schedule/BuilderTopBar";
+import { BuilderToolbar } from "@/components/schedule/BuilderToolbar";
+import { getScheduleProgress, isLandscapeType } from "@/lib/schedule-progress";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -111,6 +114,23 @@ export default function ScheduleBuilder() {
   }, [scheduleTypeForFit, isMobile]);
   const placeCard = useScheduleState((s) => s.placeCard);
   const language = useScheduleState((s) => s.language);
+  // Re-render on any change to what's placed / how big the schedule is.
+  const progressKey = useScheduleState((s) => {
+    const p = getScheduleProgress(s);
+    return `${p.placed}/${p.total}`;
+  });
+  const [placed, total] = progressKey.split("/").map(Number);
+  // Wide (landscape) pages get the full width; the Save & download panel
+  // slides in over them on demand.
+  const landscape = isLandscapeType(scheduleTypeForFit);
+  const [panelOpen, setPanelOpen] = useState(false);
+  useEffect(() => { setPanelOpen(false); }, [landscape]);
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPanelOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panelOpen]);
 
   // Load an existing schedule when opened as /schedule?id=... Nothing read
   // this parameter before, so Open/Edit from My Schedules always landed on an
@@ -393,14 +413,48 @@ export default function ScheduleBuilder() {
          />
        </AppShell>
      ) : (
-       <AppShell
-         sidebar={<CardLibrarySidebar />}
-         rightPanel={<RightPanel />}
-       >
-         <div style={{ zoom: exportingNow ? 1 : fitZoom }}>
-           <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+       <div className="flex flex-col h-dvh overflow-hidden">
+         <BuilderTopBar placed={placed} total={total} />
+         <div className="flex flex-1 min-h-0 overflow-hidden relative">
+           <aside id="library-panel" className="w-[360px] shrink-0 bg-surface border-r border-border flex flex-col overflow-hidden">
+             <CardLibrarySidebar onAddCard={handleClickPlace} />
+           </aside>
+
+           <section className="flex-1 min-w-0 flex flex-col">
+             <BuilderToolbar placed={placed} total={total} landscape={landscape} onOpenPanel={() => setPanelOpen(true)} />
+             <main
+               id="canvas-wrap"
+               className="flex-1 min-h-0 overflow-auto bg-bg-muted flex flex-col items-center p-6 gap-6"
+             >
+               <div style={{ zoom: exportingNow ? 1 : fitZoom }}>
+                 <ScheduleCanvas justDroppedSlot={justDroppedSlot} cardImages={cardImages} />
+               </div>
+             </main>
+           </section>
+
+           {landscape ? (
+             <>
+               <div
+                 aria-hidden
+                 onClick={() => setPanelOpen(false)}
+                 className={`absolute inset-0 z-[60] bg-[rgba(28,27,25,0.28)] transition-opacity duration-200 ${panelOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+               />
+               <aside
+                 aria-label="Save and download"
+                 aria-hidden={!panelOpen}
+                 inert={!panelOpen}
+                 className={`absolute top-0 right-0 bottom-0 w-[330px] z-[70] bg-surface border-l border-border shadow-[-12px_0_40px_rgba(30,42,36,0.18)] transition-transform duration-300 ease-[cubic-bezier(.2,.8,.2,1)] ${panelOpen ? "translate-x-0" : "translate-x-[105%]"}`}
+               >
+                 <RightPanel placed={placed} total={total} onClose={() => setPanelOpen(false)} />
+               </aside>
+             </>
+           ) : (
+             <aside className="w-[300px] shrink-0 bg-surface border-l border-border flex flex-col overflow-hidden">
+               <RightPanel placed={placed} total={total} />
+             </aside>
+           )}
          </div>
-       </AppShell>
+       </div>
      )}
 
       {/* Invisible overlay for dnd-kit collision detection */}
