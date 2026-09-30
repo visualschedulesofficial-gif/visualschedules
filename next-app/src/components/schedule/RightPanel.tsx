@@ -1,13 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useExport } from "@/hooks/useExport";
 import { LANGUAGES, type Language } from "@/lib/constants";
 
 const sectionLabel =
-  "text-[12px] tracking-widest uppercase text-ink-2 block font-medium";
+  "text-[12px] tracking-[.08em] uppercase text-ink-2 font-bold m-0";
 const selectCls =
-  "w-full px-3 py-2 h-[38px] text-[13px] font-medium border border-input-border rounded bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans";
+  "w-full px-3 h-[42px] text-[14px] font-medium border border-input-border rounded-[10px] bg-white text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent font-sans";
+const dlCls =
+  "w-full h-11 rounded-xl border-[1.5px] border-input-border bg-white text-ink text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-surface-hover disabled:text-[#A4ADA0] disabled:border-[#E1E6DC] disabled:cursor-not-allowed disabled:hover:bg-white";
 
 /* Professional line icons (Feather-style) */
 const Icon = {
@@ -77,141 +80,150 @@ const Icon = {
   ),
 };
 
-export function RightPanel() {
+export function RightPanel({ placed, total, onClose }: { placed: number; total: number; onClose?: () => void }) {
   const title = useScheduleState((s) => s.title);
   const pages = useScheduleState((s) => s.pages);
-  const setTitle = useScheduleState((s) => s.setTitle);
   const addPage = useScheduleState((s) => s.addPage);
   const language = useScheduleState((s) => s.language);
-  const setLanguage = useScheduleState((s) => s.setLanguage);
   const labelMode = useScheduleState((s) => s.labelMode);
   const setLabelMode = useScheduleState((s) => s.setLabelMode);
-  const { exportPDF, exportJPEG, exporting } = useExport();
+  const secondLanguage = useScheduleState((s) => s.secondLanguage);
+  const setSecondLanguage = useScheduleState((s) => s.setSecondLanguage);
+  const { exportPDF, exportJPEG, exporting, saveNow } = useExport();
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "signedOut">("idle");
 
+  const bilingual = labelMode === "multi";
+  const empty = placed === 0;
+  const full = total > 0 && placed >= total;
+  const pct = total ? Math.min(100, Math.round((placed / total) * 100)) : 0;
+
+  // If the main language is picked as the second one, move the second away.
+  useEffect(() => {
+    if (bilingual && secondLanguage === language) {
+      setSecondLanguage((language === "en" ? "hi" : "en") as Language);
+    }
+  }, [bilingual, language, secondLanguage, setSecondLanguage]);
+
+  // Anything edited after a save makes "Saved" untrue again.
+  useEffect(() => { setSaveState((s) => (s === "saved" ? "idle" : s)); }, [pages, title]);
+
+  const onSave = async () => {
+    setSaveState("saving");
+    const ok = await saveNow();
+    setSaveState(ok ? "saved" : "signedOut");
+  };
 
   return (
-    <div className="flex flex-col overflow-y-auto h-full">
-      {/* Pages — compact single row */}
-      <section className="p-4 border-b border-border shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <label className={sectionLabel}>Pages</label>
-          <span className="text-[13px] text-ink font-sans font-medium">1 / {pages.length}</span>
-          <button
-            onClick={addPage}
-            className="h-[34px] px-3 rounded border border-weekly-accent bg-white text-accent-strong text-[12px] font-sans font-semibold flex items-center gap-1.5 hover:bg-weekly-accent hover:text-white transition-all"
-          >
-            <Icon.Plus /> Add
+    <div className="flex flex-col h-full overflow-y-auto relative">
+      {onClose && (
+        <button type="button" onClick={onClose} aria-label="Close panel" className="absolute top-2.5 right-2.5 w-9 h-9 rounded-[10px] bg-surface-hover text-[20px] leading-none z-10">
+          ×
+        </button>
+      )}
+
+      <section className="px-5 py-4 border-b border-border space-y-2.5">
+        <h3 className={sectionLabel}>Your schedule</h3>
+        <p className="text-ink-2 text-[14px]"><b className="text-[22px] text-ink mr-1">{placed}</b>of {total} cards added</p>
+        <div className="h-2 rounded-full bg-[#EDF1EA] overflow-hidden">
+          <div className="h-full rounded-full bg-accent-strong transition-[width] duration-300" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-[13px] text-ink-2">Pages: <b className="text-ink">{pages.length}</b></span>
+          <button type="button" onClick={addPage} className="h-8 px-3 rounded-lg border border-input-border bg-white text-accent-strong text-[12.5px] font-semibold flex items-center gap-1.5 hover:bg-surface-hover">
+            <Icon.Plus /> Add page
           </button>
         </div>
       </section>
 
-      {/* Language */}
-      <section className="p-4 border-b border-border shrink-0 space-y-3">
-        <label className={sectionLabel}>Language</label>
-        <div className="flex items-center gap-2">
-          {([["single", "Text"], ["none", "No Text"]] as const).map(([mode, label]) => {
-            const active = (labelMode || "single") === mode
-              || (mode === "single" && (labelMode || "single") !== "none");
-            return (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setLabelMode(mode)}
-                aria-pressed={active}
-                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded text-[13px] font-sans font-semibold transition-all"
-                style={active
-                  ? { background: "var(--accent-strong)", color: "#fff", border: "1px solid var(--accent-strong)" }
-                  : { background: "#fff", color: "var(--ink-2)", border: "1px solid var(--input-border)" }}
-              >
-                <span
-                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0"
-                  style={{ border: `2px solid ${active ? "#fff" : "var(--input-border)"}` }}
-                >
-                  {active && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                </span>
-                {label}
-              </button>
-            );
-          })}
+      <section className="px-5 py-4 border-b border-border space-y-3">
+        <h3 className={sectionLabel}>Card language</h3>
+        <div className="flex items-center justify-between rounded-[10px] bg-bg px-3 py-2.5 text-[13.5px]">
+          <span className="text-ink-2">Main language</span>
+          <b className="text-ink">{LANGUAGES[language as keyof typeof LANGUAGES] || language}</b>
         </div>
-        {(labelMode || "single") !== "none" && (
+        <p className="text-[12px] text-ink-3 -mt-1.5">Change it at the top left.</p>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="peer sr-only"
+            checked={bilingual}
+            onChange={(e) => setLabelMode(e.target.checked ? "multi" : "single")}
+          />
+          <span className="mt-0.5 w-10 h-6 shrink-0 rounded-full bg-[#CDD5C7] relative transition-colors peer-checked:bg-accent-strong peer-focus-visible:ring-2 peer-focus-visible:ring-weekly-accent after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:shadow after:transition-all peer-checked:after:left-[19px]" />
+          <span className="leading-tight">
+            <b className="block text-[14px] text-ink">Bilingual cards</b>
+            <span className="text-[12px] text-ink-3">Show a second language under each card</span>
+          </span>
+        </label>
+        {bilingual && (
           <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language)}
-            className={selectCls}
+            value={secondLanguage}
+            onChange={(e) => setSecondLanguage(e.target.value as Language)}
+            aria-label="Second language"
+            className={`${selectCls} animate-[vsSlideDown_250ms_ease-out]`}
           >
-            {Object.entries(LANGUAGES).map(([code, name]) => (
+            {Object.entries(LANGUAGES).filter(([code]) => code !== language).map(([code, name]) => (
               <option key={code} value={code}>{name}</option>
             ))}
           </select>
         )}
       </section>
 
-      {/* Schedule name */}
-      <section className="p-4 border-b border-border shrink-0">
-        <label className={`${sectionLabel} mb-2.5`}>Schedule name</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full py-2 px-2.5 h-[38px] border border-input-border rounded bg-white font-sans text-[13px] text-ink outline-none focus:ring-2 focus:ring-weekly-accent"
-        />
-      </section>
-
-      {/* Download */}
-      <section className="p-4 shrink-0">
-        <label className={`${sectionLabel} mb-2.5`}>Download</label>
+      <section className="px-5 py-4 space-y-2.5">
+        <h3 className={sectionLabel}>Finish</h3>
         <button
-          onClick={exportJPEG}
-          disabled={exporting}
-          className="w-full text-[12px] py-2.5 px-3 bg-weekly-accent border border-weekly-accent text-white cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-accent-strong-hover hover:border-accent-strong-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+          onClick={onSave}
+          disabled={empty || saveState === "saving"}
+          className={`w-full h-[52px] rounded-[14px] bg-accent-strong text-white font-bold text-[15px] flex items-center justify-center gap-2 hover:bg-accent-hover disabled:bg-[#C9D2C1] disabled:cursor-not-allowed ${full && saveState === "idle" ? "animate-[vsPulse_1.8s_ease-in-out_infinite]" : ""}`}
         >
-          <Icon.Image />
-          {exporting ? "Preparing…" : "Save Image (A4)"}
+          <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10" /></svg>
+          {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved to My Schedules" : "Save schedule"}
         </button>
-        <button
-          onClick={exportPDF}
-          disabled={exporting}
-          className="w-full text-[12px] py-2.5 px-3 bg-[#F4F7EE] border border-weekly-accent text-accent-strong cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 mb-2 rounded hover:bg-[#E8EDE0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Icon.Pdf />
-          {exporting ? "Preparing…" : "Save PDF"}
+        {saveState === "signedOut" && (
+          <p className="text-[12.5px] text-ink-2 bg-[#FFF7E8] border border-[#F1DDB6] rounded-lg px-3 py-2">
+            <a href="/login?next=/schedule" className="font-semibold underline text-ink">Log in</a> to keep it in My Schedules. Downloads work without an account.
+          </p>
+        )}
+        {empty && (
+          <p className="text-[12.5px] text-ink-3 flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+            Add at least 1 card to save or download
+          </p>
+        )}
+        <button onClick={exportJPEG} disabled={exporting || empty} className={dlCls}>
+          <Icon.Image /> {exporting ? "Preparing…" : "Download image"}
         </button>
-        {/* Was permanently disabled. Browsers can't attach a file to a
-            WhatsApp link, so this saves the image first (so it's in their
-            gallery) and then opens WhatsApp for them to attach and send. */}
+        <button onClick={exportPDF} disabled={exporting || empty} className={dlCls}>
+          <Icon.Pdf /> {exporting ? "Preparing…" : "Download PDF (A4)"}
+        </button>
+        {/* Browsers can't attach a file to a WhatsApp link, so this saves
+            the image first and then opens WhatsApp to attach it. */}
         <button
           onClick={async () => {
             try { await exportJPEG(); } catch { return; }
             window.open(
-              "https://wa.me/?text=" +
-                encodeURIComponent(
-                  `Here's our "${title}" visual schedule — made free at https://visualschedule.app`
-                ),
+              "https://wa.me/?text=" + encodeURIComponent(`Here's our "${title}" visual schedule — made free at https://visualschedule.app`),
               "_blank",
               "noopener,noreferrer"
             );
           }}
-          disabled={exporting}
-          className="w-full text-[12px] py-2.5 px-3 bg-[#F4F7EE] border border-weekly-accent text-accent-strong cursor-pointer font-sans font-semibold flex items-center justify-center gap-2 rounded hover:bg-[#E8EDE0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={exporting || empty}
+          className={dlCls}
         >
-          <Icon.WhatsApp />
-          {exporting ? "Preparing…" : "Send on WhatsApp"}
+          <Icon.WhatsApp /> {exporting ? "Preparing…" : "Send on WhatsApp"}
         </button>
       </section>
 
-      {/* Founder note + contact */}
-      <section className="p-4 mt-auto border-t border-border shrink-0">
-        <p className="text-[12px] leading-relaxed text-ink-2 font-sans mb-3">
-          Built by a parent, for parents of autistic and ADHD kids — a free,
-          browser-based visual schedule creator. Print a routine in 2 minutes.
-          Your feedback shapes what gets built next.
+      <section className="px-5 py-4 mt-auto border-t border-border">
+        <p className="text-[12px] leading-relaxed text-ink-3 mb-3">
+          Built by a parent, for parents of autistic and ADHD kids. Your feedback shapes what gets built next.
         </p>
         <a
           href="https://chat.whatsapp.com/F452loR5KUE5RzcffScGw5"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 mb-2 py-2 px-3 rounded bg-accent-soft border border-accent-strong text-[12px] font-sans font-semibold text-[#2D5A2D] no-underline hover:bg-[#DFEAD3] transition-all"
+          className="flex items-center justify-center gap-2 mb-2 py-2 px-3 rounded-lg bg-accent-soft border border-accent-strong text-[12px] font-semibold text-[#2D5A2D] no-underline hover:bg-[#DFEAD3]"
         >
           <Icon.WhatsApp /> Join our WhatsApp community
         </a>
@@ -230,23 +242,16 @@ export function RightPanel() {
               rel={href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
               aria-label={label}
               title={label}
-              className="flex-1 flex items-center justify-center py-2 rounded border border-border bg-white hover:bg-surface-hover transition-all no-underline"
+              className="flex-1 flex items-center justify-center py-2 rounded-lg border border-border bg-white hover:bg-surface-hover no-underline"
               style={{ color: colour }}
             >
               {icon}
             </a>
           ))}
         </div>
-        <p className="text-center mt-3 text-[12px] font-sans text-ink-2">
+        <p className="text-center mt-3 text-[12px] text-ink-3">
           With thanks to{" "}
-          <a
-            href="https://dataorc.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-ink-2 hover:text-ink"
-          >
-            DataOrc
-          </a>
+          <a href="https://dataorc.in" target="_blank" rel="noopener noreferrer" className="underline text-ink-2 hover:text-ink">DataOrc</a>
         </p>
       </section>
     </div>
