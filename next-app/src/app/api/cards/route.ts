@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withEdgeCache } from "@/lib/edge-cache";
 
 function getEnv(): { DB?: any } {
   const symbol = Symbol.for("__cloudflare-context__");
@@ -9,7 +10,11 @@ function getEnv(): { DB?: any } {
 // GET /api/cards — public list of live cards (used by the schedule builder
 // sidebar). Returns DB cards; the client merges these with its static seed
 // cards so both admin-added and built-in cards show.
-export async function GET() {
+export async function GET(request: Request) {
+  return withEdgeCache(request, build);
+}
+
+async function build(): Promise<Response> {
   try {
     const env = getEnv();
     if (!env.DB) {
@@ -60,7 +65,7 @@ export async function GET() {
 
     return NextResponse.json(
       { cards, source: "database", count: cards.length },
-      { headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } }
+      { headers: { "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400" } }
     );
   } catch (err: any) {
     console.error("Public cards fetch error:", err);

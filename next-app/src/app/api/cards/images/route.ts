@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withEdgeCache } from "@/lib/edge-cache";
 
 // GET /api/cards/images — return all card images + any updated translations from D1
 export async function GET(request: NextRequest) {
+  return withEdgeCache(request, build);
+}
+
+async function build(): Promise<Response> {
   try {
     const symbol = Symbol.for("__cloudflare-context__");
     const ctx = (globalThis as any)[symbol];
@@ -37,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ images, labels }, {
-      headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      headers: { "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400" },
     });
   } catch {
     return NextResponse.json({ images: {}, labels: {} });
