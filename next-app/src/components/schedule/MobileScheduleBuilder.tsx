@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { LANGUAGES, GRID_SPECS, type Language, type Gender, type ScheduleType } from "@/lib/constants";
+import { CHARACTER_FACES, LANGUAGES, GRID_SPECS, type Language, type Gender, type ScheduleType } from "@/lib/constants";
 import {
   CATEGORIES,
   ALL_CARDS,
@@ -39,10 +39,10 @@ import type { CardImageMap } from "@/lib/card-data";
 type Step = "layout" | "cards" | "final";
 
 const CHARACTER_OPTIONS: { value: Gender; label: string }[] = [
-  { value: "neutral", label: "Neutral" },
+  { value: "neutral", label: "Glasses" },
   { value: "boy", label: "Boy" },
   { value: "girl", label: "Girl" },
-  { value: "brown", label: "Brown" },
+  { value: "brown", label: "Curly hair" },
 ];
 
 // Mobile-appropriate schedule types (portrait-friendly). Driven by the verified
@@ -873,7 +873,8 @@ export function MobileScheduleBuilder({
                           ? { background: GREEN_SOFT, border: `2.5px solid ${GREEN}` }
                           : { background: GREEN_SOFT, border: `1.5px solid ${BORDER}`, opacity: 0.7 }}
                       >
-                        <FaceIcon variant={o.value} />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={CHARACTER_FACES[o.value]} alt="" className="w-full h-full object-cover object-top bg-white" />
                       </button>
                     );
                   })}

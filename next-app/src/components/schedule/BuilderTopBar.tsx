@@ -5,12 +5,26 @@
 // dark nav so the page gets the height.
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { TopNav } from "@/components/layout/TopNav";
 import { useEffect, useRef, useState } from "react";
 
 type User = { id: string; email: string; role: string };
 
-export function BuilderTopBar({ placed, total }: { placed: number; total: number }) {
-  const full = total > 0 && placed >= total;
+// Site pages (Free Schedules, Blog, …): the same slim bar without steps on
+// desktop; phones keep the app-style TopNav.
+export function SiteTopBar() {
+  return (
+    <>
+      <div className="hidden md:block"><BuilderTopBar /></div>
+      <div className="md:hidden"><TopNav /></div>
+    </>
+  );
+}
+
+export function BuilderTopBar({ placed, total }: { placed?: number; total?: number }) {
+  const showSteps = typeof placed === "number" && typeof total === "number";
+  const full = showSteps && total > 0 && placed >= total;
   return (
     <header className="h-14 shrink-0 bg-white border-b border-border flex items-center relative px-4 z-50">
       <a
@@ -27,6 +41,7 @@ export function BuilderTopBar({ placed, total }: { placed: number; total: number
         <span className="font-serif text-[17px] whitespace-nowrap">Visual Schedules</span>
       </Link>
 
+      {showSteps && (
       <ol className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 m-0 p-0 list-none" aria-label="Progress">
         <Step n={1} label="Choose type" state="done" />
         <Sep done />
@@ -34,8 +49,10 @@ export function BuilderTopBar({ placed, total }: { placed: number; total: number
         <Sep done={full} />
         <Step n={3} label="Save & download" state={full ? "on" : "todo"} />
       </ol>
+      )}
 
       <div className="ml-auto flex items-center gap-1">
+        {!showSteps && <NavLink href="/schedule" label="Create" icon={<path d="M12 5v14M5 12h14" />} />}
         <NavLink href="/downloads" label="Free Schedules" icon={<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11" />} />
         <NavLink href="/blog" label="Blog" icon={<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h5" />} />
         <TextSize />
@@ -65,8 +82,10 @@ function Sep({ done }: { done: boolean }) {
 }
 
 function NavLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+  const pathname = usePathname() || "";
+  const on = pathname === href || (href !== "/schedule" && pathname.startsWith(href));
   return (
-    <Link href={href} className="flex items-center gap-1.5 h-9 px-3 rounded-[10px] no-underline text-ink-2 font-semibold text-[13.5px] hover:bg-surface-hover hover:text-ink whitespace-nowrap">
+    <Link href={href} aria-current={on ? "page" : undefined} className={`flex items-center gap-1.5 h-9 px-3 rounded-[10px] no-underline font-semibold text-[13.5px] whitespace-nowrap ${on ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-surface-hover hover:text-ink"}`}>
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
       {label}
     </Link>

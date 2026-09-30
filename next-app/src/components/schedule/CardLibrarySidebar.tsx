@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { ALL_CARDS, getCardLabel, isCharacterCard, getCardImageUrl, setRuntimeCards, type ParsedCard } from "@/lib/card-data";
-import { LANGUAGES, languageLabel, type Language, type Gender } from "@/lib/constants";
+import { LANGUAGES, languageLabel, CHARACTER_FACES, type Language, type Gender } from "@/lib/constants";
 
 const NON_CHARACTER_CATEGORIES = ["food", "routines", "activities", "rewards", "snacks", "meals", "place"];
 const PAID_CATEGORIES = ["social", "art"];
@@ -481,9 +481,7 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
           <div className="flex gap-1.5">
             {(["neutral", "boy", "girl", "brown"] as Gender[]).map((g) => {
               const active = gender === g;
-              const faceImg = faceCard
-                ? getCardImageUrl(faceCard.id, g) || getCardImageUrl(faceCard.id, "neutral")
-                : null;
+              const faceImg = CHARACTER_FACES[g];
               return (
                 <button
                   key={g}
@@ -493,8 +491,8 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
                     setGender(g);
                     setForceUpdate((prev) => prev + 1);
                   }}
-                  aria-label={g}
-                  title={g}
+                  aria-label={GENDER_LABELS[g]}
+                  title={GENDER_LABELS[g]}
                   className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
                     active
                       ? "border-accent-strong ring-2 ring-accent-soft"
@@ -503,7 +501,7 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
                 >
                   {faceImg ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={faceImg} alt={g} className="w-[200%] h-[200%] max-w-none object-cover -translate-x-1/4" />
+                    <img src={faceImg} alt={GENDER_LABELS[g]} className="w-full h-full object-cover object-top bg-white" />
                   ) : (
                     <span className="text-[12px] font-sans text-ink-3 uppercase">{g[0]}</span>
                   )}
