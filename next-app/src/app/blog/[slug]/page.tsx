@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { TopNav } from "@/components/layout/TopNav";
+import { SiteTopBar } from "@/components/schedule/BuilderTopBar";
 import { getEnv } from "@/lib/admin-auth";
 import { renderMarkdown } from "@/lib/markdown";
 
@@ -48,8 +48,8 @@ export default async function BlogPostPage(
   if (!post) notFound();
 
   return (
-    <div className="h-full flex flex-col bg-bg">
-      <TopNav />
+    <div className="h-dvh flex flex-col bg-bg">
+      <SiteTopBar />
       <main className="flex-1 overflow-y-auto">
         <article className="max-w-[720px] mx-auto px-4 py-8">
           <Link href="/blog" className="text-[12px] text-[#4A5A3E] hover:underline">← All posts</Link>
