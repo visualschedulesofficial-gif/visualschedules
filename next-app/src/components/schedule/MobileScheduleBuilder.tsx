@@ -31,6 +31,7 @@ import { track } from "@/lib/track";
 import { BuilderTour } from "@/components/onboarding/BuilderTour";
 import { useExport } from "@/hooks/useExport";
 import { DownloadSheet } from "@/components/schedule/DownloadSheet";
+import { applyPrefsToNewSchedule } from "@/lib/prefs";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { A4_PORTRAIT } from "@/lib/constants";
 import type { CardImageMap } from "@/lib/card-data";
@@ -488,6 +489,7 @@ export function MobileScheduleBuilder({
     if (isNewScheduleRef.current) {
       // Blank slate: clears title, pages, type, language and character.
       useScheduleState.getState().reset();
+      applyPrefsToNewSchedule();
       isNewScheduleRef.current = false;
     }
     useScheduleState.setState({ id: scheduleId });
