@@ -1,5 +1,6 @@
 "use client";
 
+import { shrinkFile } from "@/lib/image-resize";
 import { useState, useRef, useEffect } from "react";
 import { type ParsedCard, isCharacterCard } from "@/lib/card-data";
 
@@ -176,7 +177,7 @@ export function EditCardForm({ card, onClose, onCardUpdated }: EditCardFormProps
         if (!file) continue; // Skip if no new image
 
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", await shrinkFile(file));
         formData.append("variant", variant);
 
         // Use the schema-consistent endpoint (binding R2, columns r2_key/url).

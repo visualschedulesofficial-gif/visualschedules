@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { getCardLabel } from "@/lib/card-data";
+import { shrinkFile, shrinkImage } from "@/lib/image-resize";
 import { AddCardForm } from "./AddCardForm";
 import { EditCardForm } from "./EditCardForm";
 
@@ -55,7 +56,7 @@ function ImageSlot({ cardId, variant, label, colorClass, existingUrl }: {
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", await shrinkFile(file));
       formData.append("variant", variant);
       const res = await fetch(`/api/admin/cards/${cardId}/images`, { method: "POST", body: formData });
       if (res.ok) {
@@ -229,10 +230,13 @@ export default function AdminCardsPage() {
               <span className="text-[#9A6B12]">{paidCount} paid</span>
             </p>
           </div>
+          <div className="flex items-center gap-2">
+          <OptimizeImagesButton />
           <button onClick={() => setShowAddForm(true)}
             className="px-4 py-2 bg-[#7A8F5E] text-white text-[13px] font-medium hover:bg-[#6A7F4E] transition-colors">
             + Add Card
           </button>
+          </div>
         </div>
 
         <div className="flex gap-2 flex-wrap">
@@ -302,6 +306,69 @@ export default function AdminCardsPage() {
         <EditCardForm card={editingCard} onClose={() => setEditingCard(null)}
           onCardUpdated={() => { setEditingCard(null); loadCards(); }} />
       )}
+    </div>
+  );
+}
+
+// One-off tidy-up for pictures uploaded before uploads were shrunk: re-saves
+// every card picture as a smaller WebP. Safe to run again — ones already
+// small are skipped.
+function OptimizeImagesButton() {
+  const [state, setState] = useState<{ done: number; total: number; saved: number; failed: number } | null>(null);
+  const [running, setRunning] = useState(false);
+
+  async function run() {
+    if (!confirm("Shrink every card picture so the app loads faster? This takes a few minutes; keep this tab open.")) return;
+    setRunning(true);
+    try {
+      const data = await fetch(`/api/cards/images?t=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
+      const jobs: { cardId: string; variant: string; url: string }[] = [];
+      for (const [cardId, variants] of Object.entries((data.images || {}) as Record<string, Record<string, string>>)) {
+        for (const [variant, url] of Object.entries(variants)) {
+          if (["neutral", "boy", "girl", "brown"].includes(variant)) jobs.push({ cardId, variant, url });
+        }
+      }
+      let done = 0, saved = 0, failed = 0;
+      setState({ done, total: jobs.length, saved, failed });
+      const worker = async () => {
+        while (jobs.length) {
+          const job = jobs.shift()!;
+          try {
+            const blob = await fetch(job.url).then((r) => (r.ok ? r.blob() : Promise.reject(r.status)));
+            const small = blob.type === "image/webp" && blob.size < 150_000 ? blob : await shrinkImage(blob, 800);
+            if (small !== blob && small.size < blob.size * 0.8) {
+              const fd = new FormData();
+              fd.append("file", new File([small], `${job.variant}.webp`, { type: small.type }));
+              fd.append("variant", job.variant);
+              const res = await fetch(`/api/admin/cards/${job.cardId}/images`, { method: "POST", body: fd });
+              if (res.ok) saved += blob.size - small.size; else failed++;
+            }
+          } catch {
+            failed++;
+          }
+          done++;
+          setState({ done, total: done + jobs.length, saved, failed });
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const mb = (n: number) => (n / 1024 / 1024).toFixed(1);
+  return (
+    <div className="flex items-center gap-2">
+      {state && (
+        <span className="text-[11px] text-ink-3">
+          {state.done}/{state.total}{state.saved ? ` · saved ${mb(state.saved)} MB` : ""}{state.failed ? ` · ${state.failed} failed` : ""}
+          {!running && state.done === state.total ? " · done" : ""}
+        </span>
+      )}
+      <button onClick={run} disabled={running}
+        className="px-3 py-2 border border-[#7A8F5E] text-[#4A5A3E] text-[13px] font-medium hover:bg-[#EAF1E2] disabled:opacity-60">
+        {running ? "Shrinking…" : "Shrink all images"}
+      </button>
     </div>
   );
 }

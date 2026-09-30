@@ -1,5 +1,6 @@
 "use client";
 
+import { shrinkFile } from "@/lib/image-resize";
 import { useState, useRef, useEffect } from "react";
 
 interface Category { id: string; name: string; }
@@ -86,7 +87,7 @@ export function AddCardForm({ onClose, onCardAdded }: AddCardFormProps) {
       for (const [variant, file] of Object.entries(imagesToUpload)) {
         if (!file) continue;
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", await shrinkFile(file));
         formData.append("variant", variant);
         const uploadRes = await fetch(`/api/admin/cards/${cardId}/images`, { method: "POST", body: formData });
         if (!uploadRes.ok) {
