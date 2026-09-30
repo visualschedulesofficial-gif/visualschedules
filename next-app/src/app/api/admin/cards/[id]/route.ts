@@ -1,127 +1,91 @@
 import { NextRequest, NextResponse } from "next/server";
 
-function getEnv(): { DB?: any; R2?: any } {
+function getEnv(): { R2?: any; DB?: any } {
   const symbol = Symbol.for("__cloudflare-context__");
   const ctx = (globalThis as any)[symbol];
   return ctx?.env || {};
 }
 
-// DELETE /api/admin/cards/:id — delete a card and its images
-export async function DELETE(
+// POST /api/admin/cards/:id/images — upload an image variant to R2
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const env = getEnv();
-
-  if (!env.DB) {
-    return NextResponse.json({ error: "Database not available" }, { status: 503 });
-  }
+  const { id: cardId } = await params;
 
   try {
-    // Delete images from R2
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const variant = formData.get("variant") as string | null;
+
+    if (!file || !variant) {
+      return NextResponse.json({ error: "file and variant are required" }, { status: 400 });
+    }
+
+    if (!["neutral", "boy", "girl", "brown"].includes(variant)) {
+      return NextResponse.json({ error: "variant must be neutral, boy, girl, or brown" }, { status: 400 });
+    }
+
+    const buffer = await file.arrayBuffer();
+    const contentType = file.type || "image/webp";
+    const ext = contentType.includes("png") ? "png" : contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : "webp";
+    const r2Key = `cards/${cardId}/${variant}-${Date.now().toString(36)}.${ext}`;
+
+    const env = getEnv();
+
+    // Upload to R2
     if (env.R2) {
-      const images = await env.DB.prepare(
-        `SELECT r2_key FROM card_images WHERE card_id = ?`
-      ).bind(id).all();
-
-      for (const img of (images.results || [])) {
-        await env.R2.delete((img as any).r2_key).catch(() => {});
-      }
+      await env.R2.put(r2Key, buffer, {
+        httpMetadata: { contentType },
+      });
+    } else {
+      console.log(`[Upload] R2 binding not available, would upload to: ${r2Key}`);
     }
 
-    // Delete from D1 (cascades handle card_images, card_translations)
-    await env.DB.prepare(`DELETE FROM card_images WHERE card_id = ?`).bind(id).run();
-    await env.DB.prepare(`DELETE FROM card_translations WHERE card_id = ?`).bind(id).run();
-    await env.DB.prepare(`DELETE FROM cards WHERE id = ?`).bind(id).run();
+    const R2_PUBLIC = "/api/images";
+    const publicUrl = `${R2_PUBLIC}/${r2Key}`;
 
-    return NextResponse.json({ success: true, deleted: id });
+    // Store in D1
+    if (env.DB) {
+      await env.DB.prepare(
+        `INSERT OR REPLACE INTO card_images (card_id, variant, r2_key, url) VALUES (?, ?, ?, ?)`
+      ).bind(cardId, variant, r2Key, publicUrl).run();
+    }
+
+    return NextResponse.json({
+      cardId,
+      variant,
+      r2Key,
+      url: publicUrl,
+      size: file.size,
+    }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Delete failed" }, { status: 500 });
+    console.error("[Upload Error]", err?.message || err);
+    return NextResponse.json({ error: "Upload failed: " + (err?.message || "unknown") }, { status: 500 });
   }
 }
 
-// PUT /api/admin/cards/:id — update card name/category (kept for compatibility)
-export async function PUT(
+// GET /api/admin/cards/:id/images — list image variants for a card
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: cardId } = await params;
   const env = getEnv();
 
-  if (!env.DB) {
-    return NextResponse.json({ error: "Database not available" }, { status: 503 });
+  if (env.DB) {
+    const result = await env.DB.prepare(
+      `SELECT variant, r2_key, url FROM card_images WHERE card_id = ?`
+    ).bind(cardId).all();
+
+    const R2_PUBLIC = "/api/images";
+    const images = (result.results || []).map((img: any) => ({
+      ...img,
+      url: `${R2_PUBLIC}/${img.r2_key}`,
+    }));
+
+    return NextResponse.json({ cardId, images });
   }
 
-  try {
-    const { name, categoryId } = await request.json();
-
-    if (name) {
-      await env.DB.prepare(`DELETE FROM card_translations WHERE card_id = ? AND lang = 'en'`).bind(id).run();
-      await env.DB.prepare(
-        `INSERT INTO card_translations (card_id, lang, label) VALUES (?, 'en', ?)`
-      ).bind(id, name).run();
-    }
-
-    if (categoryId) {
-      await env.DB.prepare(
-        `UPDATE cards SET category_id = ? WHERE id = ?`
-      ).bind(categoryId, id).run();
-    }
-
-    return NextResponse.json({ success: true, id });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Update failed" }, { status: 500 });
-  }
-}
-
-// PATCH /api/admin/cards/:id — full edit: icon, category, and EN/HI labels.
-// Used by the Edit Card form. Replaces translation rows so repeated edits
-// never create duplicates.
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const env = getEnv();
-
-  if (!env.DB) {
-    return NextResponse.json({ error: "Database not available" }, { status: 503 });
-  }
-
-  try {
-    const { icon, categoryId, translations } = await request.json();
-
-    // Confirm the card exists
-    const existing = await env.DB.prepare(`SELECT id FROM cards WHERE id = ?`).bind(id).first();
-    if (!existing) {
-      return NextResponse.json({ error: `Card "${id}" not found` }, { status: 404 });
-    }
-
-    if (typeof icon === "string" && icon) {
-      await env.DB.prepare(`UPDATE cards SET icon = ? WHERE id = ?`).bind(icon, id).run();
-    }
-
-    if (typeof categoryId === "string" && categoryId) {
-      await env.DB.prepare(`UPDATE cards SET category_id = ? WHERE id = ?`).bind(categoryId, id).run();
-    }
-
-    if (translations && typeof translations === "object") {
-      for (const [lang, label] of Object.entries(translations)) {
-        if (typeof label !== "string" || !label) continue;
-        // Replace any existing row(s) for this language with one clean row
-        await env.DB.prepare(
-          `DELETE FROM card_translations WHERE card_id = ? AND lang = ?`
-        ).bind(id, lang).run();
-        await env.DB.prepare(
-          `INSERT INTO card_translations (card_id, lang, label) VALUES (?, ?, ?)`
-        ).bind(id, lang, label).run();
-      }
-    }
-
-    return NextResponse.json({ success: true, id });
-  } catch (err: any) {
-    console.error("Card update (PATCH) error:", err);
-    return NextResponse.json({ error: err?.message || "Update failed" }, { status: 500 });
-  }
+  return NextResponse.json({ cardId, images: [] });
 }
