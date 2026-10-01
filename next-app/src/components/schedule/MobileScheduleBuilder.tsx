@@ -35,7 +35,8 @@ import { downloadFiles } from "@/hooks/useExport";
 import { getDlFormat } from "@/lib/prefs";
 import { applyPrefsToNewSchedule } from "@/lib/prefs";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
-import { A4_PORTRAIT } from "@/lib/constants";
+import { A4_PORTRAIT, CANVAS_STRINGS } from "@/lib/constants";
+import { ftColumnCount, ftKeys, ftBoardsPerPage } from "@/lib/first-then";
 import type { CardImageMap } from "@/lib/card-data";
 
 type Step = "layout" | "cards" | "final";
@@ -381,8 +382,13 @@ export function MobileScheduleBuilder({
     // Both of these render CutoutStrip with 9 cards — First/Then reported 0
     // (so no count showed at all) and I Want reported 6, neither matching
     // what's actually on the page.
-    if (scheduleType === "iwant" || scheduleType === "firstthen") {
+    if (scheduleType === "iwant") {
       return { placedCount: (p?.columns?.["cutout"] || []).length, totalSlots: 9 };
+    }
+    if (scheduleType === "firstthen") {
+      const n = ftColumnCount(useScheduleState.getState().ftStyle);
+      const placed = Object.values(p?.columns || {}).reduce((a: number, c: any) => a + (c || []).length, 0);
+      return { placedCount: placed, totalSlots: n * ftBoardsPerPage(n) };
     }
     return { placedCount: 0, totalSlots: 0 };
   }, [pages, scheduleType, miniCardCount]);
@@ -753,7 +759,20 @@ export function MobileScheduleBuilder({
           Your schedule
         </SectionLabel>
 
-        <div className="space-y-2.5">
+        {scheduleType === "firstthen" && (
+          <MobileFirstThen
+            onAdd={() => setShowAddStep(true)}
+            resolve={(cardId) => {
+              const card = findCard(cardId);
+              return {
+                label: card ? getCardLabel(card, language) : cardId,
+                img: card ? (getCardImageUrl(card.id, getCardGender(card, gender)) || getCardImageUrl(card.id, "neutral")) : null,
+              };
+            }}
+          />
+        )}
+
+        <div className={`space-y-2.5 ${scheduleType === "firstthen" ? "hidden" : ""}`}>
           {stepList.map((s, i) => (
             <div key={`${s.pageIdx}-${s.slotKey}-${s.cardIdx}-${i}`}
               className="flex items-center gap-3 p-3 rounded-2xl"
@@ -992,6 +1011,77 @@ export function MobileScheduleBuilder({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// First/Then on the phone: the real boards (First | Then side by side), not a
+// list. Shows filled boards plus the next one to fill; tap + to add.
+function MobileFirstThen({ onAdd, resolve }: { onAdd: () => void; resolve: (cardId: string) => { label: string; img: string | null } }) {
+  const ftStyle = useScheduleState((s) => s.ftStyle);
+  const language = useScheduleState((s) => s.language);
+  const columns = useScheduleState((s) => (s.pages[0] as any)?.columns || {}) as Record<string, { cardId: string }[]>;
+  const removeCard = useScheduleState((s) => s.removeCard);
+  const n = ftColumnCount(ftStyle);
+  const t = CANVAS_STRINGS[language] || CANVAS_STRINGS.en;
+  const labels = n === 4 ? [t.first, t.next, t.then, t.last] : n === 3 ? [t.first, t.then, t.now] : [t.first, t.then];
+  const rows = ftKeys(n);
+  const filled = (k: string) => (columns[k] || []).length > 0;
+  let show = 1;
+  rows.forEach((keys, b) => { if (keys.some(filled)) show = Math.max(show, b + 1); });
+  if (show < rows.length && rows[show - 1].every(filled)) show += 1;
+  const nextEmpty = rows.flat().find((k) => !filled(k));
+
+  return (
+    <div className="flex flex-col gap-3">
+      {rows.slice(0, show).map((keys, b) => (
+        <div key={b} className="flex flex-col gap-1.5">
+          {show > 1 && <span className="text-[12px] font-bold tracking-[.06em] uppercase" style={{ color: FAINT }}>Board {b + 1}</span>}
+          <div className={`grid gap-2.5 ${n === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+            {keys.map((k, c) => {
+              const ref = (columns[k] || [])[0];
+              const info = ref ? resolve(ref.cardId) : null;
+              return (
+                <div key={k} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: "#fff", border: `1px solid ${GREEN_BORDER}` }}>
+                  <div className="text-center text-white font-bold py-1.5" style={{ background: "#5E7A4A", fontSize: n === 3 ? 13 : 15 }}>{labels[c]}</div>
+                  {info ? (
+                    <div className="relative flex flex-col items-center p-2 pb-2.5">
+                      <div className="w-full aspect-square flex items-center justify-center">
+                        {info.img ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={info.img} alt="" className="w-full h-full object-contain" />
+                        ) : null}
+                      </div>
+                      <span className="mt-1 text-center font-bold leading-tight line-clamp-2" style={{ color: INK, fontSize: n === 3 ? 12.5 : 14 }}>{info.label}</span>
+                      <button
+                        onClick={() => removeCard(0, k, 0)}
+                        aria-label={`Remove ${info.label}`}
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{ background: "rgba(255,255,255,.92)", border: `1px solid ${BORDER}` }}
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#C0463F" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={onAdd}
+                      aria-label={`Add ${labels[c]} card`}
+                      className={`m-2 aspect-square rounded-xl flex flex-col items-center justify-center gap-1 ${k === nextEmpty ? "vs-next" : ""}`}
+                      style={{ border: `2px dashed ${GREEN_BORDER}`, color: GREEN }}
+                    >
+                      <span className="w-9 h-9 rounded-full flex items-center justify-center text-white text-[20px] font-bold" style={{ background: GREEN }}>+</span>
+                      {k === nextEmpty && <span className="text-[12px] font-semibold">Tap to add</span>}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      <p className="text-[12px] text-center m-0" style={{ color: FAINT }}>
+        The printed page has {rows.length} boards with cut lines, so you can cut them out.
+      </p>
     </div>
   );
 }
