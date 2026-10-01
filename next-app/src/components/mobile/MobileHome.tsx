@@ -21,7 +21,7 @@ import {
   findCard,
   type ParsedCard,
 } from "@/lib/card-data";
-import { getPrefs, setPrefs, type Prefs } from "@/lib/prefs";
+import { getPrefs, setPrefs, getDlFormat, type Prefs } from "@/lib/prefs";
 import { scheduleCardIds, readDone } from "@/lib/schedule-steps";
 
 type User = { id: string; email: string | null; role: string };
@@ -144,6 +144,26 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
     return () => window.removeEventListener("focus", load);
   }, [latest?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const stepDone = latestCards.map((c, i) => !!done[`${c}-${i}`]);
+  // Same done-map "Show to child" uses, so both stay in step.
+  const writeDone = (next: Record<string, boolean>) => {
+    if (!latest) return;
+    setDone(next);
+    try { localStorage.setItem(`vs_done_${latest.id}`, JSON.stringify(next)); } catch {}
+  };
+  const stepForward = () => {
+    const i = stepDone.findIndex((d) => !d);
+    if (i === -1) return;
+    writeDone({ ...done, [`${latestCards[i]}-${i}`]: true });
+  };
+  const stepBack = () => {
+    let i = stepDone.findIndex((d) => !d);
+    i = (i === -1 ? latestCards.length : i) - 1;
+    if (i < 0) return;
+    const next = { ...done };
+    delete next[`${latestCards[i]}-${i}`];
+    writeDone(next);
+  };
+  const [touchX, setTouchX] = useState<number | null>(null);
   const doneCount = stepDone.filter(Boolean).length;
   const nowIdx = stepDone.findIndex((d) => !d);
 
@@ -258,7 +278,18 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
                     ))}
                   </div>
                 )}
-                <button type="button" onClick={() => router.push(`/schedule/${latest.id}/do`)} className="flex gap-4 items-center text-left" aria-label={`Show ${latest.title} to child`}>
+                <div
+                  className="flex items-center gap-2"
+                  onTouchStart={(e) => setTouchX(e.touches[0].clientX)}
+                  onTouchEnd={(e) => {
+                    if (touchX == null) return;
+                    const dx = e.changedTouches[0].clientX - touchX;
+                    if (dx < -50) stepForward();
+                    else if (dx > 50) stepBack();
+                    setTouchX(null);
+                  }}
+                >
+                  <button type="button" onClick={() => router.push(`/schedule/${latest.id}/do`)} className="flex-1 min-w-0 flex gap-4 items-center text-left" aria-label={`Show ${latest.title} to child`}>
                   <Thumb key={`h-${assetsVersion}`} src={cardImg(latestCards[nowIdx === -1 ? 0 : nowIdx] || latest.coverCardId, latest.gender)} size={112} tint={TINTS[1]} radius={20} />
                   <span className="min-w-0">
                     <span className="block text-[13px] font-bold tracking-[.08em] uppercase text-accent-strong">
@@ -269,6 +300,19 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
                     </span>
                   </span>
                 </button>
+                  {latestCards.length > 0 && (
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <button type="button" onClick={stepForward} disabled={nowIdx === -1} aria-label="Mark done, next step"
+                        className="w-11 h-11 rounded-full bg-accent-strong text-white flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                      </button>
+                      <button type="button" onClick={stepBack} disabled={doneCount === 0} aria-label="Back one step"
+                        className="w-11 h-11 rounded-full bg-[#F4F3EE] flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#1E2A24" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {nowIdx > -1 && latestCards[nowIdx + 1] && (
                   <div className="flex items-center gap-2.5 bg-[#F4F3EE] rounded-2xl px-3 py-2.5 text-[16px]">
                     <Thumb key={`n-${assetsVersion}`} src={cardImg(latestCards[nowIdx + 1], latest.gender)} size={36} tint={TINTS[0]} radius={10} />
@@ -515,22 +559,20 @@ function LibraryTab({ prefs, updatePrefs }: { prefs: Prefs; updatePrefs: (p: Par
   const track = (fileId: string, kind: "view" | "download") =>
     fetch("/api/downloads/track", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileId, kind }) }).catch(() => {});
 
-  // Phones: hand the file to the share sheet (Save to Photos / Files /
-  // WhatsApp); elsewhere, or if that isn't possible, open it to save.
-  const download = async (file: DFile, title: string) => {
-    track(file.id, "download");
-    try {
-      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
-      if (nav.canShare && nav.share) {
-        const blob = await fetch(file.file_url).then((r) => (r.ok ? r.blob() : Promise.reject()));
-        const ext = (blob.type.split("/")[1] || "pdf").replace("jpeg", "jpg");
-        const f = new File([blob], `${title.replace(/[^\w\u0900-\u097F -]+/g, "").trim() || "schedule"}.${ext}`, { type: blob.type });
-        if (nav.canShare({ files: [f] })) { await nav.share({ files: [f], title }); return; }
-      }
-    } catch (e) {
-      if ((e as { name?: string })?.name === "AbortError") return;
-    }
-    window.open(file.file_url, "_blank", "noopener");
+  // A plain link the parent taps — reliable on every phone (the old
+  // fetch-then-share path failed for files on other domains). Uses their
+  // remembered format: image unless they last chose PDF.
+  const dlUrl = (file: DFile) => {
+    const wantPdf = getDlFormat() === "pdf";
+    const isPdf = /\.pdf($|\?)/i.test(file.file_url);
+    const url = wantPdf || !file.preview_url ? file.file_url : isPdf ? file.preview_url : file.file_url;
+    // Google Drive "view" links → direct download.
+    const m = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    return m ? `https://drive.google.com/uc?export=download&id=${m[1]}` : url;
+  };
+  const dlName = (title: string, url: string) => {
+    const ext = (url.split("?")[0].match(/\.(\w{3,4})$/)?.[1] || "jpg").toLowerCase();
+    return `${title.replace(/[^\w\u0900-\u097F -]+/g, "").trim() || "schedule"}.${ext}`;
   };
 
   const DlIcon = ({ c = "#1E2A24" }: { c?: string }) => (
@@ -568,10 +610,11 @@ function LibraryTab({ prefs, updatePrefs }: { prefs: Prefs; updatePrefs: (p: Par
               </button>
               <div className="flex items-center gap-1 pl-1.5 pt-2">
                 <span className="flex-1 min-w-0 text-[15px] leading-tight truncate">{item.title}</span>
-                <button type="button" onClick={() => download(file, item.title)} aria-label={`Download ${item.title}`}
+                <a href={dlUrl(file)} download={dlName(item.title, dlUrl(file))} target="_blank" rel="noopener"
+                  onClick={() => track(file.id, "download")} aria-label={`Download ${item.title}`}
                   className="w-10 h-10 -my-1 rounded-xl flex items-center justify-center shrink-0 active:bg-accent-soft">
                   <DlIcon />
-                </button>
+                </a>
               </div>
             </div>
           ))}
@@ -623,10 +666,11 @@ function LibraryTab({ prefs, updatePrefs }: { prefs: Prefs; updatePrefs: (p: Par
           </div>
           <div className="flex gap-2.5">
             <button type="button" onClick={() => setOpen(null)} className="min-h-[52px] px-5 rounded-2xl font-semibold bg-white border-[1.5px] border-[#C9CCBF]">Cancel</button>
-            <button type="button" onClick={() => download(open.file, open.item.title)}
-              className="flex-1 min-h-[52px] rounded-2xl bg-accent-strong text-white font-semibold text-[16px] flex items-center justify-center gap-2">
+            <a href={dlUrl(open.file)} download={dlName(open.item.title, dlUrl(open.file))} target="_blank" rel="noopener"
+              onClick={() => track(open.file.id, "download")}
+              className="flex-1 min-h-[52px] rounded-2xl bg-accent-strong text-white font-semibold text-[16px] flex items-center justify-center gap-2 no-underline">
               <DlIcon c="#fff" /> Download
-            </button>
+            </a>
           </div>
         </Sheet>
       )}
