@@ -1,4 +1,5 @@
 import { DAY_KEYS, getDailySpec } from "@/lib/constants";
+import { ftBoardsPerPage } from "@/lib/first-then";
 import type { useScheduleState } from "@/hooks/useScheduleState";
 
 type State = ReturnType<typeof useScheduleState.getState>;
@@ -21,7 +22,7 @@ export function getScheduleProgress(s: State): { placed: number; total: number }
       case "daily": total += getDailySpec(s.cardType, s.gridCols).slots; break;
       case "mini": total += s.miniCardCount; break;
       case "iwant": total += 9; break;
-      case "firstthen": total += ftN === 4 ? 16 : 9; break;
+      case "firstthen": total += ftN * ftBoardsPerPage(ftN); break;
       case "weekly": total += weekCols * 5; break;
       case "custom": total += s.customColNames.length * 5; break;
       case "timetable": total += 2 * 12; break;
