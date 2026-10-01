@@ -18,6 +18,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { openScheduleForEdit } from "@/lib/open-for-edit";
+import { ftRank } from "@/lib/first-then";
 import {
   getRuntimeCards,
   setRuntimeCards,
@@ -71,8 +72,8 @@ function flattenPages(pages: any[]): CardRef[] {
     }
     if (p?.columns) {
       const keys = Object.keys(p.columns).sort(
-        (a, b) => (colOrder.indexOf(a) === -1 ? 999 : colOrder.indexOf(a)) -
-                  (colOrder.indexOf(b) === -1 ? 999 : colOrder.indexOf(b))
+        (a, b) => (ftRank(a) ?? (colOrder.indexOf(a) === -1 ? 999 : colOrder.indexOf(a))) -
+                  (ftRank(b) ?? (colOrder.indexOf(b) === -1 ? 999 : colOrder.indexOf(b)))
       );
       keys.forEach((k) => (p.columns[k] || []).forEach((c: CardRef) => { if (c?.cardId) out.push(c); }));
     }
