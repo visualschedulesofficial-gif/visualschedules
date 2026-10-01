@@ -810,15 +810,21 @@ function FirstThenSlot({ slotKey, colName, pageIdx, labelPx, onEmptySlotTap }: {
   const imageUrl = card ? getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral") : null;
 
   return (
-    <div className="flex flex-col min-w-0 min-h-0 rounded-[10px] border border-[#C9D5BC] overflow-hidden bg-white">
+    // Colours are inline: the image exporter misses some arbitrary-value
+    // classes, which dropped the green labels and blackened the borders.
+    <div className="flex flex-col min-w-0 min-h-0 rounded-[10px] overflow-hidden" style={{ border: "1px solid #C9D5BC", background: "#fff" }}>
       {/* Slim green label instead of the old tall band with rules. */}
-      <div className="shrink-0 bg-[#5E7A4A] text-white text-center font-serif leading-none py-[7px]" style={{ fontSize: Math.round(labelPx * 1.05) }}>
+      <div className="shrink-0 text-center font-serif leading-none py-[7px]" style={{ fontSize: Math.round(labelPx * 1.05), background: "#5E7A4A", color: "#fff" }}>
         {colName}
       </div>
       <div ref={setNodeRef} className={`flex-1 min-h-0 flex flex-col transition-colors duration-150 ${isOver ? "bg-[#EFF2E8]" : ""}`}>
         {card ? (
           <div className="flex-1 min-h-0 flex flex-col relative group">
-            <div className="flex-1 min-h-0 flex items-center justify-center p-2">
+            {/* The exporter sizes each picture to its parent box, so the
+                padding lives on an outer wrapper — otherwise the picture
+                grows over the card name in the download. */}
+            <div className="flex-1 min-h-0 p-2 flex">
+              <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center overflow-hidden">
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
@@ -827,6 +833,7 @@ function FirstThenSlot({ slotKey, colName, pageIdx, labelPx, onEmptySlotTap }: {
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               )}
+              </div>
             </div>
             <LabelStrip className="shrink-0 px-2 pb-2 pt-0.5 text-center">
               <span className="text-ink-2 font-serif leading-tight break-words line-clamp-2 block" style={{ fontSize: labelPx }}>
@@ -868,7 +875,7 @@ function ScissorLine() {
         <line x1="14.47" y1="14.48" x2="20" y2="20" />
         <line x1="8.12" y1="8.12" x2="12" y2="12" />
       </svg>
-      <div className="flex-1 border-t-2 border-dashed border-[#C5D2B8]" />
+      <div className="flex-1" style={{ borderTop: "2px dashed #C5D2B8" }} />
     </div>
   );
 }
