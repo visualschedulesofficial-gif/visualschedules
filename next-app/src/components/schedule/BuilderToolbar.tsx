@@ -1,10 +1,11 @@
 "use client";
 
 // Row above the page: schedule type + the one setting that goes with it,
-// pages, bilingual cards, and Save & download on the right.
+// pages, bilingual cards, and a one-click Save & download on the right.
 
 import { useEffect, useState } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
+import { useExport } from "@/hooks/useExport";
 import { LANGUAGES, LANGUAGE_NATIVE, type Language, type ScheduleType } from "@/lib/constants";
 import type { PageData } from "@/types/schedule";
 
@@ -22,13 +23,13 @@ function pageHasCards(p: PageData | undefined) {
 export function BuilderToolbar({
   placed,
   total,
-  onOpenPanel,
 }: {
   placed: number;
   total: number;
-  landscape?: boolean;
-  onOpenPanel: () => void;
 }) {
+  // One click: download the page as a JPEG (and save it to My Schedules
+  // when signed in). No panel, no format question.
+  const { exportJPEG, exporting } = useExport();
   const scheduleType = useScheduleState((s) => s.scheduleType);
   const setScheduleType = useScheduleState((s) => s.setScheduleType);
   const cardType = useScheduleState((s) => s.cardType);
@@ -206,11 +207,13 @@ export function BuilderToolbar({
         ) : null}
         <button
           type="button"
-          onClick={onOpenPanel}
-          className={`h-10 px-4 rounded-[10px] bg-accent-strong text-white font-bold text-[14px] flex items-center gap-2 hover:bg-accent-hover whitespace-nowrap ${full ? "animate-[vsPulse_1.8s_ease-in-out_infinite]" : ""}`}
+          onClick={() => { void exportJPEG(); }}
+          disabled={placed === 0 || exporting}
+          title={placed === 0 ? "Add at least one card first" : "Download as an image (JPEG)"}
+          className={`h-10 px-4 disabled:bg-[#C9D2C1] disabled:cursor-not-allowed rounded-[10px] bg-accent-strong text-white font-bold text-[14px] flex items-center gap-2 hover:bg-accent-hover whitespace-nowrap ${full ? "animate-[vsPulse_1.8s_ease-in-out_infinite]" : ""}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
-          Save &amp; download
+          {exporting ? "Preparing…" : "Save & download"}
         </button>
       </div>
     </div>
