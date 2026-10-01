@@ -289,6 +289,17 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
   }, [cards, categoryOrder]);
 
   // Apply the chosen width to the panel and support drag-to-resize on its edge
+  // Opens wide enough for five cards a row on laptop screens; a width the
+  // user dragged to is remembered instead.
+  const FIVE_WIDE = 600;
+  useEffect(() => {
+    let w = window.innerWidth >= 1200 ? FIVE_WIDE : 360;
+    try {
+      const saved = Number(localStorage.getItem("vs_library_width"));
+      if (saved >= 320 && saved <= 648) w = saved;
+    } catch {}
+    setPanelWidth(w);
+  }, []);
   useEffect(() => {
     const aside = document.getElementById("library-panel");
     if (aside) aside.style.width = `${panelWidth}px`;
@@ -303,7 +314,8 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
     const onMove = (ev: MouseEvent) => {
       setPanelWidth(Math.min(maxW, Math.max(320, ev.clientX - left)));
     };
-    const onUp = () => {
+    const onUp = (ev: MouseEvent) => {
+      try { localStorage.setItem("vs_library_width", String(Math.min(maxW, Math.max(320, ev.clientX - left)))); } catch {}
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       document.body.style.cursor = "";
