@@ -46,3 +46,13 @@ export function applyPrefsToNewSchedule() {
   s.setLabelMode(p.bilingual ? "multi" : "single");
   useScheduleState.getState().markClean?.();
 }
+
+// Last download format the parent picked; Download uses it without asking.
+export type DlFormat = "image" | "pdf";
+const DL_KEY = "vs_dl_format";
+export function getDlFormat(): DlFormat | null {
+  try { const v = localStorage.getItem(DL_KEY); return v === "pdf" || v === "image" ? v : null; } catch { return null; }
+}
+export function setDlFormat(f: DlFormat) {
+  try { localStorage.setItem(DL_KEY, f); } catch {}
+}
