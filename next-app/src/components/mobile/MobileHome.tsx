@@ -23,6 +23,7 @@ import {
 } from "@/lib/card-data";
 import { getPrefs, setPrefs, getDlFormat, type Prefs } from "@/lib/prefs";
 import { scheduleCardIds, readDone } from "@/lib/schedule-steps";
+import { openScheduleForEdit } from "@/lib/open-for-edit";
 
 type User = { id: string; email: string | null; role: string };
 type Schedule = {
@@ -194,25 +195,7 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
 
   const startEdit = async (id: string) => {
     setMenuFor(null);
-    try {
-      const full = await fetch(`/api/schedules/${id}`, { cache: "no-store" }).then((r) => r.json());
-      if (!full?.id) { alert("Couldn't open that schedule — please try again."); return; }
-      sessionStorage.setItem("vs_active_schedule_id", full.id);
-      const pages = full.data?.pages || [];
-      // miniCardCount isn't stored; derive it so a 5-step schedule reopens with 5 slots.
-      let cardCount = 0;
-      for (const p of pages) {
-        cardCount += (p?.slots || []).filter(Boolean).length;
-        for (const col of Object.values(p?.columns || {})) cardCount += (col as unknown[])?.length || 0;
-      }
-      sessionStorage.setItem("vs_draft_mobile_schedule", JSON.stringify({
-        id: full.id, title: full.title, scheduleType: full.scheduleType, language: full.language,
-        gender: full.gender, gridCols: full.gridCols, miniCardCount: Math.min(5, Math.max(2, cardCount)), pages,
-      }));
-      router.push("/schedule");
-    } catch {
-      alert("Couldn't open that schedule — check your connection.");
-    }
+    await openScheduleForEdit(id, (href) => router.push(href));
   };
 
   const confirmRename = async () => {
@@ -319,16 +302,18 @@ export function MobileHome({ user, schedules, loading, onDelete }: {
                     <span className="min-w-0 truncate"><span className="text-ink-2">Next</span> · <b>{cardLabel(latestCards[nowIdx + 1], latest.language)}</b></span>
                   </div>
                 )}
-                <div className="flex gap-2.5">
-                  <button type="button" onClick={newSchedule} className="flex-1 min-h-[56px] rounded-2xl bg-accent-strong text-white font-medium text-[17px] flex items-center justify-center gap-2">
-                    + Create Schedule
-                  </button>
-                  <button type="button" onClick={() => startEdit(latest.id)} className="min-h-[56px] px-6 rounded-2xl bg-white border-[1.5px] border-[#C9CCBF] font-semibold text-[17px]">
-                    Edit
-                  </button>
-                </div>
               </section>
-            ) : (
+            ) : null}
+
+            {/* Create sits on the page background, full width, so the card
+                above stays just the schedule. */}
+            {!loading && latest && (
+              <button type="button" onClick={newSchedule} className="w-full min-h-[56px] rounded-2xl bg-accent-strong text-white font-semibold text-[17px] flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(74,90,62,0.25)] active:scale-[.99] transition-transform">
+                <PlusIcon /> Create Schedule
+              </button>
+            )}
+
+            {!loading && !latest && (
               <section className="bg-white rounded-3xl p-5 flex flex-col gap-3">
                 <h1 className="m-0 text-[24px] font-bold leading-tight">Make your child&apos;s routine easier to follow.</h1>
                 <p className="m-0 text-[15px] text-ink-2">Pick pictures, put them in order, print or show on the phone.</p>
