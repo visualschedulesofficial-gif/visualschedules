@@ -20,6 +20,7 @@ const navItems = [
     { href: "/admin/licenses", label: "License Keys", icon: "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zM15.5 7.5l2-2" },
     { href: "/admin/downloads", label: "Downloads", icon: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" },
     { href: "/admin/blog", label: "Blog Posts", icon: "M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" },
+    { href: "/admin/course", label: "Course", icon: "M23 7l-7 5 7 5V7zM1 5h15v14H1z" },
     { href: "/admin/users", label: "Users", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8" },
     { href: "/admin/orgs", label: "Therapy Centers", icon: "M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" },
     { href: "/admin/analytics", label: "Analytics", icon: "M18 20V10M12 20V4M6 20v-6" },
