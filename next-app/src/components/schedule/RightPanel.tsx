@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import { useExport } from "@/hooks/useExport";
-import { LANGUAGES, type Language } from "@/lib/constants";
 
 const sectionLabel =
   "text-[12px] tracking-[.08em] uppercase text-ink-2 font-bold m-0";
@@ -83,26 +82,12 @@ const Icon = {
 export function RightPanel({ placed, total, onClose }: { placed: number; total: number; onClose?: () => void }) {
   const title = useScheduleState((s) => s.title);
   const pages = useScheduleState((s) => s.pages);
-  const addPage = useScheduleState((s) => s.addPage);
-  const language = useScheduleState((s) => s.language);
-  const labelMode = useScheduleState((s) => s.labelMode);
-  const setLabelMode = useScheduleState((s) => s.setLabelMode);
-  const secondLanguage = useScheduleState((s) => s.secondLanguage);
-  const setSecondLanguage = useScheduleState((s) => s.setSecondLanguage);
   const { exportPDF, exportJPEG, exporting, saveNow } = useExport();
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "signedOut">("idle");
 
-  const bilingual = labelMode === "multi";
   const empty = placed === 0;
   const full = total > 0 && placed >= total;
   const pct = total ? Math.min(100, Math.round((placed / total) * 100)) : 0;
-
-  // If the main language is picked as the second one, move the second away.
-  useEffect(() => {
-    if (bilingual && secondLanguage === language) {
-      setSecondLanguage((language === "en" ? "hi" : "en") as Language);
-    }
-  }, [bilingual, language, secondLanguage, setSecondLanguage]);
 
   // Anything edited after a save makes "Saved" untrue again.
   useEffect(() => { setSaveState((s) => (s === "saved" ? "idle" : s)); }, [pages, title]);
@@ -127,47 +112,8 @@ export function RightPanel({ placed, total, onClose }: { placed: number; total: 
         <div className="h-2 rounded-full bg-[#EDF1EA] overflow-hidden">
           <div className="h-full rounded-full bg-accent-strong transition-[width] duration-300" style={{ width: `${pct}%` }} />
         </div>
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-[13px] text-ink-2">Pages: <b className="text-ink">{pages.length}</b></span>
-          <button type="button" onClick={addPage} className="h-8 px-3 rounded-lg border border-input-border bg-white text-accent-strong text-[12.5px] font-semibold flex items-center gap-1.5 hover:bg-surface-hover">
-            <Icon.Plus /> Add page
-          </button>
-        </div>
       </section>
 
-      <section className="px-5 py-4 border-b border-border space-y-3">
-        <h3 className={sectionLabel}>Card language</h3>
-        <div className="flex items-center justify-between rounded-[10px] bg-bg px-3 py-2.5 text-[13.5px]">
-          <span className="text-ink-2">Main language</span>
-          <b className="text-ink">{LANGUAGES[language as keyof typeof LANGUAGES] || language}</b>
-        </div>
-        <p className="text-[12px] text-ink-3 -mt-1.5">Change it at the top left.</p>
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            className="peer sr-only"
-            checked={bilingual}
-            onChange={(e) => setLabelMode(e.target.checked ? "multi" : "single")}
-          />
-          <span className="mt-0.5 w-10 h-6 shrink-0 rounded-full bg-[#CDD5C7] relative transition-colors peer-checked:bg-accent-strong peer-focus-visible:ring-2 peer-focus-visible:ring-weekly-accent after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:shadow after:transition-all peer-checked:after:left-[19px]" />
-          <span className="leading-tight">
-            <b className="block text-[14px] text-ink">Bilingual cards</b>
-            <span className="text-[12px] text-ink-3">Show a second language under each card</span>
-          </span>
-        </label>
-        {bilingual && (
-          <select
-            value={secondLanguage}
-            onChange={(e) => setSecondLanguage(e.target.value as Language)}
-            aria-label="Second language"
-            className={`${selectCls} animate-[vsSlideDown_250ms_ease-out]`}
-          >
-            {Object.entries(LANGUAGES).filter(([code]) => code !== language).map(([code, name]) => (
-              <option key={code} value={code}>{name}</option>
-            ))}
-          </select>
-        )}
-      </section>
 
       <section className="px-5 py-4 space-y-2.5">
         <h3 className={sectionLabel}>Finish</h3>
