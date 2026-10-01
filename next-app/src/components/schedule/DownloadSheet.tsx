@@ -10,7 +10,8 @@
 // the file were built after the tap, it would drop silently into Files.
 
 import { useEffect, useRef, useState } from "react";
-import { canShareFiles, deliverFiles } from "@/hooks/useExport";
+import { downloadFiles } from "@/hooks/useExport";
+import { getDlFormat, setDlFormat } from "@/lib/prefs";
 
 type Format = "image" | "pdf";
 
@@ -51,11 +52,10 @@ function SheetBody({
   saveOnExport = false,
   onDone,
 }: SheetProps) {
-  const [format, setFormat] = useState<Format>("image");
+  const [format, setFormat] = useState<Format>(() => getDlFormat() || "image");
   const [files, setFiles] = useState<Partial<Record<Format, File[]>>>({});
   const [errors, setErrors] = useState<Partial<Record<Format, string>>>({});
   const [retry, setRetry] = useState(0);
-  const [isPhone] = useState(() => canShareFiles());
   const inflight = useRef<Format | null>(null);
   const savedOnce = useRef(false);
   const alive = useRef(true);
@@ -81,24 +81,16 @@ function SheetBody({
 
   const go = async () => {
     if (!ready) return;
-    const how = await deliverFiles(ready);
-    if (how === "cancelled") return; // they closed the share menu, so stay here
-    onDone?.(format, how);
+    setDlFormat(format);
+    await downloadFiles(ready);
+    onDone?.(format, "downloaded");
   };
 
-  const label = busy
-    ? "Preparing…"
-    : format === "image"
-      ? (isPhone ? "Share image" : "Download image")
-      : (isPhone ? "Share PDF" : "Download PDF");
+  const label = busy ? "Preparing…" : format === "image" ? "Download image" : "Download PDF";
 
   const hint = format === "image"
-    ? (isPhone
-        ? <>Opens your phone&apos;s share menu. Tap <b>Save Image</b> to keep it in Photos, or pick WhatsApp.</>
-        : <>Saves a JPG to your Downloads folder.</>)
-    : (isPhone
-        ? <>A4, ready to print. The share menu lets you save it to Files, print it or send it.</>
-        : <>A4, ready to print.</>);
+    ? <>Saves a picture to your Downloads. We&apos;ll remember this, so next time Download saves an image straight away.</>
+    : <>A4 PDF, ready to print. We&apos;ll remember this, so next time Download saves a PDF straight away.</>;
 
   return (
     <div
@@ -186,7 +178,7 @@ function SheetBody({
                 <span className="w-4 h-4 rounded-full animate-spin" style={{ border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff" }} />
               ) : (
                 <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  {isPhone ? <path d="M12 15V4M7 9l5-5 5 5M5 14v5h14v-5" /> : <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />}
+                  <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
                 </svg>
               )}
               {label}
@@ -194,11 +186,6 @@ function SheetBody({
           )}
         </div>
 
-        {!isPhone && (
-          <button type="button" onClick={() => window.print()} className="text-[13px] font-semibold self-center py-1" style={{ color: SUB }}>
-            Or print directly
-          </button>
-        )}
       </div>
     </div>
   );
