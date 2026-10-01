@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/schedule", label: "Create Schedule" },
   { href: "/downloads", label: "Free Schedules" },
   { href: "/blog", label: "Blog" },
+  { href: "/course", label: "Course" },
 ];
 
 interface User {
@@ -255,6 +256,7 @@ function MobileIconBar({ user }: { user: User | null }) {
     { href: "/schedule", label: "Create", active: pathname === "/schedule" },
     { href: "/downloads", label: "Free Schedules", active: pathname?.startsWith("/downloads") || false },
     { href: "/blog", label: "Blog", active: pathname?.startsWith("/blog") || false },
+    { href: "/course", label: "Course", active: pathname?.startsWith("/course") || false },
     user
       ? { href: "/schedules", label: "My Space", active: pathname === "/schedules" }
       : { href: "/login", label: "Sign in", active: pathname === "/login" },
