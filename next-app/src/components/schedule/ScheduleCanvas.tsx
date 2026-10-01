@@ -15,7 +15,7 @@ import type { DailyPageData, ColumnPageData } from "@/types/schedule";
 // two languages stacked, or (via LabelStrip) nothing at all.
 function CardLabelText({
   card,
-  secondaryClassName = "block text-[15px] text-[#7A8F5E] leading-tight mt-1",
+  secondaryClassName = "block text-[0.9em] text-[#5F7A45] leading-tight mt-0.5",
 }: {
   card: any;
   secondaryClassName?: string;
@@ -43,7 +43,7 @@ function CardLabelText({
 function LabelStrip({ className, children }: { className: string; children: React.ReactNode }) {
   const labelMode = useScheduleState((s) => s.labelMode);
   if (labelMode === "none") return null;
-  return <div className={className}>{children}</div>;
+  return <div className={className} data-bilingual={labelMode === "multi" ? "" : undefined}>{children}</div>;
 }
 
 // Free-tier footer, matching the printable references: two-line credit + QR
@@ -238,7 +238,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slot
               <span className={`${cardType === "equal" ? "text-[24px]" : "text-[20px]"} font-serif text-[#2C2C2C] leading-tight break-words line-clamp-2 text-left`}>
                 <CardLabelText
                   card={card}
-                  secondaryClassName={`block ${cardType === "equal" ? "text-[20px]" : "text-[17px]"} text-[#7A8F5E] leading-tight mt-1.5`}
+                  secondaryClassName="block text-[0.9em] text-[#5F7A45] leading-tight mt-1"
                 />
               </span>
             </LabelStrip>
@@ -253,7 +253,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slot
       ) : cardRef && card ? (
         <>
           <div className="absolute inset-0 flex flex-col">
-            <div className={`${labelMode === "none" ? "flex-1" : "flex-[0_0_70%]"} p-[4px] flex items-center justify-center overflow-hidden bg-white`}>
+            <div className="flex-1 min-h-0 p-[4px] flex items-center justify-center overflow-hidden bg-white">
               {imageUrl ? (
                 <img src={imageUrl} alt={getCardLabel(card, language)} crossOrigin="anonymous" className="w-full h-full object-contain" />
               ) : (
@@ -262,7 +262,7 @@ function DailyDropSlot({ slotIdx, pageIdx, justDropped, onEmptySlotTap }: { slot
                 </svg>
               )}
             </div>
-            <LabelStrip className="flex-[0_0_30%] flex items-center justify-center px-1 border-t-[1px] border-[#F0F0F0] bg-white">
+            <LabelStrip className="shrink-0 flex items-center justify-center px-1 py-1.5 border-t-[1px] border-[#F0F0F0] bg-white">
               <span className="text-[18px] text-center leading-tight font-serif text-[#2C2C2C] break-words line-clamp-2">
                 <CardLabelText card={card} />
               </span>
@@ -618,7 +618,7 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageId
                 key={idx}
                 className="bg-white border-[1.5px] border-[#C7D7B8] rounded-[12px] flex flex-col relative group overflow-hidden flex-1 min-h-0"
               >
-                <div className={`${labelMode === "none" ? "flex-1" : "flex-[0_0_72%]"} p-2 flex items-center justify-center overflow-hidden bg-white`}>
+                <div className="flex-1 min-h-0 p-2 flex items-center justify-center overflow-hidden bg-white">
                   {imageUrl ? (
                     <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
                   ) : (
