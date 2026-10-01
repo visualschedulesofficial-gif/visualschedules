@@ -8,6 +8,7 @@ import { GRID_SPECS,
 import { findCard, getCardLabel, getCardImageUrl, isCharacterCard } from "@/lib/card-data";
 import { useScheduleState } from "@/hooks/useScheduleState";
 import type { DailyPageData, ColumnPageData } from "@/types/schedule";
+import { ftColumnCount, ftKeys } from "@/lib/first-then";
 
 // Paid users get branding-free schedules: check once, hide the footer if active.
 // If the check fails (offline, logged out), branding stays — the safe default.
@@ -799,67 +800,75 @@ function CustomPage({ pageIdx, justDroppedSlot }: { pageIdx: number; justDropped
   );
 }
 
-function FirstThenColumn({ colKey, colName, dims, pageIdx, justDroppedSlot }: { colKey: string; colName: string; dims: { w: number; h: number }; pageIdx: number; justDroppedSlot: string | null }) {
-  const pages = useScheduleState((s) => s.pages);
+function FirstThenSlot({ slotKey, colName, pageIdx, labelPx, onEmptySlotTap }: { slotKey: string; colName: string; pageIdx: number; labelPx: number; onEmptySlotTap?: () => void }) {
+  const card0 = useScheduleState((s) => ((s.pages[pageIdx] as ColumnPageData)?.columns?.[slotKey] || [])[0]);
   const removeCard = useScheduleState((s) => s.removeCard);
   const language = useScheduleState((s) => s.language);
   const gender = useScheduleState((s) => s.gender);
-  const page = pages[pageIdx] as ColumnPageData;
-  const cards = page?.columns?.[colKey] || [];
-
-  const droppableId = `${pageIdx}-${colKey}`;
-  const { setNodeRef, isOver, active } = useDroppable({ id: droppableId });
-  const isDragging = !!active;
-  const hasCard = cards.length > 0;
+  const { setNodeRef, isOver } = useDroppable({ id: `${pageIdx}-${slotKey}` });
+  const card = card0 ? findCard(card0.cardId) : null;
+  const imageUrl = card ? getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral") : null;
 
   return (
-    <div className="flex flex-col border border-[#C5D2B8] rounded-[10px] overflow-hidden bg-[#F4F6EF] min-w-0">
-      <div className="bg-[#E8EDE0] border-b-2 border-b-[#C5D2B8] px-2 py-3.5 text-center shrink-0">
-        <span className="font-serif text-[26px] text-[#4A5A3E]">{colName}</span>
+    <div className="flex flex-col min-w-0 min-h-0 rounded-[10px] border border-[#C9D5BC] overflow-hidden bg-white">
+      {/* Slim green label instead of the old tall band with rules. */}
+      <div className="shrink-0 bg-[#5E7A4A] text-white text-center font-serif leading-none py-[7px]" style={{ fontSize: Math.round(labelPx * 1.05) }}>
+        {colName}
       </div>
-      <div
-        ref={setNodeRef}
-        className={`flex-1 flex items-center justify-center p-4 min-h-0 transition-colors duration-150 ${isOver ? "bg-[#EFF2E8]" : ""}`}
-      >
-        {hasCard ? (
-          (() => {
-            const card = findCard(cards[0].cardId);
-            if (!card) return null;
-            const imageUrl = getCardImageUrl(card.id, isCharacterCard(card) ? gender : "neutral");
-            return (
-              <div style={{ width: dims.w, height: dims.h }} className="bg-white border-2 border-dashed border-[#C5D2B8] rounded-[10px] flex flex-col overflow-hidden relative group">
-                <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-white p-[4px]">
-                  {imageUrl ? (
-                    <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
-                  ) : (
-                    <svg className="w-[90px] h-[90px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                  )}
-                </div>
-                <LabelStrip className="shrink-0 px-2 py-2.5 border-t border-[#F0F0F0] bg-white text-center">
-                  <span className="text-[18px] text-ink-2 font-serif leading-tight break-words line-clamp-2 block">
-                    <CardLabelText card={card} />
-                  </span>
-                </LabelStrip>
-                <button
-                  onClick={() => removeCard(pageIdx, colKey, 0)}
-                  className="absolute top-2 right-2 w-[30px] h-[30px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center cursor-pointer text-[19px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
-                >
-                  &times;
-                </button>
-              </div>
-            );
-          })()
+      <div ref={setNodeRef} className={`flex-1 min-h-0 flex flex-col transition-colors duration-150 ${isOver ? "bg-[#EFF2E8]" : ""}`}>
+        {card ? (
+          <div className="flex-1 min-h-0 flex flex-col relative group">
+            <div className="flex-1 min-h-0 flex items-center justify-center p-2">
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imageUrl} alt={getCardLabel(card, language)} className="w-full h-full object-contain" />
+              ) : (
+                <svg className="w-[60px] h-[60px] stroke-[#CCC] stroke-[1.2] fill-none" viewBox="0 0 24 24" strokeLinecap="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              )}
+            </div>
+            <LabelStrip className="shrink-0 px-2 pb-2 pt-0.5 text-center">
+              <span className="text-ink-2 font-serif leading-tight break-words line-clamp-2 block" style={{ fontSize: labelPx }}>
+                <CardLabelText card={card} />
+              </span>
+            </LabelStrip>
+            <button
+              onClick={() => removeCard(pageIdx, slotKey, 0)}
+              aria-label="Remove card"
+              className="absolute top-1.5 right-1.5 w-[28px] h-[28px] bg-white/95 border-[1.5px] border-[#DDD] rounded-full hidden group-hover:flex items-center justify-center text-[18px] text-[#888] leading-none z-[3] hover:bg-ink hover:text-white hover:border-ink"
+            >
+              &times;
+            </button>
+          </div>
         ) : (
-          <div style={{ width: dims.w, height: dims.h }} className={`border-2 border-dashed rounded-[10px] flex flex-col items-center justify-center gap-3 transition-colors duration-150 opacity-80 ${isOver ? "border-[#7A8F5E] bg-[#EFF2E8]" : isDragging ? "border-[#C5D2B8]" : "border-[#C5D2B8]"}`}>
-            <svg className={`w-[52px] h-[52px] stroke-[1.4] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-[#CCC]"}`} viewBox="0 0 24 24" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+          <div className={`dz-hint flex-1 m-2 rounded-[8px] border-2 border-dashed flex items-center justify-center ${isOver ? "border-[#7A8F5E]" : "border-[#D5DECB]"}`}>
+            {onEmptySlotTap ? (
+              <button onClick={onEmptySlotTap} aria-label="Add card" className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl font-bold bg-[#4A5A3E]">+</button>
+            ) : (
+              <svg className={`w-[34px] h-[34px] stroke-[1.4] fill-none ${isOver ? "stroke-weekly-accent" : "stroke-[#CFD8C4]"}`} viewBox="0 0 24 24" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ScissorLine() {
+  return (
+    <div className="shrink-0 h-6 flex items-center gap-2" aria-hidden>
+      <svg className="w-[18px] h-[18px] stroke-[#8A9B74] stroke-[1.6] fill-none shrink-0" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="6" cy="6" r="3" />
+        <circle cx="6" cy="18" r="3" />
+        <line x1="20" y1="4" x2="8.12" y2="15.88" />
+        <line x1="14.47" y1="14.48" x2="20" y2="20" />
+        <line x1="8.12" y1="8.12" x2="12" y2="12" />
+      </svg>
+      <div className="flex-1 border-t-2 border-dashed border-[#C5D2B8]" />
     </div>
   );
 }
@@ -882,74 +891,58 @@ const FT_LABELS: Record<string, string[]> = {
   sequencing: ["First", "Next", "Then", "Last"],
 };
 
-function FirstThenPage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
-  const isPaid = useIsPaid();
-  const title = useScheduleState((s) => s.title);
-  const scheduleType = useScheduleState((s) => s.scheduleType);
+function FirstThenPage({ pageIdx, onEmptySlotTap }: { pageIdx: number; justDroppedSlot: string | null; onEmptySlotTap?: () => void }) {
   const ftStyle = useScheduleState((s) => s.ftStyle);
+  const legacyCutout = useScheduleState((s) => ((s.pages[pageIdx] as ColumnPageData)?.columns?.["cutout"] || []).length);
   const ftT = useCanvasStrings();
-  const labels =
-    ftStyle === "sequencing"
-      ? [ftT.first, ftT.next, ftT.then, ftT.last]
-      : ftStyle === "first-then-now"
-        ? [ftT.first, ftT.then, ftT.now]
-        : [ftT.first, ftT.then];
-  const dims = FT_DIMS[labels.length] || FT_DIMS[2];
-  const scheduleTypeLabel = SCHEDULE_TYPE_LABELS[scheduleType] || scheduleType;
+  const n = ftColumnCount(ftStyle);
+  const labels = n === 4 ? [ftT.first, ftT.next, ftT.then, ftT.last] : n === 3 ? [ftT.first, ftT.then, ftT.now] : [ftT.first, ftT.then];
+  const rows = ftKeys(n);
+  const labelPx = n === 4 ? 14 : n === 3 ? 16 : 19;
   const shownTitle = useLocalizedTitle();
+
+  // Older schedules kept their cards in a cut-out strip under one board.
+  // Move them onto the boards once so nothing disappears.
+  useEffect(() => {
+    if (!legacyCutout) return;
+    const st = useScheduleState.getState();
+    const pages = [...st.pages];
+    const page = { ...(pages[pageIdx] as ColumnPageData) };
+    const columns = { ...page.columns };
+    const queue = [...(columns["cutout"] || [])];
+    delete columns["cutout"];
+    for (const row of ftKeys(n)) for (const k of row) {
+      if (!queue.length) break;
+      if (!(columns[k] || []).length) columns[k] = [queue.shift()!];
+    }
+    page.columns = columns;
+    pages[pageIdx] = page;
+    useScheduleState.setState({ pages });
+  }, [legacyCutout, pageIdx, n]);
 
   return (
     <div
       data-a4-page
       className="shrink-0 bg-white shadow-[0_4px_32px_rgba(0,0,0,0.22)] flex flex-col overflow-hidden relative box-border"
-      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "28px 32px 24px" }}
+      style={{ width: A4_PORTRAIT.width, height: A4_PORTRAIT.height, padding: "24px 32px 20px" }}
     >
-      <div className="text-center pb-3 border-b border-[#C5D2B8] mb-4 shrink-0">
-        <h2 className="font-serif text-[30px] text-[#5A8A3C] leading-snug">{shownTitle}</h2>
-      </div>
+      <h2 className="shrink-0 text-center font-serif text-[24px] text-[#5A8A3C] leading-tight mb-3">{shownTitle}</h2>
 
-      {/* Boards — 2, 3, or 4 depending on the chosen style */}
-      <div
-        className="shrink-0 grid gap-6"
-        style={{
-          height: dims.h + 48 + 44,
-          gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))`,
-        }}
-      >
-        {labels.map((name, i) => (
-          <FirstThenColumn
-            key={i}
-            colKey={String(i)}
-            colName={name}
-            dims={dims}
-            pageIdx={pageIdx}
-            justDroppedSlot={justDroppedSlot}
-          />
+      {/* Several boards per page, cut lines between, all in one row each. */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {rows.map((keys, b) => (
+          <div key={b} className="contents">
+            {b > 0 && <ScissorLine />}
+            <div className="flex-1 min-h-0 grid gap-3" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+              {keys.map((k, c) => (
+                <FirstThenSlot key={k} slotKey={k} colName={labels[c]} pageIdx={pageIdx} labelPx={labelPx} onEmptySlotTap={onEmptySlotTap} />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Scissors cut line */}
-      <div className="shrink-0 flex items-center gap-3 my-4">
-        <svg className="w-[22px] h-[22px] stroke-[#8A9B74] stroke-[1.6] fill-none shrink-0" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="6" cy="6" r="3" />
-          <circle cx="6" cy="18" r="3" />
-          <line x1="20" y1="4" x2="8.12" y2="15.88" />
-          <line x1="14.47" y1="14.48" x2="20" y2="20" />
-          <line x1="8.12" y1="8.12" x2="12" y2="12" />
-        </svg>
-        <div className="flex-1 border-t-2 border-dashed border-[#C5D2B8]" />
-      </div>
-
-      {/* Six cut-out card slots */}
-      <CutoutStrip
-        pageIdx={pageIdx}
-        dims={dims}
-        count={labels.length === 4 ? 16 : 9}
-        cols={labels.length === 4 ? 4 : 3}
-        justDroppedSlot={justDroppedSlot}
-        onEmptySlotTap={onEmptySlotTap}
-      />
-
+      <div className="h-3 shrink-0" />
       <CanvasFooter show />
     </div>
   );
