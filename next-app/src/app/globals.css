@@ -287,10 +287,18 @@ a.bg-accent-strong {
 @keyframes vsPulse { 0%, 100% { box-shadow: 0 0 0 2px rgba(110,143,78,.45) } 50% { box-shadow: 0 0 0 7px rgba(110,143,78,.16) } }
 /* "Select an image to start" floating over the card grid. */
 .vs-bob { animation: vsBob 1.6s ease-in-out infinite; }
+/* Social dock: a ring ripples out from each icon in turn, then rests ~7s. */
+@keyframes vsRipple {
+  0% { box-shadow: 0 0 0 0 rgba(74,90,62,.45) }
+  12% { box-shadow: 0 0 0 10px rgba(74,90,62,0) }
+  100% { box-shadow: 0 0 0 10px rgba(74,90,62,0) }
+}
+.vs-ripple::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: vsRipple 8s ease-out infinite; animation-delay: calc(3s + var(--d, 0s)); }
+.vs-dock:hover .vs-ripple::after { animation-play-state: paused; }
 /* The empty box the next clicked card will go into. Export hides this. */
 .vs-next { background: #F6FAF1 !important; animation: vsPulse 1.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .vs-next, .vs-bob, [class*="animate-[vs"] { animation: none !important; }
+  .vs-next, .vs-bob, .vs-ripple::after, [class*="animate-[vs"] { animation: none !important; }
 }
 
 /* Bilingual card labels get a third line so the second language isn't clipped. */
