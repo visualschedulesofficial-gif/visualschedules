@@ -199,6 +199,21 @@ export async function deliverFiles(files: File[]): Promise<"shared" | "downloade
   return "downloaded";
 }
 
+/** Save files straight to the device (Downloads / Files), no share menu. */
+export async function downloadFiles(files: File[]): Promise<void> {
+  for (let i = 0; i < files.length; i++) {
+    const url = URL.createObjectURL(files[i]);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = files[i].name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    if (i < files.length - 1) await new Promise((r) => setTimeout(r, 400));
+  }
+}
+
 function getPageElements(): HTMLElement[] {
   return Array.from(document.querySelectorAll("[data-a4-page]")) as HTMLElement[];
 }
