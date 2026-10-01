@@ -76,7 +76,7 @@ export function SocialDock() {
           </li>
         ))}
       </ul>
-      <span className="rounded-md bg-white/95 border border-border px-2.5 py-1 text-[11px] text-ink-3 shadow-sm">
+      <span className="text-[11px] text-ink-3 pr-0.5">
         With thanks to{" "}
         <a href="https://dataorc.in" target="_blank" rel="noopener noreferrer" className="underline text-ink-2 hover:text-ink">DataOrc</a>
       </span>
