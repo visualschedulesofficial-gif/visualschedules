@@ -101,12 +101,16 @@ export default function ScheduleBuilder() {
   useEffect(() => {
     const el = document.getElementById("canvas-wrap");
     if (!el) return;
-    const canvasW =
-      scheduleTypeForFit === "weekly" || scheduleTypeForFit === "custom" ? 1123 : 794; // mini stays portrait (794)
+    const wide = isLandscapeType(scheduleTypeForFit);
+    const canvasW = wide ? 1123 : 794;
+    // +26 for the "Page 1" label above each page.
+    const canvasH = (wide ? 794 : 1123) + 26;
+    // Fit the whole page (cards and footer) in view, not just its width.
     const update = () => {
-      const avail = el.clientWidth;
-      if (avail < 200) return; // ignore bogus early measurements
-      setFitZoom(Math.max(0.35, Math.min(1, (avail - 56) / canvasW)));
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      if (w < 200 || h < 200) return; // ignore bogus early measurements
+      setFitZoom(Math.max(0.3, Math.min(1, (w - 48) / canvasW, (h - 48) / canvasH)));
     };
     update();
     const ro = new ResizeObserver(update);
