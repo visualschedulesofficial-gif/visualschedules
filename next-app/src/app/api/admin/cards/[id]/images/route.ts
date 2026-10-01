@@ -29,7 +29,7 @@ export async function POST(
     const buffer = await file.arrayBuffer();
     const contentType = file.type || "image/webp";
     const ext = contentType.includes("png") ? "png" : contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : "webp";
-    const r2Key = `cards/${cardId}/${variant}.${ext}`;
+    const r2Key = `cards/${cardId}/${variant}-${Date.now().toString(36)}.${ext}`;
 
     const env = getEnv();
 
