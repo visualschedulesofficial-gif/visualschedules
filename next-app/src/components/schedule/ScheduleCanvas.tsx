@@ -94,7 +94,7 @@ function CanvasFooter({ show }: { show: boolean }) {
           )}
           <div className="min-w-0">
             <p className="text-[14px] font-serif text-[#4A5A3E] leading-snug truncate">{org.name}</p>
-            <p className="text-[12px] text-[#8A8480] leading-snug">
+            <p className="text-[8px] text-[#9A948F] leading-snug whitespace-nowrap">
               Made with visualschedule.app • © 2026 Grow Gently
             </p>
           </div>
@@ -114,11 +114,11 @@ function CanvasFooter({ show }: { show: boolean }) {
   if (!show) return <div className="shrink-0 h-[62px]" />;
   return (
     <div className="shrink-0 h-[62px] py-2 pb-3 flex items-end justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-[10.5px] text-[#8A8480] leading-snug">
-          Create Personalized A4 Visual Schedules in Just 2 Minutes • https://visualschedule.app/schedule
+      <div className="min-w-0 overflow-hidden">
+        <p className="text-[8px] text-[#9A948F] leading-[1.35] whitespace-nowrap truncate">
+          Create Personalized A4 Visual Schedules in Just 2 Minutes • visualschedule.app/schedule
         </p>
-        <p className="text-[10.5px] text-[#8A8480] leading-snug">
+        <p className="text-[8px] text-[#9A948F] leading-[1.35] whitespace-nowrap truncate">
           Visual Schedule by Grow Gently • © 2026 Grow Gently. All Rights Reserved.
         </p>
       </div>
