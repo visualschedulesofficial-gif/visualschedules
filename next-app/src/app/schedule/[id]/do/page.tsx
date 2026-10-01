@@ -17,6 +17,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { openScheduleForEdit } from "@/lib/open-for-edit";
 import {
   getRuntimeCards,
   setRuntimeCards,
@@ -254,7 +255,18 @@ export default function DoSchedulePage() {
             <div className="font-bold text-[17px] leading-tight" style={{ color: INK }}>{sched.title}</div>
             <div className="text-[12px] mt-0.5" style={{ color: SUB }}>{doneCount} of {steps.length} done</div>
           </div>
-          <button onClick={reset} className="w-9 text-[13px] font-semibold text-right" style={{ color: SUB }}>Reset</button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => openScheduleForEdit(id, (href) => router.push(href))}
+              aria-label="Edit this schedule"
+              className="h-8 px-3 rounded-full flex items-center gap-1.5 text-[13px] font-semibold active:opacity-60"
+              style={{ background: "#fff", color: INK, border: `1.5px solid ${BORDER}` }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+              Edit
+            </button>
+            <button onClick={reset} className="h-8 px-3.5 rounded-full text-[13px] font-bold active:opacity-80" style={{ background: GREEN, color: "#fff" }}>Reset</button>
+          </div>
         </div>
       </div>
 
