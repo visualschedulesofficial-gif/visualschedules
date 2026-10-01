@@ -281,11 +281,16 @@ a.bg-accent-strong {
 @keyframes vsNudge { 0%, 100% { transform: none } 30% { transform: translateX(-3px) } 60% { transform: translateX(2px) } }
 @keyframes vsFadeIn { from { opacity: 0; transform: translateY(-3px) } to { opacity: 1; transform: none } }
 @keyframes vsSlideDown { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+@keyframes vsSlideIn { from { opacity: 0; transform: translateX(14px) } to { opacity: 1; transform: none } }
+@keyframes vsPoint { 0%, 100% { transform: none } 50% { transform: translateX(4px) } }
+@keyframes vsBob { 0%, 100% { transform: translate(-50%, 0) } 50% { transform: translate(-50%, -8px) } }
 @keyframes vsPulse { 0%, 100% { box-shadow: 0 0 0 2px rgba(110,143,78,.45) } 50% { box-shadow: 0 0 0 7px rgba(110,143,78,.16) } }
+/* "Select an image to start" floating over the card grid. */
+.vs-bob { animation: vsBob 1.6s ease-in-out infinite; }
 /* The empty box the next clicked card will go into. Export hides this. */
 .vs-next { background: #F6FAF1 !important; animation: vsPulse 1.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .vs-next, [class*="animate-[vs"] { animation: none !important; }
+  .vs-next, .vs-bob, [class*="animate-[vs"] { animation: none !important; }
 }
 
 /* Bilingual card labels get a third line so the second language isn't clipped. */
