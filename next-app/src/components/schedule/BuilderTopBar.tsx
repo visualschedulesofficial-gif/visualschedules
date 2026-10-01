@@ -1,183 +1,221 @@
 "use client";
 
-// Slim desktop header for the builder: brand, 1-2-3 steps, site links,
-// text size and account — replaces the black accessibility strip and the
-// dark nav so the page gets the height.
+// Row above the page: schedule type + the one setting that goes with it,
+// pages, bilingual cards, and a one-click Save & download on the right.
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { TopNav } from "@/components/layout/TopNav";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useScheduleState } from "@/hooks/useScheduleState";
+import { useExport } from "@/hooks/useExport";
+import { LANGUAGES, LANGUAGE_NATIVE, type Language, type ScheduleType } from "@/lib/constants";
+import type { PageData } from "@/types/schedule";
 
-type User = { id: string; email: string; role: string };
+const fieldCls = "flex flex-col gap-1 shrink-0";
+const labelCls = "text-[11px] font-bold tracking-[.07em] uppercase text-ink-3 leading-none";
+const selectCls = "h-9 px-2.5 rounded-[10px] border border-input-border bg-white text-[13.5px] font-medium text-ink focus:outline-none focus:ring-2 focus:ring-weekly-accent disabled:opacity-60 disabled:cursor-not-allowed";
+const stepBtn = "w-8 h-full flex items-center justify-center text-[18px] font-bold text-accent-strong hover:bg-surface-hover disabled:text-[#C4CBBF] disabled:hover:bg-transparent disabled:cursor-not-allowed";
 
-// Site pages (Free Schedules, Blog, …): the same slim bar without steps on
-// desktop; phones keep the app-style TopNav.
-export function SiteTopBar() {
-  return (
-    <>
-      <div className="hidden md:block"><BuilderTopBar /></div>
-      <div className="md:hidden"><TopNav /></div>
-    </>
-  );
+function pageHasCards(p: PageData | undefined) {
+  if (!p) return false;
+  if ("slots" in p) return p.slots.some(Boolean);
+  return Object.values(p.columns || {}).some((c) => c?.length);
 }
 
-export function BuilderTopBar({ placed, total }: { placed?: number; total?: number }) {
-  const showSteps = typeof placed === "number" && typeof total === "number";
-  const full = showSteps && total > 0 && placed >= total;
+export function BuilderToolbar({
+  placed,
+  total,
+}: {
+  placed: number;
+  total: number;
+}) {
+  // One click: download the page as a JPEG (and save it to My Schedules
+  // when signed in). No panel, no format question.
+  const { exportJPEG, exporting } = useExport();
+  const scheduleType = useScheduleState((s) => s.scheduleType);
+  const setScheduleType = useScheduleState((s) => s.setScheduleType);
+  const cardType = useScheduleState((s) => s.cardType);
+  const setCardType = useScheduleState((s) => s.setCardType);
+  const miniCardCount = useScheduleState((s) => s.miniCardCount);
+  const setMiniCardCount = useScheduleState((s) => s.setMiniCardCount);
+  const weekMode = useScheduleState((s) => s.weekMode);
+  const setWeekMode = useScheduleState((s) => s.setWeekMode);
+  const customColNames = useScheduleState((s) => s.customColNames);
+  const setCustomColNames = useScheduleState((s) => s.setCustomColNames);
+  const ftStyle = useScheduleState((s) => s.ftStyle);
+  const setFtStyle = useScheduleState((s) => s.setFtStyle);
+  const pages = useScheduleState((s) => s.pages);
+  const addPage = useScheduleState((s) => s.addPage);
+  const removePage = useScheduleState((s) => s.removePage);
+  const language = useScheduleState((s) => s.language);
+  const labelMode = useScheduleState((s) => s.labelMode);
+  const setLabelMode = useScheduleState((s) => s.setLabelMode);
+  const secondLanguage = useScheduleState((s) => s.secondLanguage);
+  const setSecondLanguage = useScheduleState((s) => s.setSecondLanguage);
+  const bilingual = labelMode === "multi";
+
+  // Changing type on a saved schedule would throw away its layout.
+  const [isEditingSaved, setIsEditingSaved] = useState(false);
+  useEffect(() => {
+    try { setIsEditingSaved(new URLSearchParams(window.location.search).has("id")); } catch {}
+  }, []);
+
+  // The second language can't be the same as the main one.
+  useEffect(() => {
+    if (bilingual && secondLanguage === language) {
+      setSecondLanguage((language === "en" ? "hi" : "en") as Language);
+    }
+  }, [bilingual, language, secondLanguage, setSecondLanguage]);
+
+  const removeLastPage = () => {
+    if (pages.length <= 1) return;
+    if (pageHasCards(pages[pages.length - 1]) && !window.confirm(`Remove page ${pages.length} and its cards?`)) return;
+    removePage(pages.length - 1);
+  };
+
+  const full = total > 0 && placed >= total;
+  const langName = (c: string) => (LANGUAGE_NATIVE[c] && LANGUAGE_NATIVE[c] !== LANGUAGES[c as keyof typeof LANGUAGES] ? `${LANGUAGE_NATIVE[c]} · ` : "") + (LANGUAGES[c as keyof typeof LANGUAGES] || c);
+
   return (
-    <header className="h-14 shrink-0 bg-white border-b border-border flex items-center relative px-4 z-50">
-      <a
-        href="#canvas-wrap"
-        className="absolute -left-[9999px] top-0 bg-white text-ink px-4 py-2 text-[13px] font-semibold z-[1000] focus:left-2 focus:top-2"
-      >
-        Skip to schedule
-      </a>
+    <div className="shrink-0 flex items-end gap-4 px-6 py-2.5 border-b border-border bg-[#FAFBF8]">
+      <label className={fieldCls}>
+        <span className={labelCls}>Type</span>
+        <select
+          value={scheduleType}
+          onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
+          disabled={isEditingSaved}
+          title={isEditingSaved ? "Type can't be changed when editing a saved schedule" : undefined}
+          className={selectCls}
+        >
+          <option value="mini">My Schedule</option>
+          <option value="daily">Daily</option>
+          <option value="firstthen">First / Then</option>
+          <option value="iwant">I Want</option>
+          <option value="weekly">Weekly</option>
+          <option value="custom">Custom</option>
+          <option value="timetable">Timetable</option>
+        </select>
+      </label>
 
-      <Link href="/schedule" className="flex items-center gap-2.5 no-underline text-ink shrink-0">
-        <span className="w-8 h-8 rounded-[9px] bg-accent-strong flex items-center justify-center">
-          <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4" /></svg>
-        </span>
-        <span className="font-serif text-[17px] whitespace-nowrap">Visual Schedules</span>
-      </Link>
-
-      {showSteps && (
-      <ol className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 m-0 p-0 list-none" aria-label="Progress">
-        <Step n={1} label="Choose type" state="done" />
-        <Sep done />
-        <Step n={2} label="Add cards" state={full ? "done" : "on"} />
-        <Sep done={full} />
-        <Step n={3} label="Save & download" state={full ? "on" : "todo"} />
-      </ol>
+      {scheduleType === "mini" && (
+        <label className={fieldCls}>
+          <span className={labelCls}>Cards</span>
+          <select value={miniCardCount} onChange={(e) => setMiniCardCount(Number(e.target.value) as 2 | 3 | 4 | 5)} className={selectCls}>
+            {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+      )}
+      {scheduleType === "daily" && (
+        <label className={fieldCls}>
+          <span className={labelCls}>Card type</span>
+          <select value={cardType} onChange={(e) => setCardType(e.target.value as "visual" | "equal" | "text")} className={selectCls}>
+            <option value="visual">Picture focus</option>
+            <option value="equal">Equal</option>
+            <option value="text">Text focus</option>
+          </select>
+        </label>
+      )}
+      {scheduleType === "weekly" && (
+        <label className={fieldCls}>
+          <span className={labelCls}>Days</span>
+          <select value={weekMode} onChange={(e) => setWeekMode(e.target.value as "week" | "weekdays")} className={selectCls}>
+            <option value="week">All 7</option>
+            <option value="weekdays">Weekdays</option>
+          </select>
+        </label>
+      )}
+      {scheduleType === "custom" && (
+        <label className={fieldCls}>
+          <span className={labelCls}>Columns</span>
+          <select
+            value={customColNames.length}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              setCustomColNames(Array.from({ length: n }, (_, i) => customColNames[i] || `Column ${i + 1}`));
+            }}
+            className={selectCls}
+          >
+            {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+      )}
+      {scheduleType === "firstthen" && (
+        <label className={fieldCls}>
+          <span className={labelCls}>Board</span>
+          <select value={ftStyle} onChange={(e) => setFtStyle(e.target.value as "first-then" | "first-then-now" | "sequencing")} className={selectCls}>
+            <option value="first-then">First, Then</option>
+            <option value="first-then-now">First, Then, Now</option>
+            <option value="sequencing">Sequencing</option>
+          </select>
+        </label>
       )}
 
-      <div className="ml-auto flex items-center gap-1">
-        {!showSteps && <NavLink href="/schedule" label="Create" icon={<path d="M12 5v14M5 12h14" />} />}
-        <NavLink href="/downloads" label="Free Schedules" icon={<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11" />} />
-        <NavLink href="/blog" label="Blog" icon={<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h5" />} />
-        <TextSize />
-        <Account />
+      {/* Timetable's pages are fixed by its layout. */}
+      {scheduleType !== "timetable" && (
+        <div className={fieldCls} role="group" aria-label="Pages">
+          <span className={labelCls}>Pages</span>
+          <div className="h-9 flex items-stretch rounded-[10px] border border-input-border bg-white overflow-hidden">
+            <button type="button" onClick={removeLastPage} disabled={pages.length <= 1} aria-label="Remove last page" className={stepBtn}>−</button>
+            <span key={pages.length} className="min-w-[30px] px-1 flex items-center justify-center text-[14px] font-bold text-ink border-x border-border animate-[vsPop_300ms_ease-out]" aria-live="polite">
+              {pages.length}
+            </span>
+            <button type="button" onClick={addPage} disabled={pages.length >= 20} aria-label="Add a page" className={stepBtn}>+</button>
+          </div>
+        </div>
+      )}
+
+      <div className={fieldCls}>
+        <span className={labelCls}>Bilingual</span>
+        <div className="h-9 flex items-center gap-2.5">
+          <label className="flex items-center cursor-pointer" title="Show a second language under each card">
+            <input
+              type="checkbox"
+              className="peer sr-only"
+              checked={bilingual}
+              onChange={(e) => setLabelMode(e.target.checked ? "multi" : "single")}
+              aria-label="Bilingual cards"
+            />
+            <span className="w-10 h-6 shrink-0 rounded-full bg-[#CDD5C7] relative transition-colors peer-checked:bg-accent-strong peer-focus-visible:ring-2 peer-focus-visible:ring-weekly-accent after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:shadow after:transition-all peer-checked:after:left-[19px]" />
+          </label>
+          {bilingual && (
+            <select
+              value={secondLanguage}
+              onChange={(e) => setSecondLanguage(e.target.value as Language)}
+              aria-label="Second language"
+              className={`${selectCls} max-w-[190px] animate-[vsSlideIn_250ms_ease-out]`}
+            >
+              {Object.keys(LANGUAGES).filter((c) => c !== language).map((c) => (
+                <option key={c} value={c}>{langName(c)}</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
-    </header>
-  );
-}
 
-function Step({ n, label, state }: { n: number; label: string; state: "done" | "on" | "todo" }) {
-  const circle =
-    state === "on" ? "bg-accent-strong border-accent-strong text-white"
-    : state === "done" ? "bg-accent-soft border-accent-strong text-accent-strong"
-    : "bg-white border-[#CBD3C6] text-ink-3";
-  return (
-    <li className={`flex items-center gap-2 text-[14px] font-semibold whitespace-nowrap ${state === "todo" ? "text-ink-3" : state === "done" ? "text-accent-strong" : "text-ink"}`} aria-current={state === "on" ? "step" : undefined}>
-      <span key={state} className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[13px] ${circle} ${state === "done" ? "animate-[vsPop_350ms_ease-out]" : ""}`}>
-        {state === "done" ? "✓" : n}
-      </span>
-      {label}
-    </li>
-  );
-}
+      <div className="flex-1" />
 
-function Sep({ done }: { done: boolean }) {
-  return <li aria-hidden className={`w-12 h-0.5 rounded ${done ? "bg-accent-strong" : "bg-[#DCE2D8]"}`} />;
-}
-
-function NavLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
-  const pathname = usePathname() || "";
-  const on = pathname === href || (href !== "/schedule" && pathname.startsWith(href));
-  return (
-    <Link href={href} aria-current={on ? "page" : undefined} className={`flex items-center gap-1.5 h-9 px-3 rounded-[10px] no-underline font-semibold text-[13.5px] whitespace-nowrap ${on ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-surface-hover hover:text-ink"}`}>
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
-      {label}
-    </Link>
-  );
-}
-
-function TextSize() {
-  const [open, setOpen] = useState(false);
-  const [zoom, setZoom] = useState(100);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    try {
-      const saved = Number(localStorage.getItem("vs_a11y_zoom"));
-      if (saved >= 80 && saved <= 140) {
-        setZoom(saved);
-        document.documentElement.style.fontSize = `${(14 * saved) / 100}px`;
-      }
-    } catch {}
-    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-  const apply = (z: number) => {
-    const c = Math.max(80, Math.min(140, z));
-    setZoom(c);
-    document.documentElement.style.fontSize = `${(14 * c) / 100}px`;
-    try { localStorage.setItem("vs_a11y_zoom", String(c)); } catch {}
-  };
-  return (
-    <div className="relative" ref={ref}>
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label="Text size and accessibility" className="w-10 h-10 rounded-[10px] flex items-center justify-center hover:bg-surface-hover">
-        <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="#1E2A24" strokeWidth="1.9" strokeLinecap="round"><path d="M4 19l5-14 5 14M6 14h6M15 19l3-8 3 8M16 16.5h4" /></svg>
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-60 bg-white border border-border rounded-xl shadow-lg p-3 space-y-3 z-[200]">
-          <p className="text-[12px] font-semibold text-ink-2 uppercase tracking-wider">Text size</p>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={() => apply(zoom - 10)} aria-label="Decrease text size" className="w-10 h-10 rounded-lg border border-input-border font-bold">A−</button>
-            <button type="button" onClick={() => apply(100)} aria-label="Reset text size" className="flex-1 h-10 rounded-lg hover:bg-surface-hover font-semibold">{zoom}%</button>
-            <button type="button" onClick={() => apply(zoom + 10)} aria-label="Increase text size" className="w-10 h-10 rounded-lg border border-input-border font-bold">A+</button>
-          </div>
-          <a href="mailto:visualschedulesofficial@gmail.com" className="block text-[13px] text-ink-2 underline">Accessibility help</a>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Account() {
-  const [user, setUser] = useState<User | null>(null);
-  const [checked, setChecked] = useState(false);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    fetch("/api/auth/session", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => setUser(d.user || null))
-      .catch(() => setUser(null))
-      .finally(() => setChecked(true));
-    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-
-  if (!checked) return <span className="w-[34px] h-[34px] ml-1" />;
-  if (!user) {
-    return (
-      <Link href="/login?next=/schedule" className="ml-1 h-9 px-4 rounded-full bg-accent-strong text-white font-bold text-[13.5px] flex items-center no-underline hover:bg-accent-hover">
-        Log in
-      </Link>
-    );
-  }
-  const logout = async () => {
-    await fetch("/api/auth/session", { method: "DELETE" });
-    window.location.href = "/schedule";
-  };
-  return (
-    <div className="relative ml-1" ref={ref}>
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-label={`Account: ${user.email}`} aria-expanded={open} className="w-[34px] h-[34px] rounded-full bg-accent-strong text-white font-bold">
-        {user.email?.[0]?.toUpperCase() || "?"}
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-border rounded-xl shadow-lg z-[200] overflow-hidden">
-          <div className="px-3 py-2.5 border-b border-border">
-            <p className="text-[11px] uppercase tracking-wider text-ink-3 font-semibold">Signed in as</p>
-            <p className="text-[13px] text-ink truncate">{user.email}</p>
-          </div>
-          <Link href="/schedules" className="block px-3 py-2.5 text-[13px] text-ink no-underline hover:bg-surface-hover">My Schedules</Link>
-          <Link href="/plans" className="block px-3 py-2.5 text-[13px] text-ink no-underline hover:bg-surface-hover">Plans</Link>
-          <button type="button" onClick={logout} className="w-full text-left px-3 py-2.5 text-[13px] text-[#C53030] hover:bg-[#FEF0F0] border-t border-border">Log out</button>
-        </div>
-      )}
+      <div className="flex items-center gap-3 self-center">
+        {full ? (
+          <span
+            role="status"
+            className="flex items-center gap-1.5 rounded-full pl-1.5 pr-3 py-1 text-[13px] font-semibold bg-[#E6F2E1] text-[#2E5A26] border border-[#C6DDBC] animate-[vsSlideIn_420ms_cubic-bezier(.2,.8,.2,1)]"
+          >
+            <span className="w-[20px] h-[20px] rounded-full bg-[#7FAF6A] text-white flex items-center justify-center text-[11px] font-extrabold animate-[vsPop_400ms_ease-out_200ms_both]">✓</span>
+            All done!
+            <span aria-hidden className="inline-block animate-[vsPoint_1.1s_ease-in-out_infinite]">→</span>
+          </span>
+        ) : placed > 0 ? (
+          <span className="text-[13px] font-semibold text-ink-3 whitespace-nowrap" aria-live="polite">{placed} of {total} cards</span>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => { void exportJPEG(); }}
+          disabled={placed === 0 || exporting}
+          title={placed === 0 ? "Add at least one card first" : "Download as an image (JPEG)"}
+          className={`h-10 px-4 disabled:bg-[#C9D2C1] disabled:cursor-not-allowed rounded-[10px] bg-accent-strong text-white font-bold text-[14px] flex items-center gap-2 hover:bg-accent-hover whitespace-nowrap ${full ? "animate-[vsPulse_1.8s_ease-in-out_infinite]" : ""}`}
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+          {exporting ? "Preparing…" : "Save & download"}
+        </button>
+      </div>
     </div>
   );
 }
