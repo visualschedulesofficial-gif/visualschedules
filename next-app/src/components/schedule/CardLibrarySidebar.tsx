@@ -514,6 +514,21 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
         )}
       </div>
 
+      {/* First-time nudge: floats over the first row of pictures until a
+          card is placed. Clicks pass through to the cards underneath. */}
+      {addedCardIds.size === 0 && filteredCards.length > 0 && (
+        <div className="sticky top-[54px] z-30 h-0 pointer-events-none hidden md:block" aria-hidden>
+          <div className="vs-bob absolute left-1/2 top-[62px] flex flex-col items-center">
+            <span className="whitespace-nowrap rounded-full bg-accent-strong text-white text-[14px] font-bold pl-3 pr-4 py-2 shadow-[0_8px_22px_rgba(46,62,38,0.35)] flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1-6 6h-1a6 6 0 0 1-4.9-2.5L4.6 15a1.5 1.5 0 0 1 2.3-1.9L9 15" /></svg>
+              Select an image to start
+            </span>
+            <span className="w-0 h-0 border-x-[8px] border-x-transparent border-t-[9px] border-t-accent-strong" />
+          </div>
+        </div>
+      )}
+      <p className="sr-only" role="status">{addedCardIds.size === 0 ? "Select an image to start" : ""}</p>
+
       {/* CARDS SECTION */}
       <div className="px-4 py-4">
         {filteredCards.length === 0 ? (
