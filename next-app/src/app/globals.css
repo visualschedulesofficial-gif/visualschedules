@@ -287,3 +287,6 @@ a.bg-accent-strong {
 @media (prefers-reduced-motion: reduce) {
   .vs-next, [class*="animate-[vs"] { animation: none !important; }
 }
+
+/* Bilingual card labels get a third line so the second language isn't clipped. */
+[data-bilingual].line-clamp-2, [data-bilingual] .line-clamp-2 { -webkit-line-clamp: 3; line-clamp: 3; }
