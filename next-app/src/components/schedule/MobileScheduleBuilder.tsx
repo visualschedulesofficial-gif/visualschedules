@@ -31,6 +31,8 @@ import { track } from "@/lib/track";
 import { BuilderTour } from "@/components/onboarding/BuilderTour";
 import { useExport } from "@/hooks/useExport";
 import { DownloadSheet } from "@/components/schedule/DownloadSheet";
+import { downloadFiles } from "@/hooks/useExport";
+import { getDlFormat } from "@/lib/prefs";
 import { applyPrefsToNewSchedule } from "@/lib/prefs";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { A4_PORTRAIT } from "@/lib/constants";
@@ -415,6 +417,25 @@ export function MobileScheduleBuilder({
   // true when the sheet was opened by a successful Save (shows "Saved").
   const [openedFromSave, setOpenedFromSave] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // Once they've picked image or PDF, Download just does it — no sheet.
+  const [dlFormat, setDlFormatState] = useState<"image" | "pdf" | null>(null);
+  useEffect(() => { setDlFormatState(getDlFormat()); }, [showDownload]);
+  const [directBusy, setDirectBusy] = useState(false);
+  const directDownload = async () => {
+    const fmt = getDlFormat();
+    if (!fmt) { setOpenedFromSave(false); setShowDownload(true); return; }
+    setDirectBusy(true);
+    try {
+      const files = await prepareFiles(fmt, { save: !saved });
+      await downloadFiles(files);
+      onExported(fmt, "downloaded");
+    } catch (e) {
+      setToast((e as Error)?.message || "Couldn't make the file — please try again.");
+      setTimeout(() => setToast(null), 3500);
+    } finally {
+      setDirectBusy(false);
+    }
+  };
 
   // After the file is shared or downloaded, confirm where it went, then go
   // back to My schedules, where this schedule now sits at the top.
@@ -816,17 +837,23 @@ export function MobileScheduleBuilder({
             {saving ? "Saving…" : saved ? "✓ Saved" : (isAdmin && saveAsTemplate ? "Save as Template" : "Save")}
           </button>
           <button
-            onClick={() => { setOpenedFromSave(false); setShowDownload(true); }}
-            disabled={placedCount === 0}
-            className="flex-1 py-3.5 rounded-2xl text-white text-[15px] font-bold disabled:opacity-50"
+            onClick={directDownload}
+            disabled={placedCount === 0 || directBusy}
+            className="flex-1 py-3.5 rounded-2xl text-white text-[15px] font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
             style={{ background: GREEN, boxShadow: "0 6px 16px rgba(74,90,62,0.28)" }}
           >
-            Download
+            {directBusy ? "Preparing…" : dlFormat === "pdf" ? "Download PDF" : dlFormat === "image" ? "Download image" : "Download"}
           </button>
         </div>
       </div>
 
-      {/* Download / Share sheet */}
+      {toast && (
+        <div role="status" className="fixed left-1/2 -translate-x-1/2 bottom-[92px] z-[320] max-w-[90vw] rounded-xl px-4 py-2.5 text-[14px] text-white text-center animate-[vsFadeIn_200ms_ease-out]" style={{ background: "#1E2A24" }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Download sheet */}
       <DownloadSheet
         open={showDownload}
         onClose={() => setShowDownload(false)}
