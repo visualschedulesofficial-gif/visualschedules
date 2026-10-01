@@ -803,7 +803,7 @@ function ProfileTab({ user, prefs, updatePrefs, assetsVersion }: {
             ["https://www.instagram.com/visual_schedule_official/", "Instagram", "#F7E1EA", "#9B2D5B", <><rect key="a" x="3" y="3" width="18" height="18" rx="5" /><circle key="b" cx="12" cy="12" r="4" /></>],
             ["https://www.youtube.com/@VisualSchedulesOfficial", "YouTube", "#F8E0DC", "#A3291B", <><rect key="a" x="2" y="5" width="20" height="14" rx="4" /><path key="b" d="M10 9l5 3-5 3z" /></>],
             ["https://chat.whatsapp.com/F452loR5KUE5RzcffScGw5", "WhatsApp", "#DDEEDF", "#1E6B34", <path key="a" d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" />],
-            ["mailto:growgently.co@gmail.com", "Email", "#DDE7EC", "#2F5566", <><rect key="a" x="3" y="5" width="18" height="14" rx="3" /><path key="b" d="M4 7l8 6 8-6" /></>],
+            ["mailto:visualschedulesofficial@gmail.com", "Email", "#DDE7EC", "#2F5566", <><rect key="a" x="3" y="5" width="18" height="14" rx="3" /><path key="b" d="M4 7l8 6 8-6" /></>],
           ] as const).map(([href, label, bg, fg, icon]) => (
             <a key={label} href={href} target={href.startsWith("mailto:") ? undefined : "_blank"} rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 no-underline text-ink text-[12px] font-medium">
