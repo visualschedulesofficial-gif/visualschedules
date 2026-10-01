@@ -1,4 +1,5 @@
 import { DAY_KEYS } from "@/lib/constants";
+import { ftRank } from "@/lib/first-then";
 
 type CardRef = { cardId?: string } | null;
 type Page = { slots?: CardRef[]; columns?: Record<string, CardRef[]> };
@@ -8,7 +9,7 @@ type Page = { slots?: CardRef[]; columns?: Record<string, CardRef[]> };
 export function scheduleCardIds(pages: Page[] | undefined): string[] {
   const out: string[] = [];
   const colOrder = ["0", "cutout", ...DAY_KEYS, "extra"];
-  const rank = (k: string) => (colOrder.indexOf(k) === -1 ? 999 : colOrder.indexOf(k));
+  const rank = (k: string) => ftRank(k) ?? (colOrder.indexOf(k) === -1 ? 999 : colOrder.indexOf(k));
   (pages || []).forEach((p) => {
     (p?.slots || []).forEach((s) => { if (s?.cardId) out.push(s.cardId); });
     if (p?.columns) {
