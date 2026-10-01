@@ -16,7 +16,7 @@ import {
 import { createPortal } from "react-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardLibrarySidebar } from "@/components/schedule/CardLibrarySidebar";
-import { RightPanel } from "@/components/schedule/RightPanel";
+import { SocialDock } from "@/components/schedule/SocialDock";
 import { MobileScheduleBuilder } from "@/components/schedule/MobileScheduleBuilder";
 import { BuilderTopBar } from "@/components/schedule/BuilderTopBar";
 import { BuilderToolbar } from "@/components/schedule/BuilderToolbar";
@@ -125,17 +125,6 @@ export default function ScheduleBuilder() {
     return `${p.placed}/${p.total}`;
   });
   const [placed, total] = progressKey.split("/").map(Number);
-  // Wide (landscape) pages get the full width; the Save & download panel
-  // slides in over them on demand.
-  const landscape = isLandscapeType(scheduleTypeForFit);
-  const [panelOpen, setPanelOpen] = useState(false);
-  useEffect(() => { setPanelOpen(false); }, [landscape]);
-  useEffect(() => {
-    if (!panelOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPanelOpen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [panelOpen]);
 
   // Load an existing schedule when opened as /schedule?id=... Nothing read
   // this parameter before, so Open/Edit from My Schedules always landed on an
@@ -437,7 +426,7 @@ export default function ScheduleBuilder() {
            </aside>
 
            <section className="flex-1 min-w-0 flex flex-col">
-             <BuilderToolbar placed={placed} total={total} landscape onOpenPanel={() => setPanelOpen(true)} />
+             <BuilderToolbar placed={placed} total={total} />
              <main
                id="canvas-wrap"
                className="flex-1 min-h-0 overflow-auto bg-bg-muted flex flex-col items-center p-6 gap-6"
@@ -448,21 +437,7 @@ export default function ScheduleBuilder() {
              </main>
            </section>
 
-           {/* Save & download panel slides in on demand for every type, so the
-               page gets the full width. */}
-           <div
-             aria-hidden
-             onClick={() => setPanelOpen(false)}
-             className={`absolute inset-0 z-[60] bg-[rgba(28,27,25,0.28)] transition-opacity duration-200 ${panelOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-           />
-           <aside
-             aria-label="Save and download"
-             aria-hidden={!panelOpen}
-             inert={!panelOpen}
-             className={`absolute top-0 right-0 bottom-0 w-[330px] z-[70] bg-surface border-l border-border shadow-[-12px_0_40px_rgba(30,42,36,0.18)] transition-transform duration-300 ease-[cubic-bezier(.2,.8,.2,1)] ${panelOpen ? "translate-x-0" : "translate-x-[105%]"}`}
-           >
-             <RightPanel placed={placed} total={total} onClose={() => setPanelOpen(false)} />
-           </aside>
+           <SocialDock />
          </div>
        </div>
      )}
