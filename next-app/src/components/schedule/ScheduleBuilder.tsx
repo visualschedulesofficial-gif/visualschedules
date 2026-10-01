@@ -21,6 +21,7 @@ import { MobileScheduleBuilder } from "@/components/schedule/MobileScheduleBuild
 import { BuilderTopBar } from "@/components/schedule/BuilderTopBar";
 import { BuilderToolbar } from "@/components/schedule/BuilderToolbar";
 import { getScheduleProgress, isLandscapeType } from "@/lib/schedule-progress";
+import { ftColumnCount, ftNextEmpty } from "@/lib/first-then";
 import { applyPrefsToNewSchedule } from "@/lib/prefs";
 import { ScheduleCanvas } from "@/components/schedule/ScheduleCanvas";
 import { useScheduleState } from "@/hooks/useScheduleState";
@@ -259,23 +260,21 @@ export default function ScheduleBuilder() {
         setTimeout(() => setFullNotice(null), 2600);
       }
     } else if (scheduleType === "firstthen") {
-      const page = pages[pageIdx] as import("@/types/schedule").ColumnPageData;
-      // Cards go to the cut-out placeholders only — the boards above stay
-      // empty; the child physically places cut cards onto them after printing.
-      const { ftStyle } = useScheduleState.getState();
-      const ftN = ftStyle === "sequencing" ? 4 : ftStyle === "first-then-now" ? 3 : 2;
-      const order: Array<{ key: string; max: number }> = [{ key: "cutout", max: ftN === 4 ? 16 : 9 }];
+      // Fill the boards in reading order: board 1 First, Then, board 2 …,
+      // then the next page.
+      const n = ftColumnCount(useScheduleState.getState().ftStyle);
       let ftPlaced = false;
-      for (const { key, max } of order) {
-        if ((page.columns?.[key] || []).length < max) {
-          placeCard(pageIdx, key, { cardId: card.id, catId: card.categoryId });
-          setJustDroppedSlot(`${pageIdx}-${key}`);
+      for (let pIdx = 0; pIdx < pages.length; pIdx++) {
+        const key = ftNextEmpty((pages[pIdx] as import("@/types/schedule").ColumnPageData).columns, n);
+        if (key) {
+          placeCard(pIdx, key, { cardId: card.id, catId: card.categoryId });
+          setJustDroppedSlot(`${pIdx}-${key}`);
           ftPlaced = true;
           break;
         }
       }
       if (!ftPlaced) {
-        setFullNotice("All cut-out slots are full.");
+        setFullNotice("All boards on this page are full — add a page for more.");
         setTimeout(() => setFullNotice(null), 2600);
       }
     } else if (scheduleType === "timetable") {
