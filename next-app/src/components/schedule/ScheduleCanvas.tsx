@@ -662,7 +662,7 @@ function MiniSchedulePage({ pageIdx, justDroppedSlot, onEmptySlotTap }: { pageId
                   {i === 0 && pageIdx === 0 && !exporting ? (
                     <>
                       <b className="block text-[16px] text-[#4A5A3E]">{cards.length === 0 ? "Start here" : "Next card goes here"}</b>
-                      Click any card on the left
+                      Select an image to add it here
                     </>
                   ) : (
                     "Click or drag & drop to add"
@@ -1135,7 +1135,7 @@ export function ScheduleCanvas({ justDroppedSlot, onEmptySlotTap }: ScheduleCanv
           <div className="flex flex-col items-center gap-2">
             <div
               className="text-[12px] tracking-widest uppercase text-[#B0ACA6] font-medium shrink-0"
-              style={{ width: scheduleType === "daily" ? A4_PORTRAIT.width : A4_LANDSCAPE.width }}
+              style={{ width: ["weekly", "custom", "timetable"].includes(scheduleType) ? A4_LANDSCAPE.width : A4_PORTRAIT.width }}
             >
               Page {pageIdx + 1}
             </div>
