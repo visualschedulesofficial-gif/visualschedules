@@ -420,7 +420,7 @@ export default function ScheduleBuilder() {
        <div className="flex flex-col h-dvh overflow-hidden">
          <BuilderTopBar placed={placed} total={total} />
          <div className="flex flex-1 min-h-0 overflow-hidden relative">
-           <aside id="library-panel" className="w-[360px] shrink-0 bg-surface border-r border-border flex flex-col overflow-hidden">
+           <aside id="library-panel" className="w-1/2 shrink-0 bg-surface border-r border-border flex flex-col overflow-hidden">
              <CardLibrarySidebar onAddCard={handleClickPlace} />
            </aside>
 
