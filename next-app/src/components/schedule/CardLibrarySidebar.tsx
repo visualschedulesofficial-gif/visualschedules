@@ -61,7 +61,7 @@ function DraggableCardItem({
       title={isLocked ? "Subscribe to unlock paid cards" : `Add ${getCardLabel(card, language)}`}
       aria-label={isLocked ? `${getCardLabel(card, language)} (paid)` : `Add ${getCardLabel(card, language)}`}
     >
-      <div className="w-full aspect-[5/4] bg-white rounded-[9px] flex items-center justify-center overflow-hidden pointer-events-none">
+      <div className="w-full aspect-square bg-white rounded-[10px] flex items-center justify-center overflow-hidden pointer-events-none">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -79,7 +79,7 @@ function DraggableCardItem({
         )}
       </div>
 
-      <span className="text-[12.5px] font-semibold text-ink text-center line-clamp-2 leading-tight pointer-events-none">
+      <span className="text-[13.5px] font-semibold text-ink text-center line-clamp-2 leading-tight pointer-events-none">
         {getCardLabel(card, language)}
       </span>
 
@@ -172,7 +172,7 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
   const setGridCols = useScheduleState((s) => s.setGridCols);
   const weekMode = useScheduleState((s) => s.weekMode);
   const setWeekMode = useScheduleState((s) => s.setWeekMode);
-  const [panelWidth, setPanelWidth] = useState(360);
+  const [panelPct, setPanelPct] = useState(50);
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
@@ -288,34 +288,32 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
     );
   }, [cards, categoryOrder]);
 
-  // Apply the chosen width to the panel and support drag-to-resize on its edge
-  // Opens wide enough for five cards a row on laptop screens; a width the
-  // user dragged to is remembered instead.
-  const FIVE_WIDE = 600;
+  // Library and canvas split the screen 50/50 by default so cards are big
+  // and the page has less dead space around it. A dragged split is
+  // remembered as a percentage (new key, so old pixel widths don't stick).
+  const PCT_MIN = 30;
+  const PCT_MAX = 65;
   useEffect(() => {
-    let w = window.innerWidth >= 1200 ? FIVE_WIDE : 360;
     try {
-      const saved = Number(localStorage.getItem("vs_library_width"));
-      if (saved >= 320 && saved <= 648) w = saved;
+      const saved = Number(localStorage.getItem("vs_library_pct"));
+      if (saved >= PCT_MIN && saved <= PCT_MAX) setPanelPct(saved);
     } catch {}
-    setPanelWidth(w);
   }, []);
   useEffect(() => {
     const aside = document.getElementById("library-panel");
-    if (aside) aside.style.width = `${panelWidth}px`;
-  }, [panelWidth]);
+    if (aside) aside.style.width = `${panelPct}%`;
+  }, [panelPct]);
 
   const startResize = (e: React.MouseEvent) => {
     e.preventDefault();
     const aside = document.getElementById("library-panel");
-    if (!aside) return;
-    const left = aside.getBoundingClientRect().left;
-    const maxW = 118 * 5 + 8 * 4 + 26; // five cards + gaps + padding
-    const onMove = (ev: MouseEvent) => {
-      setPanelWidth(Math.min(maxW, Math.max(320, ev.clientX - left)));
-    };
+    const row = aside?.parentElement;
+    if (!aside || !row) return;
+    const { left, width } = row.getBoundingClientRect();
+    const toPct = (x: number) => Math.min(PCT_MAX, Math.max(PCT_MIN, ((x - left) / width) * 100));
+    const onMove = (ev: MouseEvent) => setPanelPct(toPct(ev.clientX));
     const onUp = (ev: MouseEvent) => {
-      try { localStorage.setItem("vs_library_width", String(Math.min(maxW, Math.max(320, ev.clientX - left)))); } catch {}
+      try { localStorage.setItem("vs_library_pct", String(toPct(ev.clientX))); } catch {}
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       document.body.style.cursor = "";
@@ -397,14 +395,14 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-border relative">
-      {/* Drag the panel edge to resize (max = five cards per row) */}
+      {/* Drag the panel edge to resize the library/canvas split */}
       <div
         onMouseDown={startResize}
         title="Drag to resize"
         className="absolute right-0 top-0 bottom-0 w-[6px] cursor-col-resize z-20 hover:bg-[#C5D2B8]/50"
       />
       {/* Everything scrolls; the toggle row below sticks to the top */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto @container">
       <div className="border-b border-border bg-white">
         <div className="p-4 pb-3 space-y-3">
           {/* Language first: card names follow it, so a parent who reads
@@ -585,7 +583,7 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
                     </svg>
                   </button>
                   {!collapsedCats.has(catId) && (
-                  <div className="grid gap-2.5 grid-cols-[repeat(auto-fill,minmax(98px,1fr))]">
+                  <div className="grid gap-3 grid-cols-4 @[540px]:grid-cols-5">
                     {categoryCards.map((card) => (
                       <DraggableCardItem
                         key={`${card.id}-${forceUpdate}`}
