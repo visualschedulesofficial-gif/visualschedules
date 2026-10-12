@@ -235,6 +235,68 @@ function friendlyMessage(err: unknown, kind: "PDF" | "images"): string {
   return `Something went wrong creating the ${kind}. Please refresh the page and try again. (Details: ${msg})`;
 }
 
+// html2canvas clones the WHOLE document by default — including the card
+// library (dozens of lazy images), which the clone then waits on for up to
+// windowTimeout. That wait was the "Preparing…" stall. Only the page being
+// captured (plus <head> for styles) is cloned now.
+function captureOptions(pageEl: HTMLElement, liveCss: string) {
+  return {
+    scale: 2,
+    backgroundColor: "#FFFFFF",
+    useCORS: true,
+    allowTaint: false,
+    logging: false,
+    imageTimeout: 8000,
+    windowTimeout: 8000,
+    onclone: (_doc: Document) => {
+      const baseStyles = _doc.createElement("style");
+      baseStyles.textContent = liveCss;
+      _doc.head.appendChild(baseStyles);
+
+      const s = _doc.createElement("style");
+      s.textContent = [
+        ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
+        ".font-sans{font-family:'Inter',system-ui,sans-serif!important}",
+        "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
+        '[class*="border-[#C7D7B8]"]{border-color:#C7D7B8!important;border-style:solid!important;border-width:1px!important}',
+        '[class*="border-[#C5D2B8]"]{border-color:#C5D2B8!important;border-style:solid!important}',
+        '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
+        '[class*="border-b-[#C5D2B8]"]{border-bottom-color:#C5D2B8!important}',
+        '[class*="border-r-[#C5D2B8]"]{border-right-color:#C5D2B8!important}',
+        '[class*="bg-[#E8EDE0]"]{background-color:#E8EDE0!important}',
+        '[class*="bg-[#FAFBF7]"]{background-color:#FAFBF7!important}',
+        '[class*="bg-[#EFF2E8]"]{background-color:#EFF2E8!important}',
+        '[class*="bg-[#F5F7EF]"]{background-color:#F5F7EF!important}',
+        '[class*="border-[#E0E6D4]"]{border-bottom-color:#E0E6D4!important}',
+        '[class*="text-[#5A8A3C]"]{color:#5A8A3C!important}',
+        '[class*="text-[#4A5A3E]"]{color:#4A5A3E!important}',
+        '[class*="text-[#7A8F5E]"] , [class*="text-[#7A8F5E]"] *{color:#7A8F5E!important}',
+        '[class*="text-[#2C2C2C]"]{color:#2C2C2C!important}',
+        '[class*="stroke-[#8A9B74]"]{stroke:#8A9B74!important}',
+      ].join("");
+      _doc.head.appendChild(s);
+    },
+    ignoreElements: (el: any) => {
+      if (el !== pageEl && !el.contains?.(pageEl) && !pageEl.contains(el) && !el.closest?.("head")) return true;
+      const raw = el.className;
+      const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
+      return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
+    },
+  };
+}
+
+function collectLiveCss() {
+  let css = "";
+  try {
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) css += rule.cssText + "\n";
+      } catch {}
+    }
+  } catch {}
+  return css;
+}
+
 async function buildPdfBlob(scheduleType: string) {
   const pages = getPageElements();
   if (!pages.length) throw new Error("NOT_VISIBLE");
@@ -250,6 +312,7 @@ async function buildPdfBlob(scheduleType: string) {
   const html2canvas = (window as any).html2canvas;
 
   const pdf = new jsPDF({ orientation, unit: "mm", format: "a4" });
+  const liveCss = collectLiveCss();
 
   for (let i = 0; i < pages.length; i++) {
     const pageEl = pages[i] as HTMLElement;
@@ -274,60 +337,10 @@ async function buildPdfBlob(scheduleType: string) {
       )
     );
 
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 80));
 
     const captureState = prepPageForCapture(pageEl);
-    const canvas = await html2canvas(pageEl, {
-      scale: 2,
-      backgroundColor: "#FFFFFF",
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      windowTimeout: 20000,
-      onclone: (_doc: Document) => {
-        let liveCss = "";
-        try {
-          for (const sheet of Array.from(document.styleSheets)) {
-            try {
-              for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
-                liveCss += rule.cssText + "\n";
-              }
-            } catch {}
-          }
-        } catch {}
-        const baseStyles = _doc.createElement("style");
-        baseStyles.textContent = liveCss;
-        _doc.head.appendChild(baseStyles);
-
-        const s = _doc.createElement("style");
-        s.textContent = [
-          ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
-          ".font-sans{font-family:'Inter',system-ui,sans-serif!important}",
-          "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
-          '[class*="border-[#C7D7B8]"]{border-color:#C7D7B8!important;border-style:solid!important;border-width:1px!important}',
-          '[class*="border-[#C5D2B8]"]{border-color:#C5D2B8!important;border-style:solid!important}',
-          '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
-          '[class*="border-b-[#C5D2B8]"]{border-bottom-color:#C5D2B8!important}',
-          '[class*="border-r-[#C5D2B8]"]{border-right-color:#C5D2B8!important}',
-          '[class*="bg-[#E8EDE0]"]{background-color:#E8EDE0!important}',
-          '[class*="bg-[#FAFBF7]"]{background-color:#FAFBF7!important}',
-          '[class*="bg-[#EFF2E8]"]{background-color:#EFF2E8!important}',
-          '[class*="bg-[#F5F7EF]"]{background-color:#F5F7EF!important}',
-          '[class*="border-[#E0E6D4]"]{border-bottom-color:#E0E6D4!important}',
-          '[class*="text-[#5A8A3C]"]{color:#5A8A3C!important}',
-          '[class*="text-[#4A5A3E]"]{color:#4A5A3E!important}',
-          '[class*="text-[#7A8F5E]"] , [class*="text-[#7A8F5E]"] *{color:#7A8F5E!important}',
-          '[class*="text-[#2C2C2C]"]{color:#2C2C2C!important}',
-          '[class*="stroke-[#8A9B74]"]{stroke:#8A9B74!important}',
-        ].join("");
-        _doc.head.appendChild(s);
-      },
-      ignoreElements: (el: any) => {
-        const raw = el.className;
-        const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
-        return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
-      },
-    });
+    const canvas = await html2canvas(pageEl, captureOptions(pageEl, liveCss));
     restorePageAfterCapture(captureState);
 
     pageEl.style.transform = prevTransform;
@@ -350,6 +363,7 @@ async function buildJpegBlobs(scheduleType: string) {
   const html2canvas = (window as any).html2canvas;
 
   const blobs: Array<{ blob: Blob; index: number }> = [];
+  const liveCss = collectLiveCss();
 
   for (let i = 0; i < pages.length; i++) {
     const pageEl = pages[i] as HTMLElement;
@@ -374,60 +388,10 @@ async function buildJpegBlobs(scheduleType: string) {
       )
     );
 
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 80));
 
     const captureState = prepPageForCapture(pageEl);
-    const canvas = await html2canvas(pageEl, {
-      scale: 2,
-      backgroundColor: "#FFFFFF",
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      windowTimeout: 20000,
-      onclone: (_doc: Document) => {
-        let liveCss = "";
-        try {
-          for (const sheet of Array.from(document.styleSheets)) {
-            try {
-              for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
-                liveCss += rule.cssText + "\n";
-              }
-            } catch {}
-          }
-        } catch {}
-        const baseStyles = _doc.createElement("style");
-        baseStyles.textContent = liveCss;
-        _doc.head.appendChild(baseStyles);
-
-        const s = _doc.createElement("style");
-        s.textContent = [
-          ".font-serif{font-family:'Playwrite DE Grund',Georgia,serif!important}",
-          ".font-sans{font-family:'Inter',system-ui,sans-serif!important}",
-          "*{--weekly-border:#C5D2B8!important;--color-weekly-border:#C5D2B8!important}",
-          '[class*="border-[#C7D7B8]"]{border-color:#C7D7B8!important;border-style:solid!important;border-width:1px!important}',
-          '[class*="border-[#C5D2B8]"]{border-color:#C5D2B8!important;border-style:solid!important}',
-          '[class*="border-[#F0F0F0]"]{border-top-color:#F0F0F0!important}',
-          '[class*="border-b-[#C5D2B8]"]{border-bottom-color:#C5D2B8!important}',
-          '[class*="border-r-[#C5D2B8]"]{border-right-color:#C5D2B8!important}',
-          '[class*="bg-[#E8EDE0]"]{background-color:#E8EDE0!important}',
-          '[class*="bg-[#FAFBF7]"]{background-color:#FAFBF7!important}',
-          '[class*="bg-[#EFF2E8]"]{background-color:#EFF2E8!important}',
-          '[class*="bg-[#F5F7EF]"]{background-color:#F5F7EF!important}',
-          '[class*="border-[#E0E6D4]"]{border-bottom-color:#E0E6D4!important}',
-          '[class*="text-[#5A8A3C]"]{color:#5A8A3C!important}',
-          '[class*="text-[#4A5A3E]"]{color:#4A5A3E!important}',
-          '[class*="text-[#7A8F5E]"] , [class*="text-[#7A8F5E]"] *{color:#7A8F5E!important}',
-          '[class*="text-[#2C2C2C]"]{color:#2C2C2C!important}',
-          '[class*="stroke-[#8A9B74]"]{stroke:#8A9B74!important}',
-        ].join("");
-        _doc.head.appendChild(s);
-      },
-      ignoreElements: (el: any) => {
-        const raw = el.className;
-        const cn = typeof raw === "string" ? raw : raw && typeof raw.baseVal === "string" ? raw.baseVal : "";
-        return cn.includes("slot-rm") || cn.includes("remove") || cn.includes("dz-hint");
-      },
-    });
+    const canvas = await html2canvas(pageEl, captureOptions(pageEl, liveCss));
     restorePageAfterCapture(captureState);
 
     pageEl.style.transform = prevTransform;
@@ -436,9 +400,6 @@ async function buildJpegBlobs(scheduleType: string) {
     const blob = await new Promise<Blob>((res) => canvas.toBlob(res, "image/jpeg", 0.92));
     blobs.push({ blob, index: i });
 
-    if (i < pages.length - 1) {
-      await new Promise((r) => setTimeout(r, 400));
-    }
   }
 
   return blobs;
@@ -544,8 +505,9 @@ export function useExport() {
       } else {
         await downloadBlob(blob, fileName);
       }
-      showStatus("Saving…");
-      await saveToDatabase();
+      // Save in the background — the download is already done, so the
+      // button shouldn't sit on "Preparing…" waiting for the server.
+      void saveToDatabase();
     } catch (err) {
       console.error("PDF export error:", err);
       alert(friendlyMessage(err, "PDF"));
@@ -580,8 +542,9 @@ export function useExport() {
           await new Promise((r) => setTimeout(r, 400));
         }
       }
-      showStatus("Saving…");
-      await saveToDatabase();
+      // Save in the background — the download is already done, so the
+      // button shouldn't sit on "Preparing…" waiting for the server.
+      void saveToDatabase();
     } catch (err) {
       console.error("JPEG export error:", err);
       alert(friendlyMessage(err, "images"));
@@ -617,7 +580,7 @@ export function useExport() {
             new File([blob], blobs.length > 1 ? `${baseName}-page-${index + 1}.jpg` : `${baseName}.jpg`, { type: "image/jpeg" })
           );
         }
-        if (opts.save) await saveToDatabase();
+        if (opts.save) void saveToDatabase();
         return files;
       } catch (err) {
         console.error("Export prepare error:", err);
