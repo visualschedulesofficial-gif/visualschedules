@@ -165,16 +165,22 @@ export function BuilderToolbar({
       <div className={fieldCls}>
         <span className={labelCls}>Bilingual</span>
         <div className="h-9 flex items-center gap-2.5">
-          <label className="flex items-center cursor-pointer" title="Show a second language under each card">
-            <input
-              type="checkbox"
-              className="peer sr-only"
-              checked={bilingual}
-              onChange={(e) => setLabelMode(e.target.checked ? "multi" : "single")}
-              aria-label="Bilingual cards"
+          {/* Real knob element: the old ::after knob got pushed to the
+              middle by global styles. */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={bilingual}
+            aria-label="Bilingual cards"
+            title="Show a second language under each card"
+            onClick={() => setLabelMode(bilingual ? "single" : "multi")}
+            className={`relative w-11 h-6 shrink-0 rounded-full p-0 border-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-weekly-accent ${bilingual ? "bg-accent-strong" : "bg-[#CDD5C7]"}`}
+          >
+            <span
+              aria-hidden
+              className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.25)] transition-transform duration-200 ${bilingual ? "translate-x-5" : "translate-x-0"}`}
             />
-            <span className="w-10 h-6 shrink-0 rounded-full bg-[#CDD5C7] relative transition-colors peer-checked:bg-accent-strong peer-focus-visible:ring-2 peer-focus-visible:ring-weekly-accent after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:shadow after:transition-all peer-checked:after:left-[19px]" />
-          </label>
+          </button>
           {bilingual && (
             <select
               value={secondLanguage}
@@ -193,16 +199,7 @@ export function BuilderToolbar({
       <div className="flex-1" />
 
       <div className="flex items-center gap-3 self-center">
-        {full ? (
-          <span
-            role="status"
-            className="flex items-center gap-1.5 rounded-full pl-1.5 pr-3 py-1 text-[13px] font-semibold bg-[#E6F2E1] text-[#2E5A26] border border-[#C6DDBC] animate-[vsSlideIn_420ms_cubic-bezier(.2,.8,.2,1)]"
-          >
-            <span className="w-[20px] h-[20px] rounded-full bg-[#7FAF6A] text-white flex items-center justify-center text-[11px] font-extrabold animate-[vsPop_400ms_ease-out_200ms_both]">✓</span>
-            All done!
-            <span aria-hidden className="inline-block animate-[vsPoint_1.1s_ease-in-out_infinite]">→</span>
-          </span>
-        ) : placed > 0 ? (
+        {!full && placed > 0 ? (
           <span className="text-[13px] font-semibold text-ink-3 whitespace-nowrap" aria-live="polite">{placed} of {total} cards</span>
         ) : null}
         <button
@@ -210,9 +207,17 @@ export function BuilderToolbar({
           onClick={() => { void exportJPEG(); }}
           disabled={placed === 0 || exporting}
           title={placed === 0 ? "Add at least one card first" : "Download as an image (JPEG)"}
-          className={`h-10 px-4 disabled:bg-[#C9D2C1] disabled:cursor-not-allowed rounded-[10px] bg-accent-strong text-white font-bold text-[14px] flex items-center gap-2 hover:bg-accent-hover whitespace-nowrap ${full ? "animate-[vsPulse_1.8s_ease-in-out_infinite]" : ""}`}
+          className={`h-10 px-4 disabled:bg-[#C9D2C1] disabled:cursor-not-allowed rounded-[10px] bg-accent-strong text-white font-bold text-[14px] flex items-center gap-2 hover:bg-accent-hover whitespace-nowrap ${full ? "ring-2 ring-[#7FAF6A]/50 ring-offset-1" : ""}`}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+          {/* Schedule full: the download arrow turns into a tick, once —
+              replaces the old moving "All done!" pill. */}
+          {full && !exporting ? (
+            <span key="done" role="status" aria-label="All slots filled" className="w-[18px] h-[18px] rounded-full bg-[#7FAF6A] flex items-center justify-center animate-[vsPop_400ms_ease-out]">
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            </span>
+          ) : (
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+          )}
           {exporting ? "Preparing…" : "Save & download"}
         </button>
       </div>
