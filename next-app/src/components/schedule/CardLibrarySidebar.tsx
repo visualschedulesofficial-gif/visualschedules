@@ -181,8 +181,8 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
   const [catFlags, setCatFlags] = useState<Record<string, boolean>>({});
   const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [searchOrCategory, setSearchOrCategory] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [categoryPick, setCategoryPick] = useState("");
   const [forceUpdate, setForceUpdate] = useState(0);
 
   // Resolve a category id to its display name (DB first, then fallback, then id)
@@ -337,7 +337,7 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
     return categories.includes(val);
   };
 
-  const selectedCategory = isCategory(searchOrCategory) ? searchOrCategory : null;
+  const selectedCategory = isCategory(categoryPick) ? categoryPick : null;
 
   // Character picker is locked to Neutral when the chosen category has no character cards
   // Locked when: admin explicitly marked the category as no-characters, OR the
@@ -358,7 +358,6 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [charactersLocked]);
 
-  const searchText = !isCategory(searchOrCategory) ? searchOrCategory : "";
 
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {
@@ -401,133 +400,115 @@ export function CardLibrarySidebar({ onAddCard }: { onAddCard?: (cardId: string)
         title="Drag to resize"
         className="absolute right-0 top-0 bottom-0 w-[6px] cursor-col-resize z-20 hover:bg-[#C5D2B8]/50"
       />
-      {/* Everything scrolls; the toggle row below sticks to the top */}
+      {/* Everything scrolls; the filter rows below stick to the top */}
       <div className="flex-1 min-h-0 overflow-y-auto @container">
-      <div className="border-b border-border bg-white">
-        <div className="p-4 pb-3 space-y-3">
+      {/* Two compact rows, both sticky:
+          1) Language · Search · Category · All/Free/Paid
+          2) Character */}
+      <div className="sticky top-0 z-20 bg-white border-b border-border px-4 pt-3 pb-2.5 space-y-2.5">
+        <div className="flex items-center gap-2">
           {/* Language first: card names follow it, so a parent who reads
               Marathi can pick cards without reading English. */}
-          <label className="flex items-center gap-2.5 h-[46px] px-3 rounded-xl border-[1.5px] border-accent-strong bg-accent-soft cursor-pointer">
-            <svg className="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+          <label className="flex items-center gap-1.5 h-10 px-2.5 rounded-xl border-[1.5px] border-accent-strong bg-accent-soft cursor-pointer shrink-0 max-w-[30%]">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as Language)}
               aria-label="Card language"
-              className="flex-1 min-w-0 appearance-none bg-transparent border-0 outline-none font-bold text-[15px] text-ink cursor-pointer"
+              className="min-w-0 appearance-none bg-transparent border-0 outline-none font-bold text-[14px] text-ink cursor-pointer truncate"
             >
               {Object.keys(LANGUAGES).map((code) => (
                 <option key={code} value={code}>{languageLabel(code)}</option>
               ))}
             </select>
-            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
+            <svg className="w-3.5 h-3.5 shrink-0 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
           </label>
 
-          {/* One box: type to search, or pick a category from the list */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 min-h-[44px] px-2.5 rounded-xl border border-input-border bg-white focus-within:border-accent-strong focus-within:ring-2 focus-within:ring-weekly-accent/30">
-                <svg className="w-4 h-4 shrink-0 stroke-ink-2 fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-                {selectedCategory && (
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-accent-soft text-accent-hover pl-2 pr-0.5 py-0.5 text-[12.5px] font-semibold whitespace-nowrap max-w-[55%]">
-                    <span className="truncate">{catName(selectedCategory)}</span>
-                    <button type="button" onClick={() => setSearchOrCategory("")} aria-label="Clear category" className="w-5 h-5 rounded-md hover:bg-[#D7E3C9] leading-none text-[15px]">×</button>
-                  </span>
-                )}
-                <input
-                  type="search"
-                  placeholder={selectedCategory ? "" : "Search or pick category"}
-                  value={selectedCategory ? "" : searchOrCategory}
-                  onChange={(e) => {
-                    setSearchOrCategory(e.target.value);
-                    setIsDropdownOpen(e.target.value === "");
-                  }}
-                  onFocus={() => { if (!searchOrCategory || selectedCategory) setIsDropdownOpen(true); }}
-                  onBlur={() => setTimeout(() => setIsDropdownOpen(false), 150)}
-                  aria-label="Search cards or pick a category"
-                  aria-expanded={isDropdownOpen}
-                  className="flex-1 min-w-0 h-10 bg-transparent border-0 outline-none text-[14px] text-ink placeholder:text-ink-3"
-                />
-                <button type="button" onMouseDown={(e) => { e.preventDefault(); setIsDropdownOpen((v) => !v); }} aria-label="Show categories" className="w-6 h-6 shrink-0 flex items-center justify-center">
-                  <svg className={`w-3.5 h-3.5 stroke-ink-2 fill-none transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" strokeWidth="2.2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
-                </button>
-              </div>
-              {isDropdownOpen && (
-                <ul role="listbox" className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-border rounded-xl shadow-[0_12px_28px_rgba(30,42,36,0.14)] z-50 max-h-72 overflow-y-auto p-1.5 m-0 list-none animate-[vsSlideDown_180ms_ease-out]">
-                  <li className="px-2.5 pt-1.5 pb-1 text-[11px] font-bold tracking-wider uppercase text-ink-3">Categories</li>
-                  {categories.map((catId) => (
-                    <li
-                      key={catId}
-                      role="option"
-                      aria-selected={selectedCategory === catId}
-                      onMouseDown={(e) => { e.preventDefault(); setSearchOrCategory(catId); setIsDropdownOpen(false); }}
-                      className={`flex justify-between items-center px-2.5 py-2.5 rounded-lg cursor-pointer text-[14px] font-medium ${selectedCategory === catId ? "bg-accent-soft" : "hover:bg-accent-soft"}`}
-                    >
-                      {catName(catId)} <span className="text-ink-3 text-[12px]">{categoryCounts[catId] || 0}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            {/* One tag: tap to cycle All → Free → Paid */}
-            <button
-              type="button"
-              onClick={cycleAccess}
-              aria-label={`Showing ${accessFilter || "all"} cards. Tap to change`}
-              className={`h-11 min-w-[78px] px-3.5 rounded-xl border flex items-center justify-center gap-2 font-semibold text-[14px] transition-colors ${
-                accessFilter === "free" ? "bg-accent-soft border-[#9DB887] text-[#2E4A22]"
-                : accessFilter === "paid" ? "bg-[#FFF3E6] border-[#EBC993] text-[#7A4E12]"
-                : "bg-white border-input-border text-ink"
-              }`}
-            >
-              <span className={`w-2.5 h-2.5 rounded-full ${accessFilter === "free" ? "bg-[#5E8F48]" : accessFilter === "paid" ? "bg-[#D9922E]" : "bg-[conic-gradient(#7FAF6A_0_50%,#E0A246_50%_100%)]"}`} />
-              {accessFilter === "free" ? "Free" : accessFilter === "paid" ? "Paid" : "All"}
-            </button>
+          <div className="flex-1 min-w-0 flex items-center gap-1.5 h-10 px-2.5 rounded-xl border border-input-border bg-white focus-within:border-accent-strong focus-within:ring-2 focus-within:ring-weekly-accent/30">
+            <svg className="w-4 h-4 shrink-0 stroke-ink-2 fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            <input
+              type="search"
+              placeholder="Search"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              aria-label="Search cards"
+              className="flex-1 min-w-0 h-full bg-transparent border-0 outline-none text-[14px] text-ink placeholder:text-ink-3"
+            />
           </div>
-        </div>
-      </div>
 
-      {/* STICKY: free/paid + characters stay visible while browsing */}
-      <div className="sticky top-0 z-20 bg-white border-b border-border px-4 py-2.5 flex items-center gap-3 min-h-[54px]">
-        <span className="text-[13px] font-semibold text-ink-2">Character</span>
-        {!charactersLocked && (
-          <div className="flex gap-1.5">
-            {(["neutral", "boy", "girl", "brown"] as Gender[]).map((g) => {
-              const active = gender === g;
-              const faceImg = CHARACTER_FACES[g];
-              return (
-                <button
-                  key={g}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => {
-                    setGender(g);
-                    setForceUpdate((prev) => prev + 1);
-                  }}
-                  aria-label={GENDER_LABELS[g]}
-                  title={GENDER_LABELS[g]}
-                  className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
-                    active
-                      ? "border-accent-strong ring-2 ring-accent-soft"
-                      : "border-transparent opacity-75 hover:opacity-100"
-                  }`}
-                >
-                  {faceImg ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={faceImg} alt={GENDER_LABELS[g]} className="w-full h-full object-cover object-top bg-white" />
-                  ) : (
-                    <span className="text-[12px] font-sans text-ink-3 uppercase">{g[0]}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
+          <label className={`flex items-center gap-1.5 h-10 px-2.5 rounded-xl border cursor-pointer shrink-0 max-w-[30%] ${selectedCategory ? "border-accent-strong bg-accent-soft" : "border-input-border bg-white"}`}>
+            <select
+              value={selectedCategory || ""}
+              onChange={(e) => setCategoryPick(e.target.value)}
+              aria-label="Category"
+              className="min-w-0 appearance-none bg-transparent border-0 outline-none font-semibold text-[14px] text-ink cursor-pointer truncate"
+            >
+              <option value="">All categories</option>
+              {categories.map((catId) => (
+                <option key={catId} value={catId}>{catName(catId)} ({categoryCounts[catId] || 0})</option>
+              ))}
+            </select>
+            <svg className="w-3.5 h-3.5 shrink-0 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
+          </label>
+
+          {/* One tag: tap to cycle All → Free → Paid */}
+          <button
+            type="button"
+            onClick={cycleAccess}
+            aria-label={`Showing ${accessFilter || "all"} cards. Tap to change`}
+            className={`h-10 min-w-[70px] px-3 rounded-xl border flex items-center justify-center gap-1.5 font-semibold text-[14px] transition-colors shrink-0 ${
+              accessFilter === "free" ? "bg-accent-soft border-[#9DB887] text-[#2E4A22]"
+              : accessFilter === "paid" ? "bg-[#FFF3E6] border-[#EBC993] text-[#7A4E12]"
+              : "bg-white border-input-border text-ink"
+            }`}
+          >
+            <span className={`w-2.5 h-2.5 rounded-full ${accessFilter === "free" ? "bg-[#5E8F48]" : accessFilter === "paid" ? "bg-[#D9922E]" : "bg-[conic-gradient(#7FAF6A_0_50%,#E0A246_50%_100%)]"}`} />
+            {accessFilter === "free" ? "Free" : accessFilter === "paid" ? "Paid" : "All"}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] font-semibold text-ink-2">Character</span>
+          {!charactersLocked && (
+            <div className="flex gap-1.5">
+              {(["neutral", "boy", "girl", "brown"] as Gender[]).map((g) => {
+                const active = gender === g;
+                const faceImg = CHARACTER_FACES[g];
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setGender(g);
+                      setForceUpdate((prev) => prev + 1);
+                    }}
+                    aria-label={GENDER_LABELS[g]}
+                    title={GENDER_LABELS[g]}
+                    className={`w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                      active
+                        ? "border-accent-strong ring-2 ring-accent-soft"
+                        : "border-transparent opacity-75 hover:opacity-100"
+                    }`}
+                  >
+                    {faceImg ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={faceImg} alt={GENDER_LABELS[g]} className="w-full h-full object-cover object-top bg-white" />
+                    ) : (
+                      <span className="text-[12px] font-sans text-ink-3 uppercase">{g[0]}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* First-time nudge: floats over the first row of pictures until a
           card is placed. Clicks pass through to the cards underneath. */}
       {addedCardIds.size === 0 && filteredCards.length > 0 && (
-        <div className="sticky top-[54px] z-30 h-0 pointer-events-none hidden md:block" aria-hidden>
+        <div className="sticky top-[110px] z-30 h-0 pointer-events-none hidden md:block" aria-hidden>
           <div className="vs-bob absolute left-1/2 top-[62px] flex flex-col items-center">
             <span className="whitespace-nowrap rounded-full bg-accent-strong text-white text-[14px] font-bold pl-3 pr-4 py-2 shadow-[0_8px_22px_rgba(46,62,38,0.35)] flex items-center gap-2">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1-6 6h-1a6 6 0 0 1-4.9-2.5L4.6 15a1.5 1.5 0 0 1 2.3-1.9L9 15" /></svg>
