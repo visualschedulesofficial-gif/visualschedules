@@ -3,6 +3,11 @@ name: Deploy to Cloudflare
 on:
   push:
     branches: [main, nextjs-migration]
+    # Blog drafts and the marketing agent's notes don't change the app,
+    # so they don't need a full rebuild + deploy.
+    paths-ignore:
+      - "content/blog/**"
+      - "marketing/**"
   workflow_dispatch:
 
 jobs:
