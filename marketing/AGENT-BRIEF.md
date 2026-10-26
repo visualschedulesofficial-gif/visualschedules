@@ -14,7 +14,12 @@ Therapy centres in India working with autistic / neurodiverse children: occupati
 **The pitch:** therapists can recommend Visual Schedules to parents as free home-practice support (bilingual, Hindi-English, printable), so routines practised in therapy carry over at home. Mention Grow Gently courses in one line only. Offer: a free walkthrough call.
 
 **Always include (Neha, 2026-10-26):**
-- Visual Schedules is bilingual (Hindi-English) and has both girl and boy characters.
+- Visual Schedules is bilingual and has both girl and boy characters.
+- **Lead with the state's language** (Neha, 2026-10-26). Supported so far: English, Hindi, Marathi, Gujarati. Maharashtra → "bilingual Marathi/Hindi-English"; Gujarat → "bilingual Gujarati/Hindi-English"; Hindi-belt states → "bilingual Hindi-English". For other states, say "bilingual Hindi-English" until Neha confirms more languages.
+
+**Gmail:** the Gmail connector (visualschedulesofficial@gmail.com) is connected. Save drafts there with create_draft — never send. Also keep the markdown copy in `marketing/email-drafts/`.
+
+**Backlog (Neha, 2026-10-26):** the 2026-10-19 → 2026-10-25 batches were never put in Gmail. Re-draft them into Gmail at 10–15 a day with the current pitch, one city at a time (Pune done 2026-10-26; next Mumbai, Bengaluru, Delhi NCR, Hyderabad, Chennai, Kolkata). Mark each lead's notes "in Gmail drafts YYYY-MM-DD".
 - Most of Visual Schedules is free, and there's a one-week free trial of paid features.
 - We can create access codes with the centre's own branding that they share with parents — free, or as part of their paid services.
 
