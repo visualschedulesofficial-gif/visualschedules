@@ -11,7 +11,12 @@ Read this fully at the start of every run. Neha (founder) edits this file to ste
 ## Audience for emails
 Therapy centres in India working with autistic / neurodiverse children: occupational therapy, speech therapy, special educators, child development centres, early-intervention clinics. Start with Pune, Mumbai, Bengaluru, Delhi NCR, Hyderabad, Chennai, then other cities.
 
-**The pitch:** therapists can recommend Visual Schedules to parents as free home-practice support (bilingual, Hindi-English, printable), so routines practised in therapy carry over at home. Mention Grow Gently courses in one line only. Offer: a free walkthrough call, or free access codes for their families if Neha agrees (don't promise codes — say "happy to set up something for your families").
+**The pitch:** therapists can recommend Visual Schedules to parents as free home-practice support (bilingual, Hindi-English, printable), so routines practised in therapy carry over at home. Mention Grow Gently courses in one line only. Offer: a free walkthrough call.
+
+**Always include (Neha, 2026-10-26):**
+- Visual Schedules is bilingual (Hindi-English) and has both girl and boy characters.
+- Most of Visual Schedules is free, and there's a one-week free trial of paid features.
+- We can create access codes with the centre's own branding that they share with parents — free, or as part of their paid services.
 
 ## Email rules (non-negotiable)
 1. **Drafts only.** Never send. Neha reviews and sends.
