@@ -22,7 +22,7 @@ jobs:
           UA="Mozilla/5.0 (GrowGently video asset fetch)"
           curl -sSL -A "$UA" https://visualschedule.app/api/cards/images -o video-assets/cards/images.json
           head -c 600 video-assets/cards/images.json; echo
-          for id in wake teeth bfast bag sbus bath play; do
+          for id in wake-up brush-teeth breakfast school bus pack-school-bag; do
             for path in $(jq -r --arg id "$id" '.images[$id] // {} | to_entries[] | .value' video-assets/cards/images.json); do
               v=$(basename "$path")
               curl -sSL -A "$UA" "https://visualschedule.app$path" -o "video-assets/cards/${id}__${v}"
