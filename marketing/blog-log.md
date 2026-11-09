@@ -6,3 +6,4 @@ One line per post the agent drafts: date · title · slug · main keyword.
 2026-10-27 · Ek Baar Ki Baat Hai: Simple Ways to Build Storytelling Skills at Home · storytelling-with-your-child-at-home · stories skill area (store unreadable; general post linking growgently.in)
 2026-11-02 · Shaadi Season: How to Prepare Your Neurodiverse Child for a Family Wedding · family-wedding-visual-schedule · autism wedding tips
 2026-11-03 · Ek Shabd, Do Shabd: Gentle Ways to Grow Your Child's Language at Home · everyday-language-at-home · language skill area (store unreadable; general post linking growgently.in)
+2026-11-09 · Susu Time, Step by Step: Toilet Training Your Neurodiverse Child with a Visual Schedule · toilet-training-visual-schedule · toilet training autism
