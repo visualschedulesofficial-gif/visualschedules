@@ -1,0 +1,38 @@
+name: Fetch card images for video
+
+# Runs only on the video-assets branch. Downloads a few live card images
+# from visualschedule.app so they can be used in Grow Gently videos.
+# Does not deploy anything.
+on:
+  push:
+    branches: [video-assets]
+    paths: ['.github/workflows/fetch-video-cards.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download cards
+        run: |
+          mkdir -p video-assets/cards
+          UA="Mozilla/5.0 (GrowGently video asset fetch)"
+          curl -sSL -A "$UA" https://visualschedule.app/api/cards/images -o video-assets/cards/images.json
+          head -c 600 video-assets/cards/images.json; echo
+          for id in wake teeth bfast bag sbus bath play; do
+            for path in $(jq -r --arg id "$id" '.images[$id] // {} | to_entries[] | .value' video-assets/cards/images.json); do
+              v=$(basename "$path")
+              curl -sSL -A "$UA" "https://visualschedule.app$path" -o "video-assets/cards/${id}__${v}"
+            done
+          done
+          ls -la video-assets/cards
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add video-assets
+          git commit -m "Add card images for video" || echo "nothing to commit"
+          git push
