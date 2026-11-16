@@ -8,3 +8,4 @@ One line per post the agent drafts: date · title · slug · main keyword.
 2026-11-03 · Ek Shabd, Do Shabd: Gentle Ways to Grow Your Child's Language at Home · everyday-language-at-home · language skill area (store unreadable; general post linking growgently.in)
 2026-11-09 · Susu Time, Step by Step: Toilet Training Your Neurodiverse Child with a Visual Schedule · toilet-training-visual-schedule · toilet training autism
 2026-11-10 · Main Khud Karunga: Teaching Everyday Self-Care Routines One Small Step at a Time · self-care-routines-step-by-step · routines skill area (store unreadable; general post linking growgently.in)
+2026-11-16 · Chalo, Ghoomne Chalein! Planning Winter Holiday Travel with Your Neurodiverse Child · holiday-travel-visual-schedule · travelling with autistic child India
